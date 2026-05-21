@@ -1,0 +1,10 @@
+{
+	"hooks": {
+		"PostToolUse": [
+			{
+				"type": "command",
+				"command": "pnpm run verify --write \"$TOOL_INPUT_FILE_PATH\""
+			}
+		]
+	}
+}

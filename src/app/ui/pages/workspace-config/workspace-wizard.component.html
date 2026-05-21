@@ -1,0 +1,248 @@
+<!-- Step 1: Mode Selection -->
+@if (step() === 1) {
+	<div class="space-y-6">
+		<div class="space-y-2">
+			<h2
+				class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100"
+			>
+				New Workspace
+			</h2>
+			<p class="text-sm text-gray-500 dark:text-gray-400">
+				Choose how to create your workspace.
+			</p>
+		</div>
+
+		<div class="grid grid-cols-2 gap-4">
+			<!-- From Folder card -->
+			<button
+				type="button"
+				(click)="selectFolderMode()"
+				[class.opacity-50]="!hasLocalAdapter"
+				[class.cursor-not-allowed]="!hasLocalAdapter"
+				class="group flex flex-col items-center justify-center gap-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-8 text-center transition-colors hover:bg-gray-50"
+			>
+				<svg lucideFolder class="size-10 text-gray-400"></svg>
+				<div>
+					<div class="font-medium text-gray-900 dark:text-gray-100">
+						From Folder
+					</div>
+					<div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+						Pick an existing folder of notes
+					</div>
+				</div>
+				@if (!hasLocalAdapter) {
+					<span class="mt-2 text-xs leading-tight text-gray-400">
+						Folder picker not available on this device.
+					</span>
+				}
+			</button>
+
+			<!-- Standalone card -->
+			<div
+				(click)="selectStandaloneMode()"
+				class="flex cursor-pointer select-none flex-col items-center justify-center gap-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-8 text-center transition-colors hover:bg-gray-50"
+			>
+				<svg lucideStickyNote class="size-10 shrink-0 text-gray-400"></svg>
+				<div>
+					<div class="font-medium text-gray-900 dark:text-gray-100">
+						Standalone
+					</div>
+					<div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+						Keep everything inside the app, no external files
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Footer: just cancel (simple secondary) -->
+		<div class="flex justify-end pt-2">
+			<button
+				type="button"
+				(click)="cancel()"
+				class="rounded-lg bg-transparent px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-200 dark:hover:bg-gray-800"
+			>
+				Cancel
+			</button>
+		</div>
+	</div>
+}
+
+<!-- Step 2: Name / Folder Selection -->
+@if (step() === 2) {
+	<div class="space-y-6">
+		<div class="space-y-2">
+			<h2
+				class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100"
+			>
+				@if (mode() === 'folder') {
+					Choose Folder
+				} @else {
+					Name Your Workspace
+				}
+			</h2>
+			<p class="text-sm text-gray-500 dark:text-gray-400">
+				@if (mode() === 'folder') {
+					Select the folder containing your notes.
+				} @else {
+					Give your standalone workspace a name.
+				}
+			</p>
+		</div>
+
+		@if (mode() === 'folder') {
+			<!-- Folder mode: browse button -->
+			<button
+				type="button"
+				(click)="pickFolder()"
+				[disabled]="pickingFolder()"
+				class="w-full rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 px-6 py-8 text-center transition-colors hover:border-indigo-400 disabled:opacity-50"
+			>
+				@if (pickingFolder()) {
+					<span class="text-sm text-gray-500"
+						>Opening folder picker...</span
+					>
+				} @else if (folderPath()) {
+					<div class="space-y-1">
+						<div
+							class="font-medium text-gray-900 dark:text-gray-100"
+						>
+							{{ folderName() }}
+						</div>
+						<div class="truncate text-xs text-gray-500">
+							{{ folderPath() }}
+						</div>
+					</div>
+				} @else {
+					<div class="space-y-2">
+						<svg lucidePlus class="mx-auto size-8 text-gray-400"></svg>
+						<span class="text-sm font-medium text-indigo-600">
+							Browse Folders
+						</span>
+					</div>
+				}
+			</button>
+		} @else {
+			<!-- Standalone mode: text input -->
+			<div>
+				<label
+					for="workspace-name"
+					class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
+				>
+					Workspace Name
+				</label>
+				<input
+					id="workspace-name"
+					type="text"
+					[(ngModel)]="workspaceName"
+					placeholder="My Notes"
+					class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 outline-none transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+				/>
+			</div>
+		}
+
+		<!-- Footer: back + cancel + continue -->
+		<footer
+			class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700"
+		>
+			<button
+				type="button"
+				(click)="goBack()"
+				class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-200 dark:hover:bg-gray-800"
+			>
+				← Back
+			</button>
+			<span class="flex items-center gap-2">
+				<button
+					type="button"
+					(click)="cancel()"
+					class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-200 dark:hover:bg-gray-800"
+				>
+					Cancel
+				</button>
+				<button
+					type="button"
+					(click)="goToStep3()"
+					[disabled]="
+						(mode() === 'folder' && !folderPath()) ||
+						(mode() === 'standalone' && !workspaceName().trim())
+					"
+					class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:bg-indigo-400"
+				>
+					Continue →
+				</button>
+			</span>
+		</footer>
+	</div>
+}
+
+<!-- Step 3: Remote Adapter Selection -->
+@if (step() === 3) {
+	<div class="space-y-6">
+		<div class="space-y-2">
+			<h2
+				class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100"
+			>
+				Sync Adapters
+			</h2>
+			<p class="text-sm text-gray-500 dark:text-gray-400">
+				Sync adapters let you keep your notes in sync across devices.
+				You can configure these later in workspace settings.
+			</p>
+		</div>
+
+		<!-- Available adapters list -->
+		<div class="space-y-3">
+			<div
+				class="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 opacity-60"
+			>
+				<div class="flex items-center gap-3">
+					<svg lucideCloud class="size-5 text-gray-400"></svg>
+					<div>
+						<div
+							class="text-sm font-medium text-gray-900 dark:text-gray-100"
+						>
+							Google Drive
+						</div>
+						<div class="text-xs text-gray-500">
+							Sync notes across devices
+						</div>
+					</div>
+				</div>
+				<span
+					class="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:text-gray-400"
+				>
+					Coming soon
+				</span>
+			</div>
+		</div>
+
+		<!-- Footer: back + cancel + create (uses nav element, different ordering) -->
+		<nav
+			class="flex flex-row items-center justify-between pt-4 border-gray-200 dark:border-gray-700 border-t"
+		>
+			<button
+				type="button"
+				(click)="goBack()"
+				class="rounded-lg px-4 py-2 text-sm text-gray-600 dark:text-gray-400 font-medium transition-colors hover:bg-gray-200 dark:hover:bg-gray-800"
+			>
+				← Back
+			</button>
+			<span class="flex items-center gap-2">
+				<button
+					type="button"
+					(click)="cancel()"
+					class="rounded-lg px-4 py-2 text-sm text-gray-600 dark:text-gray-400 font-medium transition-colors hover:bg-gray-200 dark:hover:bg-gray-800"
+				>
+					Cancel
+				</button>
+				<button
+					type="button"
+					(click)="completeWizard()"
+					class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
+				>
+					Create Workspace
+				</button>
+			</span>
+		</nav>
+	</div>
+}

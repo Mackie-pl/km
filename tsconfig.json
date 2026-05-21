@@ -1,0 +1,47 @@
+/* To learn more about this file see: https://angular.io/config/tsconfig. */
+{
+	"compileOnSave": false,
+	"compilerOptions": {
+		"rootDir": "./src",
+		"noUncheckedIndexedAccess": true,
+		"exactOptionalPropertyTypes": true,
+		"allowUnreachableCode": false,
+		"allowUnusedLabels": false,
+		"paths": {
+			"@ui/*": ["./src/app/ui/*"],
+			"@ui": ["./src/app/ui"],
+			"@vault/*": ["./src/app/core/vault/*"],
+			"@vault": ["./src/app/core/vault"],
+			"@core/*": ["./src/app/core/*"],
+			"@core": ["./src/app/core"],
+			"@services/*": ["./src/app/core/services/*"],
+			"@types/*": ["./src/app/core/types/*"],
+			"@journal/*": ["./src/app/core/journal/*"],
+			"@adapters/*": ["./src/app/core/adapters/*"]
+		},
+		"outDir": "./dist/out-tsc",
+		"forceConsistentCasingInFileNames": true,
+		"strict": true,
+		"noImplicitOverride": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true,
+		"skipLibCheck": true,
+		"esModuleInterop": true,
+		"sourceMap": true,
+		"declaration": false,
+		"experimentalDecorators": true,
+		"moduleResolution": "bundler",
+		"importHelpers": true,
+		"target": "ES2022",
+		"module": "ES2022",
+		"useDefineForClassFields": false,
+		"lib": ["ES2022", "dom"]
+	},
+	"angularCompilerOptions": {
+		"enableI18nLegacyMessageIdFormat": false,
+		"strictInjectionParameters": true,
+		"strictInputAccessModifiers": true,
+		"strictTemplates": true
+	}
+}

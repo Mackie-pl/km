@@ -1,0 +1,91 @@
+{
+	"workbench.colorCustomizations": {
+		"activityBar.activeBorder": "#ffffff",
+		"activityBar.border": "#F41F4E"
+	},
+	"angular-schematics.schematicsDefaultOptions": {
+		"angular-*": {
+			"externalTemplate": true
+		}
+	},
+	"cSpell.words": ["tauri"],
+	"eslint.workingDirectories": ["."],
+	"eslint.validate": ["typescript", "html"],
+	"eslint.codeAction.showDocumentation": {
+		"enable": true
+	},
+	"chat.tools.terminal.autoApprove": {
+		"/^pnpm exec eslint src --format json$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^pnpm exec eslint src --ext \\.ts,\\.html --format json$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^pnpm exec npm view @stylistic/eslint-plugin version$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^pnpm exec node -e \"import stylisticPlugin from '@stylistic/eslint-plugin'; console\\.log\\(Object\\.keys\\(stylisticPlugin\\)\\); console\\.log\\(stylisticPlugin\\.rules && Object\\.keys\\(stylisticPlugin\\.rules\\)\\.slice\\(0, 10\\)\\);\"$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^pnpm exec eslint src/app/adapters/local/browser-file-system-api\\.adapter\\.ts --format json$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^pnpm exec tsc --noEmit$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^pnpm exec tsc --project tsconfig\\.json --showConfig$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^pnpm exec jscpd --help \\| Out-String -Width 4096$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^pnpm eslint src --ext \\.ts,\\.html --fix 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^Get-Command pnpm -ErrorAction SilentlyContinue; Get-Command corepack -ErrorAction SilentlyContinue; where\\.exe pnpm 2>\\$null; \\$env:Path -split ';' \\| Select-String -SimpleMatch 'pnpm'$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^corepack pnpm run verify 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^npx playwright test --config e2e/playwright\\.config\\.ts --reporter=list 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^npx playwright test --config e2e/playwright\\.config\\.ts --reporter=list --timeout=30000 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^npx playwright test --config e2e/playwright\\.config\\.ts --reporter=list --timeout=60000 --grep \"Sync contract\\|Adapter DI\" 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^npx playwright test --config e2e/playwright\\.config\\.ts --reporter=list --timeout=60000 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^npx playwright test --config e2e/playwright\\.config\\.ts --reporter=list --timeout=60000 --grep \"pull imports\" 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^npx tsc --noEmit 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^pnpm exec tsc --noEmit --project tsconfig\\.app\\.json 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		}
+	}
+}

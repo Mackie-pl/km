@@ -1,0 +1,173 @@
+import { TuiRoot } from '@taiga-ui/core';
+import { TuiDialogService } from '@taiga-ui/core/portals/dialog';
+import { PolymorpheusComponent } from '@taiga-ui/polymorpheus';
+import { Component, effect, inject, signal } from '@angular/core';
+import { Router, RouterOutlet } from '@angular/router';
+import { Menu, MenuItem, Submenu } from '@tauri-apps/api/menu';
+import { PlatformService } from '@services/platform.service';
+import { ThemeService } from '@services/theme.service';
+import { VaultStore } from '@vault/store';
+import { WorkspaceService } from '@services/workspace.service';
+import { SettingsComponent } from '@ui/pages/settings/settings.component';
+import { WorkspaceConfig } from '@ui/pages/workspace-config/workspace-config';
+import { SidebarComponent } from '@ui/partials/sidebar/sidebar.component';
+import { HeaderComponent } from '@ui/partials/header/header.component';
+import { NoWorkspaceComponent } from './no-workspace/no-workspace.component';
+
+/**
+ * App shell — sidebar + header + main content area.
+ *
+ * On desktop (Windows/Linux): sidebar is always visible and collapsible.
+ * On mobile (Android): sidebar is hidden; opened via hamburger icon + swipe to close.
+ *
+ * When no workspace is selected, shows a full-screen picker overlay instead.
+ */
+@Component({
+	selector: 'app-root',
+	standalone: true,
+	imports: [
+		RouterOutlet,
+		TuiRoot,
+		SidebarComponent,
+		HeaderComponent,
+		NoWorkspaceComponent,
+	],
+	templateUrl: './app.component.html',
+	styleUrl: './app.component.scss',
+})
+export class AppComponent {
+	private readonly router = inject(Router);
+	readonly platformService = inject(PlatformService);
+	private readonly dialogService = inject(TuiDialogService);
+	readonly workspaceService = inject(WorkspaceService);
+	private readonly vaultDb = inject(VaultStore);
+
+	private nativeMenuInitialized = false;
+
+	/** Inject to ensure ThemeService is constructed at app boot — applies the
+	 *  persisted/system theme to <html> immediately on startup. */
+	private readonly _theme = inject(ThemeService);
+
+	constructor() {
+		console.warn('AppComponent initialized');
+
+		// Defer vault (IndexedDB) initialization until a workspace is active.
+		// This prevents loading entries for no workspace, and ensures the vault
+		// always scopes data to the current workspace.
+		let vaultWatchEnabled = false;
+		effect(() => {
+			const ws = this.workspaceService.activeWorkspace();
+			if (!ws || vaultWatchEnabled) return;
+			vaultWatchEnabled = true;
+			void this.vaultDb.init();
+		});
+
+		effect(() => {
+			console.warn(
+				'Platform detected:',
+				this.platformService.platform(),
+				this.platformService.isDesktopTauri(),
+			);
+			if (this.nativeMenuInitialized) {
+				return;
+			}
+
+			if (!this.platformService.detected()) {
+				return;
+			}
+
+			if (!this.platformService.isDesktopTauri()) {
+				return;
+			}
+
+			this.nativeMenuInitialized = true;
+			this.initNativeMenu().catch((error: unknown) => {
+				console.error('Failed to initialize native menu:', error);
+			});
+		});
+	}
+
+	/** Whether the sidebar is collapsed on desktop (visible by default) */
+	readonly sidebarCollapsed = signal(false);
+
+	/** Whether the mobile sidebar overlay is open */
+	readonly mobileSidebarOpen = signal(false);
+
+	/** Toggle the mobile sidebar overlay (hamburger menu) */
+	toggleMobileSidebar(): void {
+		this.mobileSidebarOpen.update((v) => !v);
+	}
+
+	/** Whether the current route is the workspace creation wizard */
+	isOnWizardRoute(): boolean {
+		return this.router.url.startsWith('/workspace/new');
+	}
+
+	/**
+	 * Opens the workspace creation wizard.
+	 */
+	openWorkspacePicker(): void {
+		void this.router.navigate(['/workspace/new']);
+	}
+
+	/**
+	 * Opens the settings screen.
+	 *
+	 * Desktop → Taiga UI modal dialog (overlay with backdrop)
+	 * Mobile  → Angular router navigation (full page with back button)
+	 */
+	openSettings(): void {
+		if (this.platformService.isMobile()) {
+			void this.router.navigate(['/settings']);
+		} else {
+			this.dialogService
+				.open(new PolymorpheusComponent(SettingsComponent), {
+					size: 'm',
+					dismissible: true,
+					label: 'Settings',
+				})
+				.subscribe();
+		}
+	}
+
+	/**
+	 * Opens the workspace config screen.
+	 *
+	 * Desktop → Taiga UI modal dialog (overlay with backdrop)
+	 * Mobile  → Angular router navigation (full page with back button)
+	 */
+	openWorkspaceConfig(): void {
+		if (this.platformService.isMobile()) {
+			void this.router.navigate(['/workspace']);
+		} else {
+			this.dialogService
+				.open(new PolymorpheusComponent(WorkspaceConfig), {
+					size: 'm',
+					dismissible: true,
+					label: 'Workspaces',
+				})
+				.subscribe();
+		}
+	}
+
+	private async initNativeMenu(): Promise<void> {
+		const settingsItem = await MenuItem.new({
+			id: 'settings',
+			text: 'Settings',
+			action: () => {
+				this.openSettings();
+			},
+		});
+
+		const appSubmenu = await Submenu.new({
+			text: 'App',
+			items: [settingsItem],
+		});
+
+		const menu = await Menu.new({
+			items: [appSubmenu],
+		});
+
+		await menu.setAsAppMenu();
+	}
+}
