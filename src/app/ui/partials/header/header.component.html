@@ -3,36 +3,53 @@
   pt-[env(safe-area-inset-top,0px)] pushes below the camera notch on mobile.
 -->
 <header
-  class="flex items-center justify-between min-h-12 px-4 pt-[env(safe-area-inset-top,0px)] flex-shrink-0 select-none border-b bg-gray-100 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
-  data-tauri-drag-region
+	class="flex items-center justify-between min-h-12 px-4 pt-[env(safe-area-inset-top,0px)] flex-shrink-0 select-none border-b bg-gray-100 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+	data-tauri-drag-region
 >
-  <!-- Left side: hamburger (mobile only) + title -->
-  <div class="flex items-center gap-2">
-    @if (platformService.isMobile()) {
-      <button
-        class="flex items-center justify-center size-8 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
-        (click)="toggleSidebar.emit()"
-        aria-label="Open sidebar"
-        title="Menu"
-      >
-        <svg lucideMenu class="size-5"></svg>
-      </button>
-    }
-    <span
-      class="text-[0.9375rem] font-semibold text-gray-900 dark:text-gray-100"
-      >Notes2</span
-    >
-  </div>
+	<!-- Left side: hamburger (mobile only) + title -->
+	<div class="flex items-center gap-2">
+		@if (platformService.isMobile()) {
+			<button
+				class="flex items-center justify-center size-8 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
+				(click)="toggleSidebar.emit()"
+				aria-label="Open sidebar"
+				title="Menu"
+			>
+				<svg lucideMenu class="size-5"></svg>
+			</button>
+		}
+		<span
+			class="text-[0.9375rem] font-semibold text-gray-900 dark:text-gray-100"
+			>Notes2</span
+		>
+	</div>
 
-  <!-- Right side: settings gear (shown on mobile/web, moved to native menu on desktop Tauri) -->
-  @if (!platformService.isDesktopTauri()) {
-    <button
-      class="flex items-center justify-center size-8 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
-      (click)="openSettings.emit()"
-      aria-label="Open settings"
-      title="Settings"
-    >
-      <svg lucideSettings class="size-5"></svg>
-    </button>
-  }
+	<!-- Right side: sync button (browser only — browser FS API needs a user gesture for permission) + settings gear -->
+	<div class="flex items-center gap-1">
+		@if (!platformService.isDesktopTauri() && hasActiveAdapters()) {
+			<button
+				class="flex items-center justify-center size-8 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
+				(click)="syncNow()"
+				aria-label="Sync now"
+				title="Sync now"
+			>
+				@if (syncStatus() === 'syncing') {
+					<svg lucideRefreshCw class="size-5 animate-spin"></svg>
+				} @else {
+					<svg lucideRefreshCw class="size-5"></svg>
+				}
+			</button>
+		}
+
+		@if (!platformService.isDesktopTauri()) {
+			<button
+				class="flex items-center justify-center size-8 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
+				(click)="openSettings.emit()"
+				aria-label="Open settings"
+				title="Settings"
+			>
+				<svg lucideSettings class="size-5"></svg>
+			</button>
+		}
+	</div>
 </header>

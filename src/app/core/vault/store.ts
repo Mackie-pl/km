@@ -1,30 +1,18 @@
-// vault-db.service.ts
-
 import { Injectable, signal, computed, inject, effect } from '@angular/core';
 import { WorkspaceService } from '@core/services/workspace.service';
+import {
+	VAULT_ENTRY_TYPES,
+	type VaultEntryType,
+	type VaultEntry,
+} from './vault-entry';
+import { VaultDatabase } from './vault-database';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyRecord = Record<string, any>;
-
-export const VAULT_ENTRY_TYPES = { FILE: 'file', FOLDER: 'folder' } as const;
-export type VaultEntryType =
-	(typeof VAULT_ENTRY_TYPES)[keyof typeof VAULT_ENTRY_TYPES];
-
-export interface VaultEntry {
-	id: string;
-	workspaceId: string;
-	name: string;
-	path: string;
-	parentId: string | null;
-	type: VaultEntryType;
-	content?: string;
-	createdAt: number;
-	updatedAt: number;
-	/** Adapter IDs that still need to receive this entry. Empty = fully synced. */
-	pendingAdapters: string[];
-	deleted: boolean;
-	revision: number;
-}
+// Re-exports for backward compat with imports from @vault/store
+export {
+	VAULT_ENTRY_TYPES,
+	type VaultEntryType,
+	type VaultEntry,
+} from './vault-entry';
 
 @Injectable({
 	providedIn: 'root',
@@ -70,21 +58,28 @@ export class VaultStore {
 	// =========================
 	//
 
-	private db: IDBDatabase | null = null;
+	private readonly database = new VaultDatabase();
 	private initPromise: Promise<void> | null = null;
 
 	/**
+	 * Incremented every time entries are loaded from IndexedDB.
+	 * SyncEngineService watches this to know when the vault is ready
+	 * after workspace activation or switch.
+	 */
+	readonly loadVersion = signal(0);
+
+	/**
 	 * Initialize the IndexedDB connection and load entries for the active workspace.
-	 * Safe to call multiple times — only opens the DB once.
-	 * If no workspace is active, the entries map stays empty until one is selected.
+	 * Safe to call multiple times — only opens the DB once, but ALWAYS reloads
+	 * entries (handles workspace switch where a different set of entries is needed).
 	 */
 	async init() {
 		this.initPromise ??= (async () => {
-			this.db = await this.open();
-			await this.loadAll();
+			await this.database.open();
 		})();
 
 		await this.initPromise;
+		await this.loadAll();
 	}
 
 	constructor() {
@@ -97,64 +92,15 @@ export class VaultStore {
 
 	/** Clear in-memory entries and reload from IndexedDB for the current workspace. */
 	private async clearAndReload(): Promise<void> {
+		this.loadVersion.set(0);
 		this.entries.set(new Map());
-		await this.loadAll();
+		// init() opens the DB (if not already open) then loads entries.
+		// Safe to call multiple times — only opens DB once.
+		await this.init();
 	}
 
 	private async ensureInitialized(): Promise<void> {
 		await this.init();
-	}
-
-	private open(): Promise<IDBDatabase> {
-		return new Promise((resolve, reject) => {
-			// DB version 3: dirty:boolean → pendingAdapters:string[]
-			const request = indexedDB.open('vault-db', 3);
-
-			request.onupgradeneeded = (event) => {
-				const db = request.result;
-
-				if (!db.objectStoreNames.contains('entries')) {
-					const store = db.createObjectStore('entries', {
-						keyPath: 'id',
-					});
-					store.createIndex('path', 'path');
-					store.createIndex('parentId', 'parentId');
-					store.createIndex('workspaceId', 'workspaceId');
-				} else if (event.oldVersion < 3) {
-					// Migration v2 → v3: replace dirty index with pendingAdapters field
-					const store = request.transaction?.objectStore('entries');
-					if (!store) return;
-
-					// Remove old dirty index if it exists
-					if (store.indexNames.contains('dirty')) {
-						store.deleteIndex('dirty');
-					}
-
-					// Migrate: dirty:boolean → pendingAdapters:string[]
-					const cursorReq = store.openCursor();
-					cursorReq.onsuccess = () => {
-						const cursor = cursorReq.result;
-						if (cursor) {
-							const entry = cursor.value as AnyRecord;
-							if (typeof entry['dirty'] === 'boolean') {
-								entry['pendingAdapters'] = [];
-								delete entry['dirty'];
-								cursor.update(entry);
-							}
-							cursor.continue();
-						}
-					};
-				}
-			};
-
-			request.onsuccess = () => {
-				resolve(request.result);
-			};
-
-			request.onerror = () => {
-				reject(new Error(request.error?.message));
-			};
-		});
 	}
 
 	//
@@ -164,25 +110,20 @@ export class VaultStore {
 	//
 
 	private async loadAll() {
-		if (!this.db) return;
 		const wsId = this.activeWorkspaceId();
 		if (!wsId) {
 			this.entries.set(new Map());
 			return;
 		}
 
-		const tx = this.db.transaction('entries', 'readonly');
-		const store = tx.objectStore('entries');
-		const index = store.index('workspaceId');
-
-		const request = index.getAll(wsId) as IDBRequest<VaultEntry[]>;
-		const entries = await this.awaitRequest<VaultEntry[]>(request);
-
+		const entries = await this.database.loadAll(wsId);
 		const map = new Map<string, VaultEntry>();
 		for (const entry of entries) {
 			map.set(entry.id, entry);
 		}
 		this.entries.set(map);
+		// Signal that the vault is ready for consumers (SyncEngine, etc.)
+		this.loadVersion.update((v) => v + 1);
 	}
 
 	//
@@ -299,32 +240,90 @@ export class VaultStore {
 
 	//
 	// =========================
+	// RENAME
+	// =========================
+	//
+
+	/**
+	 * Rename a file or folder entry.
+	 *
+	 * For files: updates name + path, sets `pendingRenameFrom` so the sync
+	 * engine calls `adapter.rename()` instead of `adapter.write()`.
+	 *
+	 * For folders: cascades to all children whose `path` starts with the old path.
+	 * Every child gets `revision + 1` and `pendingAdapters` merged.
+	 *
+	 * @param id - The entry ID to rename
+	 * @param newName - The new name (last path segment only, e.g. "new-name.md")
+	 */
+	async renameEntry(id: string, newName: string): Promise<void> {
+		const entry = this.entries().get(id);
+		if (!entry || entry.name === newName) return;
+
+		const oldPath = entry.path;
+
+		// Rebuild path: replace last segment (the name)
+		const parent = entry.path.split('/').slice(0, -1).join('/');
+		const newPath = parent ? `${parent}/${newName}` : newName;
+
+		const wsId = this.activeWorkspaceId();
+		if (!wsId) return;
+
+		const activeAdapters =
+			this.workspaceService.activeWorkspace()?.activeSyncAdapters ?? [];
+		const pendingAdapters = [
+			...new Set([...entry.pendingAdapters, ...activeAdapters]),
+		];
+
+		const updated: VaultEntry = {
+			...entry,
+			name: newName,
+			path: newPath,
+			updatedAt: Date.now(),
+			revision: entry.revision + 1,
+			pendingAdapters,
+			pendingRenameFrom: oldPath,
+		};
+
+		await this.put(updated);
+
+		// Cascade to children if this is a folder
+		if (entry.type === VAULT_ENTRY_TYPES.FOLDER) {
+			const children = Array.from(this.entries().values()).filter(
+				(e) =>
+					e.workspaceId === wsId &&
+					!e.deleted &&
+					e.path.startsWith(oldPath + '/'),
+			);
+
+			for (const child of children) {
+				const childNewPath = newPath + child.path.slice(oldPath.length);
+				const childNewName =
+					childNewPath.split('/').pop() ?? child.name;
+
+				await this.put({
+					...child,
+					name: childNewName,
+					path: childNewPath,
+					updatedAt: Date.now(),
+					revision: child.revision + 1,
+					pendingAdapters: [
+						...new Set([
+							...child.pendingAdapters,
+							...activeAdapters,
+						]),
+					],
+				});
+			}
+		}
+	}
+
+	//
+	// =========================
 	// INBOUND SYNC — external file reconciliation
 	// =========================
 
-	/**
-	 * Apply an external file change detected by an adapter (watch/pull).
-	 *
-	 * This is the canonical reconciliation entry point for inbound sync:
-	 *
-	 * ```text
-	 * external change → adapter detects → SyncEngine reads file
-	 * → VaultStore.applyExternalFile() → projection updated → UI rerenders
-	 * ```
-	 *
-	 * ## Behavior by scenario
-	 *
-	 * | Scenario | Action |
-	 * |----------|--------|
-	 * | NEW file (not in vault) | Create entry, mark source adapter synced |
-	 * | EXISTING file, no local unsaved changes | Overwrite content |
-	 * | EXISTING file, local unsaved changes exist | Create conflict file |
-	 * | EXISTING file marked deleted | Restore as active file |
-	 *
-	 * @param path - File path relative to workspace root
-	 * @param content - Full text content from the canonical source
-	 * @param sourceAdapterId - The adapter that detected the change
-	 */
+	/** Apply an external file change — delegates to case handlers. */
 	async applyExternalFile(
 		path: string,
 		content: string,
@@ -337,87 +336,252 @@ export class VaultStore {
 
 		const existing = this.getByPath(path);
 
-		// ── Case 1: Brand new file ──
 		if (!existing) {
-			const name = path.split('/').pop() ?? '';
-			const activeAdapters =
-				this.workspaceService.activeWorkspace()?.activeSyncAdapters ??
-				[];
-
-			await this.put(
-				this.makeEntry({
-					workspaceId: wsId,
-					name,
-					path,
-					content,
-					pendingAdapters: activeAdapters.filter(
-						(a) => a !== sourceAdapterId,
-					),
-				}),
+			await this.handleNewExternalFile(
+				wsId,
+				path,
+				content,
+				sourceAdapterId,
 			);
 			return;
 		}
 
-		// ── Case 2: File was locally deleted, now external version appears ──
 		if (existing.deleted) {
-			const updated: VaultEntry = {
-				...existing,
+			await this.handleRestoredExternalFile(
+				existing,
 				content,
-				deleted: false,
-				updatedAt: Date.now(),
-				revision: existing.revision + 1,
-				// Don't re-add source adapter — it's already in sync
-				pendingAdapters: existing.pendingAdapters.filter(
-					(a) => a !== sourceAdapterId,
-				),
-			};
-			await this.put(updated);
+				sourceAdapterId,
+			);
 			return;
 		}
 
-		// ── Case 3: Local unsaved changes exist → conflict ──
 		if (existing.pendingAdapters.length > 0) {
-			const ext = existing.name.includes('.')
-				? '.' + (existing.name.split('.').pop() ?? '')
-				: '';
-			const conflictName = `${existing.name.replace(/\.[^.]+$/, '')}.conflict-${sourceAdapterId}${ext}`;
-			const conflictPath = existing.path.replace(
-				existing.name,
-				conflictName,
-			);
-			const entry: VaultEntry = {
-				id: crypto.randomUUID(),
-				workspaceId: wsId,
-				name: conflictName,
-				path: conflictPath,
-				type: VAULT_ENTRY_TYPES.FILE,
-				parentId: existing.parentId,
+			await this.handleExternalConflict(
+				existing,
+				path,
 				content,
-				createdAt: Date.now(),
-				updatedAt: Date.now(),
-				pendingAdapters: [],
-				deleted: false,
-				revision: 1,
-			};
-			await this.put(entry);
-			console.warn(
-				`[Vault] Conflict detected for "${path}" — created "${conflictName}"`,
+				sourceAdapterId,
+				wsId,
 			);
 			return;
 		}
 
-		// ── Case 4: Clean overwrite — no local changes pending ──
+		// Clean overwrite — no local changes pending
 		const updated: VaultEntry = {
 			...existing,
 			content,
 			updatedAt: Date.now(),
 			revision: existing.revision + 1,
-			// Source adapter is already in sync
 			pendingAdapters: existing.pendingAdapters.filter(
 				(a) => a !== sourceAdapterId,
 			),
 		};
 		await this.put(updated);
+	}
+
+	private async handleNewExternalFile(
+		wsId: string,
+		path: string,
+		content: string,
+		sourceAdapterId: string,
+	): Promise<void> {
+		const name = path.split('/').pop() ?? '';
+		const activeAdapters =
+			this.workspaceService.activeWorkspace()?.activeSyncAdapters ?? [];
+		await this.put(
+			this.makeEntry({
+				workspaceId: wsId,
+				name,
+				path,
+				content,
+				pendingAdapters: activeAdapters.filter(
+					(a) => a !== sourceAdapterId,
+				),
+			}),
+		);
+	}
+
+	private async handleRestoredExternalFile(
+		existing: VaultEntry,
+		content: string,
+		sourceAdapterId: string,
+	): Promise<void> {
+		const updated: VaultEntry = {
+			...existing,
+			content,
+			deleted: false,
+			updatedAt: Date.now(),
+			revision: existing.revision + 1,
+			pendingAdapters: existing.pendingAdapters.filter(
+				(a) => a !== sourceAdapterId,
+			),
+		};
+		await this.put(updated);
+	}
+
+	private async handleExternalConflict(
+		existing: VaultEntry,
+		path: string,
+		content: string,
+		sourceAdapterId: string,
+		wsId: string,
+	): Promise<void> {
+		const ext = existing.name.includes('.')
+			? '.' + (existing.name.split('.').pop() ?? '')
+			: '';
+		const conflictName = `${existing.name.replace(/\.[^.]+$/, '')}.conflict-${sourceAdapterId}${ext}`;
+		const conflictPath = existing.path.replace(existing.name, conflictName);
+		const entry: VaultEntry = {
+			id: crypto.randomUUID(),
+			workspaceId: wsId,
+			name: conflictName,
+			path: conflictPath,
+			type: VAULT_ENTRY_TYPES.FILE,
+			parentId: existing.parentId,
+			content,
+			createdAt: Date.now(),
+			updatedAt: Date.now(),
+			pendingAdapters: [],
+			deleted: false,
+			revision: 1,
+		};
+		await this.put(entry);
+		console.warn(
+			`[Vault] Conflict detected for "${path}" — created "${conflictName}"`,
+		);
+	}
+
+	//
+	// =========================
+	// INBOUND SYNC — external rename reconciliation
+	// =========================
+
+	/** Apply an external rename — delegates to case handlers. */
+	async applyExternalRename(
+		oldPath: string,
+		newPath: string,
+		sourceAdapterId: string,
+	): Promise<void> {
+		await this.ensureInitialized();
+
+		const wsId = this.activeWorkspaceId();
+		if (!wsId) return;
+
+		const existing = this.getByPath(oldPath);
+		if (!existing) return;
+
+		const newName = newPath.split('/').pop() ?? '';
+
+		if (existing.pendingAdapters.length > 0) {
+			await this.handleExternalRenameConflict(
+				existing,
+				oldPath,
+				newPath,
+				newName,
+				wsId,
+				sourceAdapterId,
+			);
+			return;
+		}
+
+		await this.handleCleanExternalRename(
+			existing,
+			oldPath,
+			newPath,
+			newName,
+			wsId,
+			sourceAdapterId,
+		);
+	}
+
+	private async handleExternalRenameConflict(
+		existing: VaultEntry,
+		_oldPath: string,
+		newPath: string,
+		newName: string,
+		wsId: string,
+		sourceAdapterId: string,
+	): Promise<void> {
+		const activeAdapters =
+			this.workspaceService.activeWorkspace()?.activeSyncAdapters ?? [];
+		await this.put(
+			this.makeEntry({
+				workspaceId: wsId,
+				name: newName,
+				path: newPath,
+				content: existing.content ?? '',
+				pendingAdapters: activeAdapters.filter(
+					(a) => a !== sourceAdapterId,
+				),
+			}),
+		);
+		console.warn(
+			`[Vault] External rename conflict for "${_oldPath}" → "${newPath}" — local changes preserved`,
+		);
+	}
+
+	private async handleCleanExternalRename(
+		existing: VaultEntry,
+		oldPath: string,
+		newPath: string,
+		newName: string,
+		wsId: string,
+		sourceAdapterId: string,
+	): Promise<void> {
+		const activeAdapters =
+			this.workspaceService.activeWorkspace()?.activeSyncAdapters ?? [];
+
+		const updated: VaultEntry = {
+			...existing,
+			name: newName,
+			path: newPath,
+			updatedAt: Date.now(),
+			revision: existing.revision + 1,
+			pendingAdapters: activeAdapters.filter(
+				(a) => a !== sourceAdapterId,
+			),
+		};
+
+		await this.put(updated);
+
+		if (existing.type === VAULT_ENTRY_TYPES.FOLDER) {
+			await this.cascadeRenameChildren(
+				existing,
+				oldPath,
+				newPath,
+				activeAdapters,
+			);
+		}
+	}
+
+	private async cascadeRenameChildren(
+		existing: VaultEntry,
+		oldPath: string,
+		newPath: string,
+		activeAdapters: string[],
+	): Promise<void> {
+		const children = Array.from(this.entries().values()).filter(
+			(e) =>
+				e.workspaceId === existing.workspaceId &&
+				!e.deleted &&
+				e.path.startsWith(oldPath + '/'),
+		);
+
+		for (const child of children) {
+			const childNewPath = newPath + child.path.slice(oldPath.length);
+			const childNewName = childNewPath.split('/').pop() ?? child.name;
+
+			await this.put({
+				...child,
+				name: childNewName,
+				path: childNewPath,
+				updatedAt: Date.now(),
+				revision: child.revision + 1,
+				pendingAdapters: [
+					...new Set([...child.pendingAdapters, ...activeAdapters]),
+				],
+			});
+		}
 	}
 
 	//
@@ -452,16 +616,24 @@ export class VaultStore {
 	/**
 	 * Mark a single adapter as synced for this entry.
 	 * Removes the adapter from `pendingAdapters`.
+	 * Also clears `pendingRenameFrom` when the last adapter is synced.
 	 */
 	async markAdapterSynced(id: string, adapterId: string): Promise<void> {
 		const entry = this.entries().get(id);
 		if (!entry) return;
 
+		const pendingAdapters = entry.pendingAdapters.filter(
+			(a) => a !== adapterId,
+		);
+
+		// Clear pendingRenameFrom when fully synced (no adapters left to push to)
+		const pendingRenameFrom =
+			pendingAdapters.length === 0 ? undefined : entry.pendingRenameFrom;
+
 		await this.put({
 			...entry,
-			pendingAdapters: entry.pendingAdapters.filter(
-				(a) => a !== adapterId,
-			),
+			pendingAdapters,
+			...(pendingRenameFrom !== undefined ? { pendingRenameFrom } : {}),
 		});
 	}
 
@@ -508,33 +680,22 @@ export class VaultStore {
 			updatedAt: Date.now(),
 			deleted: false,
 			revision: 1,
-			...overrides,
+			workspaceId: overrides.workspaceId,
+			name: overrides.name,
+			path: overrides.path,
+			pendingAdapters: overrides.pendingAdapters,
+			...(overrides.content !== undefined
+				? { content: overrides.content }
+				: {}),
 		};
 	}
 
 	private async put(entry: VaultEntry) {
-		// persist to IndexedDB
-		if (!this.db) return;
-		const tx = this.db.transaction('entries', 'readwrite');
-		const store = tx.objectStore('entries');
-		const request = store.put(entry);
-		await this.awaitRequest(request);
+		await this.database.put(entry);
 
 		// update signal state
 		const next = new Map(this.entries());
 		next.set(entry.id, entry);
 		this.entries.set(next);
-	}
-
-	private awaitRequest<T>(request: IDBRequest<T>): Promise<T> {
-		return new Promise((resolve, reject) => {
-			request.onsuccess = () => {
-				resolve(request.result);
-			};
-
-			request.onerror = () => {
-				reject(new Error(request.error?.message));
-			};
-		});
 	}
 }

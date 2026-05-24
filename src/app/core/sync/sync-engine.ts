@@ -78,6 +78,7 @@ export class SyncEngineService implements OnDestroy {
 		this.pulling = true;
 		try {
 			const adapters = this.getActiveAdapters();
+			await this.registerScopes(adapters);
 			await this.pullPhase(adapters);
 		} finally {
 			this.pulling = false;
@@ -156,6 +157,10 @@ export class SyncEngineService implements OnDestroy {
 				try {
 					if (entry.deleted) {
 						await adapter.delete(entry.path, root);
+					} else if (entry.pendingRenameFrom) {
+						const renameFrom: string = entry.pendingRenameFrom;
+						// Use rename() on the adapter so the old file is removed atomically
+						await adapter.rename(renameFrom, entry.path, root);
 					} else {
 						await adapter.write(
 							entry.path,
@@ -186,6 +191,8 @@ export class SyncEngineService implements OnDestroy {
 					(e: FileEntry) => !e.isDirectory,
 				);
 
+				const remotePaths = new Set(remoteFiles.map((e) => e.path));
+
 				// Import each remote file through the canonical reconciliation path.
 				// applyExternalFile handles: new files, conflicts, clean overwrites.
 				for (const rf of remoteFiles) {
@@ -196,11 +203,50 @@ export class SyncEngineService implements OnDestroy {
 						adapter.id,
 					);
 				}
+
+				// Orphan detection: vault entries not present on the remote adapter
+				// are cleaned up (handles remote-deleted and remote-renamed files).
+				const allEntries = this.vault.files();
+				for (const entry of allEntries) {
+					if (
+						!remotePaths.has(entry.path) &&
+						entry.pendingAdapters.includes(adapter.id)
+					) {
+						// Entry exists on this adapter's pending list but the file
+						// doesn't exist remotely — the only pending op it could have
+						// is a write. If the remote removed it, mark synced so we
+						// don't keep trying to push it.
+						await this.vault.markAdapterSynced(
+							entry.id,
+							adapter.id,
+						);
+					}
+				}
 			} catch (err) {
-				console.error(
-					`[Sync] Pull failed for adapter ${adapter.id}:`,
-					err,
-				);
+				// NotAllowedError = browser FS API permission not available yet
+				// (e.g., after reload, no user gesture to re-grant yet).
+				// Log as warn — will retry on next cycle or when user clicks sync.
+				if (
+					err instanceof DOMException &&
+					err.name === 'NotAllowedError'
+				) {
+					console.warn(
+						`[Sync] Pull skipped for ${adapter.id}: permission not available (click sync to re-grant)`,
+					);
+				} else if (
+					err instanceof Error &&
+					(err.message.includes('permission denied') ||
+						err.message.includes('forbidden path'))
+				) {
+					console.warn(
+						`[Sync] Pull skipped for ${adapter.id}: ${err.message}`,
+					);
+				} else {
+					console.error(
+						`[Sync] Pull failed for adapter ${adapter.id}:`,
+						err,
+					);
+				}
 			}
 		}
 	}
@@ -224,7 +270,15 @@ export class SyncEngineService implements OnDestroy {
 	): Promise<void> {
 		for (const event of events) {
 			try {
-				if (event.type === 'delete') {
+				if (event.type === 'rename' && event.oldPath) {
+					const oldPath: string = event.oldPath;
+					// External rename detected via watch
+					await this.vault.applyExternalRename(
+						oldPath,
+						event.path,
+						adapter.id,
+					);
+				} else if (event.type === 'delete') {
 					const local = this.vault.getByPath(event.path);
 					if (local && !local.deleted) {
 						await this.vault.delete(local.id);
@@ -250,6 +304,28 @@ export class SyncEngineService implements OnDestroy {
 	// ──────────────────────────────────────────────
 	// Helpers
 	// ──────────────────────────────────────────────
+
+	/**
+	 * Call registerScope on each adapter that supports it.
+	 * This authorizes the root path with the platform's permission scope
+	 * (e.g. Tauri's FS scope) before any read/write operations.
+	 */
+	private async registerScopes(
+		adapters: ActiveAdapterEntry[],
+	): Promise<void> {
+		for (const { adapter, root } of adapters) {
+			if (adapter.registerScope && root) {
+				try {
+					await adapter.registerScope(root);
+				} catch (err) {
+					console.warn(
+						`[Sync] Failed to register scope for ${adapter.id}:`,
+						err,
+					);
+				}
+			}
+		}
+	}
 
 	/**
 	 * Build the list of active adapter instances with their root paths.

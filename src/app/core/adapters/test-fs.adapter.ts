@@ -38,7 +38,14 @@ export class TestFsAdapter implements Adapter {
 	}
 
 	isAvailable(): boolean {
-		return true;
+		// Only available in E2E tests — tauri-mock.js sets this flag before
+		// Angular bootstraps. In dev (ng serve / pnpm tauri dev), the flag
+		// is absent so the real adapter (TauriFsAdapter / BrowserFileSystemApiAdapter)
+		// is picked by getWorkspacePickerAdapter().
+		return (
+			typeof sessionStorage !== 'undefined' &&
+			sessionStorage.getItem('KM_E2E_TEST') === 'true'
+		);
 	}
 
 	pickWorkspaceFolder(): Promise<WorkspacePickResult | null> {
@@ -65,6 +72,15 @@ export class TestFsAdapter implements Adapter {
 
 	delete(path: string, _root?: string): Promise<void> {
 		this.files.delete(path);
+		return Promise.resolve();
+	}
+
+	rename(oldPath: string, newPath: string, _root?: string): Promise<void> {
+		const content = this.files.get(oldPath);
+		if (content !== undefined) {
+			this.files.set(newPath, content);
+			this.files.delete(oldPath);
+		}
 		return Promise.resolve();
 	}
 
@@ -119,7 +135,23 @@ export class TestFsAdapter implements Adapter {
 		type: WatchEvent['type'],
 		path: string,
 		content?: string,
+		oldPath?: string,
 	): void {
+		if (type === 'rename' && oldPath) {
+			const existingContent = this.files.get(oldPath);
+			this.files.set(path, content ?? existingContent ?? '');
+			this.files.delete(oldPath);
+			const events: WatchEvent[] = [{ type, path, oldPath }];
+			for (const cb of this.watchCallbacks) {
+				try {
+					cb(events);
+				} catch {
+					// Ignore callback errors in tests
+				}
+			}
+			return;
+		}
+
 		if (type !== 'delete' && content !== undefined) {
 			this.files.set(path, content);
 		}

@@ -86,6 +86,94 @@
 		"/^pnpm exec tsc --noEmit --project tsconfig\\.app\\.json 2>&1$/": {
 			"approve": true,
 			"matchCommandLine": true
+		},
+		"/^npx ng build 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^Get-Command pnpm, npm, node -ErrorAction SilentlyContinue \\| Select-Object Name, Source$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^cmd /c pnpm run verify 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^cmd /c pnpm run build 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^cmd /c pnpm run lint 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^cmd /c pnpm run jscpd 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^pnpm exec playwright test --config e2e/playwright\\.config\\.ts -g \"Editor\" 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^npx eslint src/app/ui/pages/editor/editor\\.ts 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^cargo check 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^cd C:\\\\Users\\\\hohen\\\\km-test ; pnpm run verify 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^Get-Command pnpm -ErrorAction SilentlyContinue; Get-Command npx -ErrorAction SilentlyContinue; Get-Command npm -ErrorAction SilentlyContinue$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^npx eslint \"src\\\\app\\\\core\\\\sync\\\\sync-engine\\.ts\" --format unix 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^cd C:\\\\Users\\\\hohen\\\\km-test\\\\src-tauri ; cargo check 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^cd C:\\\\Users\\\\hohen\\\\km-test ; npx ng build 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^corepack pnpm run verify$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^corepack pnpm run lint$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^corepack pnpm run lint 2>&1 \\| Select-String -Pattern \"sidebar\"$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^corepack pnpm run build ; corepack pnpm run jscpd$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^corepack pnpm run jscpd$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^corepack pnpm run build$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^corepack pnpm run lint 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^code --list-extensions \\| Select-String \"evaluations\"$/": {
+			"approve": true,
+			"matchCommandLine": true
 		}
 	}
 }

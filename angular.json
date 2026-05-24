@@ -28,9 +28,16 @@
                 "glob": "**/*",
                 "input": "node_modules/@taiga-ui/icons/src",
                 "output": "assets/taiga-ui/icons"
+              },
+              {
+                "glob": "fonts/**/*",
+                "input": "node_modules/katex/dist",
+                "output": "./"
               }
             ],
             "styles": [
+              "node_modules/@milkdown/crepe/lib/theme/common/style.css",
+              "node_modules/@milkdown/crepe/lib/theme/frame/style.css",
               "node_modules/@taiga-ui/styles/taiga-ui-theme.less",
               "node_modules/@taiga-ui/styles/taiga-ui-fonts.less",
               "src/styles.scss"

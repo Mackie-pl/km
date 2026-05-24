@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { WorkspaceService } from '@services/workspace.service';
 import { LucideTrash2 } from '@lucide/angular';
+import { DialogService } from '@core/dialog/dialog.service';
 
 @Component({
 	selector: 'app-workspace-config',
@@ -15,6 +16,7 @@ import { LucideTrash2 } from '@lucide/angular';
 export class WorkspaceConfig {
 	private readonly workspaceService = inject(WorkspaceService);
 	private readonly router = inject(Router);
+	private readonly dialog = inject(DialogService);
 
 	readonly workspaces = this.workspaceService.workspaces;
 	readonly activeWorkspace = this.workspaceService.activeWorkspace;
@@ -33,8 +35,12 @@ export class WorkspaceConfig {
 	 * Prompt for confirmation and remove a workspace.
 	 * If the user cancels the confirm dialog, no action is taken.
 	 */
-	removeWorkspace(id: string, name: string): void {
-		if (window.confirm(`Remove "${name}" workspace?`)) {
+	async removeWorkspace(id: string, name: string): Promise<void> {
+		const confirmed = await this.dialog.confirm({
+			title: 'Remove Workspace',
+			message: `Remove "${name}" workspace?`,
+		});
+		if (confirmed) {
 			this.workspaceService.removeWorkspace(id);
 		}
 	}

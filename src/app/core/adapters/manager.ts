@@ -29,10 +29,6 @@ export class AdaptersManager {
 	 * @returns The first available local adapter, or null if none found
 	 */
 	getWorkspacePickerAdapter(): Adapter | null {
-		console.warn(
-			'Looking for workspace picker adapter among:',
-			this.strategies,
-		);
 		return (
 			this.strategies.find((a) => a.isLocal && a.isAvailable()) ?? null
 		);

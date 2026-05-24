@@ -12,8 +12,10 @@ export interface FileEntry {
 }
 
 export interface WatchEvent {
-	type: 'create' | 'modify' | 'delete';
+	type: 'create' | 'modify' | 'delete' | 'rename';
 	path: string;
+	/** Previous path for rename events. */
+	oldPath?: string;
 }
 
 /**
@@ -36,6 +38,8 @@ export interface Adapter {
 	write(path: string, content: string, root?: string): Promise<void>;
 	/** Delete a file or empty directory. */
 	delete(path: string, root?: string): Promise<void>;
+	/** Rename a file or directory (atomic if the backing FS supports it). */
+	rename(oldPath: string, newPath: string, root?: string): Promise<void>;
 	/** List entries in a directory (non-recursive). */
 	list(path: string, root?: string): Promise<FileEntry[]>;
 	/** Optional: subscribe to filesystem changes. Returns an unsubscribe fn. */
@@ -43,6 +47,16 @@ export interface Adapter {
 		callback: (events: WatchEvent[]) => void,
 		root?: string,
 	): Promise<() => void>;
+
+	/**
+	 * Optional: register a root path with the platform's permission scope.
+	 * Called on workspace activation so the adapter can authorize future
+	 * read/write operations on the path.
+	 *
+	 * Implemented by adapters whose backing store requires permissions
+	 * to be granted per-path (e.g. Tauri's FS scope).
+	 */
+	registerScope?(root: string): Promise<void>;
 }
 
 // ============================================================================

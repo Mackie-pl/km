@@ -1,6 +1,17 @@
 import { test, expect } from '../fixtures/test';
 
 /**
+ * Read the KM test hook from the window object.
+ * Wrapped in a helper to avoid repetitive `unknown` casts.
+ */
+function getKmHook(): Record<string, unknown> | undefined {
+	const hook = (window as unknown as Record<string, unknown>)['__KM_TEST__'];
+	return typeof hook === 'object' && hook !== null
+		? (hook as Record<string, unknown>)
+		: undefined;
+}
+
+/**
  * Sync engine E2E tests — TDD contract for Phase F+G.
  *
  * These tests define the EXACT behaviour the pendingAdapters model
@@ -25,8 +36,9 @@ test.describe('Sync contract — pendingAdapters model', () => {
 		// Verify test hook is available
 		const hasHook = await page.evaluate(() => {
 			return (
-				typeof (window as Record<string, unknown>)['__KM_TEST__'] ===
-				'object'
+				typeof (window as unknown as Record<string, unknown>)[
+					'__KM_TEST__'
+				] === 'object'
 			);
 		});
 		expect(hasHook).toBe(true);
@@ -37,7 +49,9 @@ test.describe('Sync contract — pendingAdapters model', () => {
 	// → push writes to each adapter → pending becomes empty
 	test('create note pushes content to active adapters', async ({ page }) => {
 		const noteContent = await page.evaluate(async () => {
-			const km = (window as Record<string, unknown>)['__KM_TEST__'] as {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
 				workspaceService: {
 					addWorkspace: (ws: {
 						id: string;
@@ -93,7 +107,9 @@ test.describe('Sync contract — pendingAdapters model', () => {
 	test('pull imports remote file from TestFsAdapter', async ({ page }) => {
 		// Pre-create a file directly in the adapter
 		await page.evaluate(async () => {
-			const km = (window as Record<string, unknown>)['__KM_TEST__'] as {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
 				workspaceService: {
 					addWorkspace: (ws: {
 						id: string;
@@ -151,7 +167,9 @@ test.describe('Sync contract — pendingAdapters model', () => {
 			// Allow pull to fire (triggered by workspace activation)
 			await new Promise((r) => setTimeout(r, 2500));
 
-			const km = (window as Record<string, unknown>)['__KM_TEST__'] as {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
 				vaultStore: {
 					getByPath: (
 						path: string,
@@ -170,7 +188,9 @@ test.describe('Sync contract — pendingAdapters model', () => {
 	// ──────────── SCENARIO 3: TWO ADAPTERS ────────────
 	test('two adapters tracked independently', async ({ page }) => {
 		const result = await page.evaluate(async () => {
-			const km = (window as Record<string, unknown>)['__KM_TEST__'] as {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
 				workspaceService: {
 					addWorkspace: (ws: {
 						id: string;
@@ -237,7 +257,9 @@ test.describe('Sync contract — pendingAdapters model', () => {
 	// ──────────── SCENARIO 4: NO ADAPTERS ────────────
 	test('no adapters — pendingAdapters is empty', async ({ page }) => {
 		const result = await page.evaluate(async () => {
-			const km = (window as Record<string, unknown>)['__KM_TEST__'] as {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
 				workspaceService: {
 					addWorkspace: (ws: {
 						id: string;
@@ -279,7 +301,9 @@ test.describe('Sync contract — pendingAdapters model', () => {
 	// ──────────── SCENARIO 5: DELETE ────────────
 	test('delete pushes adapter.delete()', async ({ page }) => {
 		const result = await page.evaluate(async () => {
-			const km = (window as Record<string, unknown>)['__KM_TEST__'] as {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
 				workspaceService: {
 					addWorkspace: (ws: {
 						id: string;
@@ -351,7 +375,9 @@ test.describe('Inbound sync — watch() + applyExternalFile', () => {
 	test('external modify updates vault content', async ({ page }) => {
 		// Set up workspace + create a file first
 		await page.evaluate(async () => {
-			const km = (window as Record<string, unknown>)['__KM_TEST__'] as {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
 				workspaceService: {
 					addWorkspace: (ws: {
 						id: string;
@@ -398,7 +424,9 @@ test.describe('Inbound sync — watch() + applyExternalFile', () => {
 
 		// Now simulate an external modification
 		await page.evaluate(async () => {
-			const km = (window as Record<string, unknown>)['__KM_TEST__'] as {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
 				simulateExternalChange: (
 					type: 'create' | 'modify' | 'delete',
 					path: string,
@@ -417,7 +445,9 @@ test.describe('Inbound sync — watch() + applyExternalFile', () => {
 
 		// Verify vault was updated
 		const updated = await page.evaluate(async () => {
-			const km = (window as Record<string, unknown>)['__KM_TEST__'] as {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
 				vaultStore: {
 					getByPath: (path: string) =>
 						| {
@@ -436,7 +466,9 @@ test.describe('Inbound sync — watch() + applyExternalFile', () => {
 	// ──────────── SCENARIO 7: EXTERNAL NEW FILE ────────────
 	test('external new file is imported via watch', async ({ page }) => {
 		await page.evaluate(async () => {
-			const km = (window as Record<string, unknown>)['__KM_TEST__'] as {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
 				workspaceService: {
 					addWorkspace: (ws: {
 						id: string;
@@ -472,7 +504,9 @@ test.describe('Inbound sync — watch() + applyExternalFile', () => {
 
 		// Simulate a new file appearing externally
 		await page.evaluate(async () => {
-			const km = (window as Record<string, unknown>)['__KM_TEST__'] as {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
 				simulateExternalChange: (
 					type: 'create' | 'modify' | 'delete',
 					path: string,
@@ -485,7 +519,9 @@ test.describe('Inbound sync — watch() + applyExternalFile', () => {
 		await page.waitForTimeout(1000);
 
 		const imported = await page.evaluate(async () => {
-			const km = (window as Record<string, unknown>)['__KM_TEST__'] as {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
 				vaultStore: {
 					getByPath: (
 						path: string,
@@ -504,7 +540,9 @@ test.describe('Inbound sync — watch() + applyExternalFile', () => {
 		page,
 	}) => {
 		const result = await page.evaluate(async () => {
-			const km = (window as Record<string, unknown>)['__KM_TEST__'] as {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
 				workspaceService: {
 					addWorkspace: (ws: {
 						id: string;
@@ -587,9 +625,9 @@ test.describe('Adapter DI smoke tests', () => {
 	test('TestFsAdapter is registered and accessible', async ({ page }) => {
 		await page.goto('/');
 		const hasAdapter = await page.evaluate(() => {
-			const km = (window as Record<string, unknown>)['__KM_TEST__'] as
-				| { getTestAdapters: () => readonly unknown[] }
-				| undefined;
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as { getTestAdapters: () => readonly unknown[] } | undefined;
 			return (km?.getTestAdapters()?.length ?? 0) > 0;
 		});
 		expect(hasAdapter).toBe(true);
@@ -598,10 +636,329 @@ test.describe('Adapter DI smoke tests', () => {
 	test('invoke mock still works', async ({ page }) => {
 		await page.goto('/');
 		const hasInvoke = await page.evaluate(() => {
-			const internals = (window as Record<string, unknown>)
+			const internals = (window as unknown as Record<string, unknown>)
 				.__TAURI_INTERNALS__ as Record<string, unknown> | undefined;
 			return typeof internals?.invoke === 'function';
 		});
 		expect(hasInvoke).toBe(true);
+	});
+});
+
+// ──────────── RENAME CONTRACT ────────────
+test.describe('Rename contract', () => {
+	test.beforeEach(async ({ page }) => {
+		await page.goto('/');
+	});
+
+	// ──────────── SCENARIO R1: RENAME FILE PUSH ────────────
+	// Rename file → pendingRenameFrom = old path → push executes adapter.rename()
+	// → old file removed, new file created on adapter
+	test('rename file pushes rename to adapter, old file removed', async ({
+		page,
+	}) => {
+		const result = await page.evaluate(async () => {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
+				workspaceService: {
+					addWorkspace: (ws: {
+						id: string;
+						name: string;
+						activeSyncAdapters: string[];
+						adapterConfigs: unknown[];
+					}) => void;
+					activateWorkspace: (id: string) => void;
+				};
+				vaultStore: {
+					init: () => Promise<void>;
+					createFile: (
+						path: string,
+						content?: string,
+					) => Promise<void>;
+					renameEntry: (id: string, newName: string) => Promise<void>;
+					getByPath: (
+						path: string,
+					) => { id: string; name: string } | undefined;
+				};
+				getTestAdapters: () => readonly {
+					files: Map<string, string>;
+				}[];
+			};
+
+			const id = 'tdd-rename-push';
+			km.workspaceService.addWorkspace({
+				id,
+				name: 'Rename-Push',
+				activeSyncAdapters: ['test-fs'],
+				adapterConfigs: [],
+			});
+			km.workspaceService.activateWorkspace(id);
+			await km.vaultStore.init();
+
+			// Create a file and wait for push
+			await km.vaultStore.createFile('old-name.md', '# Rename me');
+			await new Promise((r) => setTimeout(r, 2500));
+
+			// Verify it was pushed
+			const entry = km.vaultStore.getByPath('old-name.md');
+			if (!entry) return 'NOT_CREATED';
+
+			// Rename
+			await km.vaultStore.renameEntry(entry.id, 'new-name.md');
+			await new Promise((r) => setTimeout(r, 2500));
+
+			const adapters = km.getTestAdapters();
+			return {
+				hasNew: adapters[0]?.files.has('new-name.md') ?? false,
+				hasOld: adapters[0]?.files.has('old-name.md') ?? false,
+			};
+		});
+
+		expect(result).not.toBe('NOT_CREATED');
+		expect((result as { hasNew: boolean; hasOld: boolean }).hasNew).toBe(
+			true,
+		);
+		expect((result as { hasNew: boolean; hasOld: boolean }).hasOld).toBe(
+			false,
+		);
+	});
+
+	// ──────────── SCENARIO R2: FOLDER RENAME CASCADE ────────────
+	// Rename folder → children paths updated
+	test('rename folder cascades to children paths', async ({ page }) => {
+		const result = await page.evaluate(async () => {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
+				workspaceService: {
+					addWorkspace: (ws: {
+						id: string;
+						name: string;
+						activeSyncAdapters: string[];
+						adapterConfigs: unknown[];
+					}) => void;
+					activateWorkspace: (id: string) => void;
+				};
+				vaultStore: {
+					init: () => Promise<void>;
+					createFolder: (path: string) => Promise<void>;
+					createFile: (
+						path: string,
+						content?: string,
+					) => Promise<void>;
+					renameEntry: (id: string, newName: string) => Promise<void>;
+					getByPath: (
+						path: string,
+					) => { id: string; name: string; path: string } | undefined;
+				};
+			};
+
+			const id = 'tdd-rename-folder';
+			km.workspaceService.addWorkspace({
+				id,
+				name: 'Rename-Folder',
+				activeSyncAdapters: [],
+				adapterConfigs: [],
+			});
+			km.workspaceService.activateWorkspace(id);
+			await km.vaultStore.init();
+
+			// Create folder with file inside
+			await km.vaultStore.createFolder('notes');
+			await km.vaultStore.createFile('notes/meeting.md', '# Meeting');
+
+			const folder = km.vaultStore.getByPath('notes');
+			if (!folder) return 'FOLDER_NOT_FOUND';
+
+			// Rename folder
+			await km.vaultStore.renameEntry(folder.id, 'journal');
+
+			const child = km.vaultStore.getByPath('journal/meeting.md');
+			const oldChild = km.vaultStore.getByPath('notes/meeting.md');
+			const renamedFolder = km.vaultStore.getByPath('journal');
+
+			return {
+				childPath: child?.path ?? null,
+				oldChildPath: oldChild?.path ?? null,
+				folderName: renamedFolder?.name ?? null,
+			};
+		});
+
+		expect(result).not.toBe('FOLDER_NOT_FOUND');
+		const r = result as {
+			childPath: string | null;
+			oldChildPath: string | null;
+			folderName: string | null;
+		};
+		expect(r.childPath).toBe('journal/meeting.md');
+		expect(r.oldChildPath).toBeUndefined();
+		expect(r.folderName).toBe('journal');
+	});
+
+	// ──────────── SCENARIO R3: EXTERNAL RENAME VIA WATCH ────────────
+	// simulateExternalChange with type 'rename' → vault paths updated
+	test('external rename via watch updates vault', async ({ page }) => {
+		await page.evaluate(async () => {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
+				workspaceService: {
+					addWorkspace: (ws: {
+						id: string;
+						name: string;
+						activeSyncAdapters: string[];
+						adapterConfigs: unknown[];
+					}) => void;
+					activateWorkspace: (id: string) => void;
+				};
+				vaultStore: {
+					init: () => Promise<void>;
+					createFile: (
+						path: string,
+						content?: string,
+					) => Promise<void>;
+					getByPath: (
+						path: string,
+					) => { id: string; content?: string } | undefined;
+				};
+				simulateExternalChange: (
+					type: 'create' | 'modify' | 'delete' | 'rename',
+					path: string,
+					content?: string,
+					oldPath?: string,
+				) => void;
+			};
+
+			const id = 'tdd-rename-external';
+			km.workspaceService.addWorkspace({
+				id,
+				name: 'Rename-External',
+				activeSyncAdapters: ['test-fs'],
+				adapterConfigs: [],
+			});
+			km.workspaceService.activateWorkspace(id);
+			await km.vaultStore.init();
+
+			// Create a local file
+			await km.vaultStore.createFile('original.md', '# Original');
+			await new Promise((r) => setTimeout(r, 1500));
+
+			// Simulate external rename
+			km.simulateExternalChange(
+				'rename',
+				'renamed.md',
+				'# Original',
+				'original.md',
+			);
+		});
+
+		await page.waitForTimeout(1000);
+
+		const result = await page.evaluate(async () => {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
+				vaultStore: {
+					getByPath: (
+						path: string,
+					) => { path: string; content?: string } | undefined;
+				};
+			};
+			const renamed = km.vaultStore.getByPath('renamed.md');
+			const original = km.vaultStore.getByPath('original.md');
+			return {
+				renamedExists: renamed !== undefined,
+				renamedContent: renamed?.content,
+				originalExists: original !== undefined,
+			};
+		});
+
+		expect(result.renamedExists).toBe(true);
+		expect(result.renamedContent).toBe('# Original');
+		expect(result.originalExists).toBe(false);
+	});
+
+	// ──────────── SCENARIO R4: PULL DETECTS ORPHANED ENTRY ────────────
+	// Pre-populate adapter with file → vault has a different file that doesn't exist remotely
+	// → pull detects orphan → orphan deleted
+	test('pull detects orphaned entry after remote rename', async ({
+		page,
+	}) => {
+		await page.evaluate(async () => {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
+				workspaceService: {
+					addWorkspace: (ws: {
+						id: string;
+						name: string;
+						activeSyncAdapters: string[];
+						adapterConfigs: unknown[];
+					}) => void;
+					activateWorkspace: (id: string) => void;
+				};
+				vaultStore: {
+					init: () => Promise<void>;
+					createFile: (
+						path: string,
+						content?: string,
+					) => Promise<void>;
+				};
+				syncEngine: {
+					forcePull: () => Promise<void>;
+				};
+				getTestAdapters: () => readonly {
+					files: Map<string, string>;
+				}[];
+			};
+
+			const adapters = km.getTestAdapters();
+
+			// Pre-populate adapter with ONLY the renamed file
+			adapters[0]?.files.set('current-name.md', '# Current');
+
+			const id = 'tdd-rename-orphan';
+			km.workspaceService.addWorkspace({
+				id,
+				name: 'Rename-Orphan',
+				activeSyncAdapters: ['test-fs'],
+				adapterConfigs: [{ adapterId: 'test-fs', path: 'test:/root' }],
+			});
+			km.workspaceService.activateWorkspace(id);
+			await km.vaultStore.init();
+
+			// Create an orphan — a vault entry with no matching remote file
+			await km.vaultStore.createFile('stale-orphan.md', '# Orphan');
+
+			// Wait for push so adapter has it
+			await new Promise((r) => setTimeout(r, 2500));
+
+			// Now manually remove it from the adapter (simulating remote rename/delete)
+			adapters[0]?.files.delete('stale-orphan.md');
+			adapters[0]?.files.set('current-name.md', '# Still current');
+
+			// Pull — should detect orphan
+			await km.syncEngine.forcePull();
+			await new Promise((r) => setTimeout(r, 1500));
+		});
+
+		const result = await page.evaluate(async () => {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
+				vaultStore: {
+					getByPath: (path: string) => { path: string } | undefined;
+				};
+			};
+			return {
+				orphanExists:
+					km.vaultStore.getByPath('stale-orphan.md') !== undefined,
+				currentExists:
+					km.vaultStore.getByPath('current-name.md') !== undefined,
+			};
+		});
+
+		expect(result.orphanExists).toBe(false);
+		expect(result.currentExists).toBe(true);
 	});
 });

@@ -18,13 +18,19 @@ bootstrapApplication(AppComponent, appConfig)
 			getTestAdapters: () => TestFsAdapter.getInstances(),
 			/** Simulate an external change on the first TestFsAdapter */
 			simulateExternalChange: (
-				type: 'create' | 'modify' | 'delete',
+				type: 'create' | 'modify' | 'delete' | 'rename',
 				path: string,
 				content?: string,
+				oldPath?: string,
 			) => {
 				const adapters = TestFsAdapter.getInstances();
 				if (adapters.length > 0 && adapters[0]) {
-					adapters[0].simulateExternalChange(type, path, content);
+					adapters[0].simulateExternalChange(
+						type,
+						path,
+						content,
+						oldPath,
+					);
 				}
 			},
 		};

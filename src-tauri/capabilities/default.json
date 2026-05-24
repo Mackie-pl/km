@@ -11,9 +11,39 @@
     "dialog:allow-open",
     "fs:default",
     "fs:allow-write-text-file",
+    "fs:allow-read-text-file",
     "fs:allow-mkdir",
     "fs:allow-remove",
     "fs:allow-read-dir",
-    "fs:scope-app-recursive"
+    "fs:scope-app-recursive",
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        {
+          "path": "$APPDATA/*"
+        },
+        {
+          "path": "$HOME/*"
+        },
+        {
+          "path": "$DESKTOP/*"
+        },
+        {
+          "path": "$DOCUMENT/*"
+        },
+        {
+          "path": "$DOWNLOAD/*"
+        },
+        {
+          "path": "$APPLOCALDATA/*"
+        },
+        {
+          "path": "$DATA/*"
+        },
+        {
+          "path": "$LOCALDATA/*"
+        }
+      ]
+    }
   ]
 }

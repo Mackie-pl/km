@@ -1,4 +1,4 @@
-@use "tailwindcss";
+@use 'tailwindcss';
 
 /*
  * Dark mode — manual toggle via .dark class on <html>.
@@ -10,20 +10,30 @@
 
 /* Taiga UI global theme variables — overrides Tailwind's base layer minimally */
 :root {
-  --tui-font-text:
-    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --tui-radius-m: 0.5rem;
+	--tui-font-text:
+		'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+		sans-serif;
+	--tui-radius-m: 0.5rem;
 }
 
 /* Smooth theme transitions */
 html {
-  transition:
-    background-color 0.3s ease,
-    color 0.3s ease;
+	transition:
+		background-color 0.3s ease,
+		color 0.3s ease;
 }
 
 body {
-  @apply bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100;
-  margin: 0;
-  font-family: var(--tui-font-text);
+	@apply bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100;
+	margin: 0;
+	font-family: var(--tui-font-text);
+}
+
+.dark .milkdown {
+	--crepe-color-background: #1b1c1d;
+	--crepe-color-on-background: #f8f9ff;
+	--crepe-color-surface: #111418;
+	--crepe-color-surface-low: #2c2e31;
+	--crepe-color-outline: #4b4e51;
+	/* … add any other --crepe-* variables you need */
 }

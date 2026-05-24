@@ -3,7 +3,6 @@ import { SettingsComponent } from '@ui/pages/settings/settings.component';
 import { WorkspaceConfig } from '@ui/pages/workspace-config/workspace-config';
 import { WorkspaceWizardComponent } from '@ui/pages/workspace-config/workspace-wizard.component';
 import { Empty } from '@ui/pages/empty/empty';
-import { Editor } from '@ui/pages/editor/editor';
 
 export const routes: Routes = [
 	{
@@ -19,8 +18,9 @@ export const routes: Routes = [
 		component: WorkspaceWizardComponent,
 	},
 	{
-		path: 'e/**',
-		component: Editor,
+		path: 'e/:entryId',
+		loadComponent: () =>
+			import('@ui/pages/editor/editor').then((m) => m.Editor),
 	},
 	{
 		path: '**',

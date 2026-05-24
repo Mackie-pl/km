@@ -72,6 +72,7 @@ if (isFileSystemPickerSupported(window)) {
 - We are using Tailwind v4 (CSS-first configuration). Do NOT suggest adding or modifying `tailwind.config.js`.
 - Use utility classes for ALL styling — colors, spacing, typography, hover states, dark mode.
 - **No SCSS classes for theme colors** — component `.scss` files are intentionally empty placeholders. All colors come from Tailwind utilities.
+- **SCSS is allowed (and encouraged) for `[attr.data-*]` selectors** — when reducing `[class.*]` bindings via `[attr.data-active]` + `@apply`, use the component's `.scss` file. See the `tailwind-styling` skill for patterns.
 - **No inline `style` attributes** — use `[ngClass]` for dynamic class switching when component logic drives which styles apply.
 - Dark mode uses a manual `.dark` class on `<html>` (not `prefers-color-scheme`), configured via:
     ```css

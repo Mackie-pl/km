@@ -43,5 +43,6 @@
 		"strictInjectionParameters": true,
 		"strictInputAccessModifiers": true,
 		"strictTemplates": true
-	}
+	},
+	"exclude": ["e2e/**/*.ts", "e2e/**/*.js"]
 }

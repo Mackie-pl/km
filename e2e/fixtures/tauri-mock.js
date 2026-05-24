@@ -11,6 +11,16 @@
 (function mockTauriApis() {
 	if (typeof window === 'undefined') return;
 
+	// Signal to TestFsAdapter that we're in an E2E test environment.
+	// This flag is checked by TestFsAdapter.isAvailable() — without it,
+	// TestFsAdapter doesn't activate, letting the real adapter (Tauri / Browser FS)
+	// be picked by getWorkspacePickerAdapter() during dev.
+	try {
+		sessionStorage.setItem('KM_E2E_TEST', 'true');
+	} catch {
+		// sessionStorage may not be available in some test environments
+	}
+
 	// ----------------------------
 	// 1. Tauri runtime detection
 	// ----------------------------

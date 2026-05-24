@@ -1,226 +1,106 @@
 <!--
-  Responsive sidebar — pure Tailwind, no Taiga UI.
-
-  Desktop: always visible, collapsible (w-64 ↔ w-16).
-  Mobile: hidden by default, fixed overlay with backdrop.
+  Single sidebar template — CSS class switching for desktop vs mobile.
+  Desktop: relative, collapsible w-64 / w-16.
+  Mobile: fixed z-50 overlay, slide in/out via translate-x.
 -->
 
-<!-- ===== DESKTOP SIDEBAR ===== -->
-@if (isDesktop()) {
-  <aside
-    class="flex flex-col h-full flex-shrink-0 border-r transition-all duration-300 overflow-hidden bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
-    [class.w-64]="!collapsed()"
-    [class.w-16]="collapsed()"
-    data-tauri-drag-region
-  >
-    <!-- Sidebar header (drag region) -->
-    <div class="flex items-center h-12 px-3 flex-shrink-0">
-      @if (!collapsed()) {
-        <span
-          class="text-sm font-semibold truncate text-gray-900 dark:text-gray-100"
-          >Notes</span
-        >
-      }
-      <button
-        class="ml-auto flex items-center justify-center size-7 rounded-md border-none bg-transparent cursor-pointer transition-colors duration-150 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
-        (click)="toggleCollapsed()"
-        [attr.aria-label]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
-      >
-        @if (collapsed()) {
-          <svg lucideChevronRight class="size-4"></svg>
-        } @else {
-          <svg lucideChevronLeft class="size-4"></svg>
-        }
-      </button>
-    </div>
-
-    <!-- Nav items -->
-    <nav class="flex-1 overflow-y-auto px-2 py-2">
-      @for (item of navItems; track item.route) {
-        <button
-          class="flex items-center w-full gap-3 px-3 py-2.5 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
-          [attr.aria-label]="item.label"
-        >
-          @if (item.iconName === "fileText") {
-            <svg lucideFileText class="size-5 flex-shrink-0"></svg>
-          } @else if (item.iconName === "archive") {
-            <svg lucideArchive class="size-5 flex-shrink-0"></svg>
-          } @else {
-            <svg lucideTrash2 class="size-5 flex-shrink-0"></svg>
-          }
-          @if (!collapsed()) {
-            <span class="text-sm truncate">{{ item.label }}</span>
-          }
-        </button>
-      }
-
-      <!-- Vault file and folder list -->
-      <div class="mt-3 px-1">
-        <div
-          class="px-3 pb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
-        >
-          Vault
-        </div>
-        <div class="space-y-1">
-          @if (folders().length || files().length) {
-            @for (entry of folders(); track entry.id) {
-              <button
-                class="flex items-center w-full gap-3 px-3 py-2.5 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
-                [attr.aria-label]="entry.name"
-              >
-                <svg lucideFolder class="size-5 flex-shrink-0"></svg>
-                @if (!collapsed()) {
-                  <span class="text-sm truncate">{{ entry.name }}</span>
-                }
-              </button>
-            }
-            @for (entry of files(); track entry.id) {
-              <button
-                class="flex items-center w-full gap-3 px-3 py-2.5 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
-                [attr.aria-label]="entry.name"
-                (click)="openFile(entry)"
-              >
-                <svg lucideFileText class="size-5 flex-shrink-0"></svg>
-                @if (!collapsed()) {
-                  <span class="text-sm truncate">{{ entry.name }}</span>
-                }
-              </button>
-            }
-          } @else {
-            <div
-              class="px-3 py-2 rounded-lg text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800"
-            >
-              No notes yet
-            </div>
-          }
-        </div>
-      </div>
-    </nav>
-
-    <!-- Workspace footer -->
-    <div
-      class="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2"
-    >
-      <button
-        (click)="openWorkspaceConfigDialog()"
-        class="flex items-center w-full gap-3 px-3 py-2.5 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
-        [attr.aria-label]="'Workspace: ' + (activeWorkspace()?.name ?? 'None')"
-      >
-        @if (!collapsed()) {
-          <span class="text-xs font-medium text-gray-600 dark:text-gray-300">
-            {{ activeWorkspace()?.name }}
-          </span>
-        }
-        <svg lucideSettings class="size-4 flex-shrink-0 ml-auto"></svg>
-      </button>
-    </div>
-  </aside>
+<!-- Mobile backdrop -->
+@if (!isDesktop() && mobileOpen()) {
+	<div
+		class="fixed inset-0 z-40 bg-black/50 transition-opacity duration-300"
+		(click)="closeMobile()"
+	></div>
 }
 
-<!-- ===== MOBILE SIDEBAR (overlay) ===== -->
-@if (!isDesktop()) {
-  <!-- Backdrop -->
-  @if (mobileOpen()) {
-    <div
-      class="fixed inset-0 z-40 bg-black/50 transition-opacity duration-300"
-      (click)="closeMobile()"
-    ></div>
-  }
+<!-- Sidebar panel -->
+<aside
+	class="flex flex-col h-full flex-shrink-0 border-r transition-all duration-300 overflow-hidden bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+	[class.w-64]="!isDesktop() || !collapsed()"
+	[class.w-16]="isDesktop() && collapsed()"
+	[class.fixed]="!isDesktop()"
+	[class.z-50]="!isDesktop()"
+	[class.w-72]="!isDesktop()"
+	[class.top-0]="!isDesktop()"
+	[class.left-0]="!isDesktop()"
+	[class.translate-x-0]="!isDesktop() && mobileOpen()"
+	[class.-translate-x-full]="!isDesktop() && !mobileOpen()"
+	[class.relative]="isDesktop()"
+	data-tauri-drag-region
+	(touchstart)="onTouchStart($event)"
+	(touchend)="onTouchEnd($event)"
+>
+	<!-- Header -->
+	<div class="flex items-center h-12 px-3 flex-shrink-0">
+		@if ((isDesktop() && !collapsed()) || !isDesktop()) {
+			<span
+				class="text-sm font-semibold truncate text-gray-900 dark:text-gray-100"
+				>Notes</span
+			>
+		}
+		<button
+			class="ml-auto flex items-center justify-center size-7 rounded-md border-none bg-transparent cursor-pointer transition-colors duration-150 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
+			(click)="isDesktop() ? toggleCollapsed() : closeMobile()"
+			[attr.aria-label]="
+				isDesktop()
+					? collapsed()
+						? 'Expand sidebar'
+						: 'Collapse sidebar'
+					: 'Close sidebar'
+			"
+		>
+			@if (isDesktop()) {
+				@if (collapsed()) {
+					<svg lucideChevronRight class="size-4"></svg>
+				} @else {
+					<svg lucideChevronLeft class="size-4"></svg>
+				}
+			} @else {
+				<svg lucideX class="size-5"></svg>
+			}
+		</button>
+	</div>
 
-  <!-- Sidebar panel -->
-  <aside
-    class="fixed top-0 left-0 z-50 h-full w-72 flex flex-col border-r transition-transform duration-300 bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
-    [class.translate-x-0]="mobileOpen()"
-    [class.-translate-x-full]="!mobileOpen()"
-    (touchstart)="onTouchStart($event)"
-    (touchend)="onTouchEnd($event)"
-  >
-    <!-- Mobile sidebar header -->
-    <div
-      class="flex items-center h-12 px-4 flex-shrink-0 border-b border-gray-200 dark:border-gray-700"
-    >
-      <span class="text-sm font-semibold text-gray-900 dark:text-gray-100"
-        >Notes</span
-      >
-      <button
-        class="ml-auto flex items-center justify-center size-8 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
-        (click)="closeMobile()"
-        aria-label="Close sidebar"
-      >
-        <svg lucideX class="size-5"></svg>
-      </button>
-    </div>
+	<!-- Vault list (scrollable) -->
+	<nav class="flex-1 overflow-y-auto px-2 py-2">
+		<app-sidebar-vault-list
+			[collapsed]="collapsed()"
+			[activeEntryPath]="activeEntryPath()"
+		/>
+	</nav>
 
-    <!-- Nav items -->
-    <nav class="flex-1 overflow-y-auto px-3 py-3">
-      @for (item of navItems; track item.route) {
-        <button
-          class="flex items-center w-full gap-3 px-3 py-2.5 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
-          [attr.aria-label]="item.label"
-        >
-          @if (item.iconName === "fileText") {
-            <svg lucideFileText class="size-5 flex-shrink-0"></svg>
-          } @else if (item.iconName === "archive") {
-            <svg lucideArchive class="size-5 flex-shrink-0"></svg>
-          } @else {
-            <svg lucideTrash2 class="size-5 flex-shrink-0"></svg>
-          }
-          <span class="text-sm">{{ item.label }}</span>
-        </button>
-      }
+	<!-- Archive link -->
+	<div class="flex-shrink-0 px-2 pb-1">
+		<hr class="mx-3 mb-1 border-gray-200 dark:border-gray-700" />
+		<button
+			class="flex items-center w-full gap-3 px-3 py-2.5 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
+			aria-label="Archive"
+		>
+			<svg lucideArchive class="size-5 flex-shrink-0"></svg>
+			@if (!isDesktop() || !collapsed()) {
+				<span class="text-sm">Archive</span>
+			}
+		</button>
+	</div>
 
-      <!-- Vault file and folder list -->
-      <div class="mt-3 px-1">
-        <div
-          class="pb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
-        >
-          Vault
-        </div>
-        <div class="space-y-1">
-          @if (folders().length || files().length) {
-            @for (entry of folders(); track entry.id) {
-              <button
-                class="flex items-center w-full gap-3 px-3 py-2.5 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
-                [attr.aria-label]="entry.name"
-              >
-                <svg lucideFolder class="size-5 flex-shrink-0"></svg>
-                <span class="text-sm truncate">{{ entry.name }}</span>
-              </button>
-            }
-            @for (entry of files(); track entry.id) {
-              <button
-                class="flex items-center w-full gap-3 px-3 py-2.5 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
-                [attr.aria-label]="entry.name"
-              >
-                <svg lucideFileText class="size-5 flex-shrink-0"></svg>
-                <span class="text-sm truncate">{{ entry.name }}</span>
-              </button>
-            }
-          } @else {
-            <div
-              class="px-3 py-2 rounded-lg text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800"
-            >
-              No notes yet
-            </div>
-          }
-        </div>
-      </div>
-    </nav>
-
-    <!-- Workspace footer -->
-    <div
-      class="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-3"
-    >
-      <button
-        (click)="openWorkspaceConfigDialog()"
-        class="flex items-center w-full gap-3 px-3 py-2.5 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
-        [attr.aria-label]="'Workspace: ' + (activeWorkspace()?.name ?? 'None')"
-      >
-        <span class="text-sm font-medium text-gray-600 dark:text-gray-300">
-          {{ activeWorkspace()?.name }}
-        </span>
-        <svg lucideSettings class="size-4 flex-shrink-0 ml-auto"></svg>
-      </button>
-    </div>
-  </aside>
-}
+	<!-- Workspace footer -->
+	<div
+		class="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2"
+	>
+		<button
+			(click)="openWorkspaceConfigDialog()"
+			class="flex items-center w-full gap-3 px-3 py-2.5 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
+			[attr.aria-label]="
+				'Workspace: ' + (activeWorkspace()?.name ?? 'None')
+			"
+		>
+			@if (!isDesktop() || !collapsed()) {
+				<span
+					class="text-xs font-medium text-gray-600 dark:text-gray-300"
+				>
+					{{ activeWorkspace()?.name }}
+				</span>
+			}
+			<svg lucideSettings class="size-4 flex-shrink-0 ml-auto"></svg>
+		</button>
+	</div>
+</aside>

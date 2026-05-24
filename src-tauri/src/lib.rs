@@ -41,11 +41,40 @@ async fn pick_workspace_folder(
         .blocking_pick_folder();
 
     match folder {
-        Some(path) => Ok(Some(WorkspaceInfo {
-            path: path.to_string(),
-        })),
+        Some(path) => {
+            let path_str = path.to_string();
+            register_fs_scope_inner(&app, &path_str, true)?;
+            Ok(Some(WorkspaceInfo { path: path_str }))
+        }
         None => Ok(None),
     }
+}
+
+
+/// Register a directory path with Tauri's FS scope so the frontend can
+/// read/write files inside it.
+///
+/// Called on every `forcePull()` and `pickWorkspaceFolder()` so that
+/// workspace paths loaded from config (localStorage) are also authorized.
+///
+/// TypeScript analogy: Like pre-authorizing a file handle via the File
+/// System Access API's `showDirectoryPicker()` + `requestPermission()` —
+/// but without the UI dialog.
+#[tauri::command]
+fn register_fs_scope(app: tauri::AppHandle, path: String) -> Result<(), String> {
+    register_fs_scope_inner(&app, &path, true)
+}
+
+/// Internal helper — registers a path with the FS scope.
+fn register_fs_scope_inner(
+    app: &tauri::AppHandle,
+    path: &str,
+    writable: bool,
+) -> Result<(), String> {
+    use tauri_plugin_fs::FsExt;
+    app.fs_scope()
+        .allow_directory(path, writable)
+        .map_err(|e| format!("Failed to register FS scope: {e}"))
 }
 
 
@@ -56,7 +85,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init()) 
         // Register both commands so the frontend can invoke them via `invoke()`
-        .invoke_handler(tauri::generate_handler![greet, get_platform, pick_workspace_folder])
+        .invoke_handler(tauri::generate_handler![greet, get_platform, pick_workspace_folder, register_fs_scope])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

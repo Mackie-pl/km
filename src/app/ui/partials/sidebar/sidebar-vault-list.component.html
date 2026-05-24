@@ -1,0 +1,132 @@
+<!--
+  Vault file & folder list — single template used by both desktop and mobile sidebar.
+  Labels hide when collapsed() is true (desktop collapsed state).
+-->
+<div class="px-1">
+	<div
+		class="px-3 pb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+	>
+		Vault
+	</div>
+	<div class="space-y-1">
+		@if (folders().length || files().length) {
+			@for (entry of folders(); track entry.id) {
+				@if (renamingId() === entry.id) {
+					<footer class="flex items-center w-full gap-3 px-3 py-2.5">
+						<svg lucideFolder class="size-5 flex-shrink-0"></svg>
+						<input
+							autofocus
+							[value]="entry.name"
+							(blur)="
+								commitRename(
+									entry.id,
+									$any($event.target).value
+								)
+							"
+							(keydown.enter)="
+								commitRename(
+									entry.id,
+									$any($event.target).value
+								)
+							"
+							(keydown.escape)="cancelRename()"
+							class="flex-1 bg-transparent border-b border-indigo-500 dark:border-indigo-400 text-sm text-gray-900 dark:text-gray-100 outline-none"
+						/>
+					</footer>
+				} @else {
+					<button
+						class="entry-btn font-medium"
+						[tuiDropdownManual]="contextEntry()?.id === entry.id"
+						[tuiDropdown]="contextMenu"
+						(contextmenu)="onContextMenu($event, entry)"
+						(touchstart)="onTouchStartRename($event, entry)"
+						(touchend)="onTouchEndRename()"
+						[attr.aria-label]="entry.name"
+					>
+						<svg lucideFolder class="size-5 flex-shrink-0"></svg>
+						@if (!collapsed()) {
+							<span class="text-sm truncate">{{
+								entry.name
+							}}</span>
+						}
+					</button>
+				}
+			}
+			@for (entry of files(); track entry.id) {
+				@if (renamingId() === entry.id) {
+					<nav class="flex items-center w-full gap-3 px-3 py-2.5">
+						<svg lucideFileText class="size-5 flex-shrink-0"></svg>
+						<input
+							#renameInput
+							autofocus
+							[value]="entry.name"
+							(blur)="
+								commitRename(
+									entry.id,
+									$any($event.target).value
+								)
+							"
+							(keydown.escape)="cancelRename()"
+							(keydown.enter)="
+								commitRename(
+									entry.id,
+									$any($event.target).value
+								)
+							"
+							class="flex-1 bg-transparent border-b border-indigo-500 dark:border-indigo-400 text-sm text-gray-900 dark:text-gray-100 outline-none"
+						/>
+					</nav>
+				} @else {
+					<button
+						class="entry-btn font-semibold"
+						[tuiDropdown]="contextMenu"
+						[tuiDropdownManual]="contextEntry()?.id === entry.id"
+						(click)="openFile(entry)"
+						(contextmenu)="onContextMenu($event, entry)"
+						(touchstart)="onTouchStartRename($event, entry)"
+						(touchend)="onTouchEndRename()"
+						[attr.data-active]="
+							entry.path === activeEntryPath() ? '' : null
+						"
+						[attr.aria-label]="entry.name"
+					>
+						<svg lucideFileText class="size-5 flex-shrink-0"></svg>
+						@if (!collapsed()) {
+							<span class="text-sm truncate">{{
+								entry.name
+							}}</span>
+						}
+					</button>
+				}
+			}
+		} @else {
+			<div
+				class="px-3 py-2 rounded-lg text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800"
+			>
+				No notes yet
+			</div>
+		}
+	</div>
+</div>
+
+<!-- Context menu template -->
+<ng-template #contextMenu>
+	@if (contextEntry(); as entry) {
+		<div class="flex flex-col min-w-32 py-1">
+			<button
+				class="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors duration-150 border-none bg-transparent cursor-pointer text-left"
+				(click)="startRename(entry)"
+			>
+				<svg lucidePencil class="size-4 flex-shrink-0"></svg>
+				Rename
+			</button>
+			<button
+				class="flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors duration-150 border-none bg-transparent cursor-pointer text-left"
+				(click)="deleteEntry(entry)"
+			>
+				<svg lucideTrash2 class="size-4 flex-shrink-0"></svg>
+				Delete
+			</button>
+		</div>
+	}
+</ng-template>

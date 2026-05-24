@@ -1,25 +1,24 @@
-import { Component, inject, model, output } from '@angular/core';
 import {
-	LucideFileText,
+	Component,
+	inject,
+	model,
+	output,
+	signal,
+	computed,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router } from '@angular/router';
+import { filter } from 'rxjs';
+import {
 	LucideArchive,
-	LucideTrash2,
-	LucideFolder,
 	LucideChevronLeft,
 	LucideChevronRight,
 	LucideX,
 	LucideSettings,
 } from '@lucide/angular';
 import { PlatformService } from '@services/platform.service';
-import { VaultStore, VaultEntry } from '@vault/store';
 import { WorkspaceService } from '@services/workspace.service';
-import { Router } from '@angular/router';
-
-/** Pre-defined navigation items with their icon name for template switching */
-interface NavItem {
-	label: string;
-	iconName: 'fileText' | 'archive' | 'trash2';
-	route: string;
-}
+import { SidebarVaultListComponent } from './sidebar-vault-list.component';
 
 /**
  * Responsive sidebar component.
@@ -27,20 +26,19 @@ interface NavItem {
  * Desktop: always visible, collapsible between expanded (w-64) and collapsed (w-16).
  * Mobile: hidden by default, opens as a fixed overlay when triggered.
  *
- * Uses pure Tailwind for layout — no Taiga UI components.
+ * Sub-components handle the vault list; this component owns layout,
+ * responsive state, and the archive/workspace footer buttons.
  */
 @Component({
 	selector: 'app-sidebar',
 	standalone: true,
 	imports: [
-		LucideFileText,
 		LucideArchive,
-		LucideTrash2,
 		LucideChevronLeft,
 		LucideChevronRight,
 		LucideX,
 		LucideSettings,
-		LucideFolder,
+		SidebarVaultListComponent,
 	],
 	templateUrl: './sidebar.component.html',
 	styleUrl: './sidebar.component.scss',
@@ -50,56 +48,57 @@ export class SidebarComponent {
 	private readonly workspaceService = inject(WorkspaceService);
 	private readonly router = inject(Router);
 
-	// ---- Two-way bindable signals (model inputs) ----
-	// TypeScript analogy: these are like writable props with automatic
-	// two-way binding via [(collapsed)]="..." in the parent template.
-
 	/** Whether the sidebar is collapsed on desktop */
 	readonly collapsed = model(false);
 
 	/** Whether the mobile overlay is open */
 	readonly mobileOpen = model(false);
 
-	// ---- Output event ----
-
 	/** Emitted when the workspace config should be opened */
 	readonly openWorkspaceConfig = output();
 
-	// ---- Derived state ----
-
 	readonly isDesktop = this.platformService.isDesktop;
 	readonly activeWorkspace = this.workspaceService.activeWorkspace;
-	private readonly vaultDb = inject(VaultStore);
 
-	readonly folders = this.vaultDb.folders;
-	readonly files = this.vaultDb.files;
+	/** Derive the currently-viewed entry path from the router URL, or null if not on an editor route. */
+	readonly activeEntryPath = computed(() => {
+		const prefix = '/e/';
+		const url = this.currentUrl();
+		if (!url.startsWith(prefix)) return null;
+		return decodeURIComponent(url.slice(prefix.length));
+	});
 
-	// ---- Nav items (placeholder — wire up routes later) ----
+	/** Signal that stays in sync with the current router URL. */
+	private readonly currentUrl = signal(this.router.url);
 
-	readonly navItems: NavItem[] = [
-		{ label: 'Notes', iconName: 'fileText', route: '/' },
-		{ label: 'Archive', iconName: 'archive', route: '/archive' },
-		{ label: 'Trash', iconName: 'trash2', route: '/trash' },
-	];
+	constructor() {
+		this.router.events
+			.pipe(
+				filter(
+					(event): event is NavigationEnd =>
+						event instanceof NavigationEnd,
+				),
+				takeUntilDestroyed(),
+			)
+			.subscribe((event: NavigationEnd) => {
+				this.currentUrl.set(event.urlAfterRedirects);
+			});
+	}
 
 	// ---- Mobile swipe-to-close ----
 
 	private touchStartX = 0;
 
-	/** Track where the user started their touch for swipe detection */
 	onTouchStart(event: TouchEvent): void {
 		this.touchStartX = event.touches[0]?.clientX ?? 0;
 	}
 
-	/** If the user swiped left > 60px, close the mobile sidebar */
 	onTouchEnd(event: TouchEvent): void {
 		const deltaX = event.changedTouches[0]?.clientX ?? 0 - this.touchStartX;
 		if (deltaX < -60) {
 			this.closeMobile();
 		}
 	}
-
-	// ---- Actions ----
 
 	toggleCollapsed(): void {
 		this.collapsed.update((v) => !v);
@@ -111,17 +110,5 @@ export class SidebarComponent {
 
 	openWorkspaceConfigDialog(): void {
 		this.openWorkspaceConfig.emit();
-	}
-
-	async openFile(entry: VaultEntry): Promise<void> {
-		const nav = await this.router
-			.navigate(['/e', entry.path])
-			.catch((err: unknown) => {
-				console.error('Navigation error:', err);
-				return false;
-			});
-		if (!nav) {
-			console.error('Failed to navigate to file:', entry.path);
-		}
 	}
 }

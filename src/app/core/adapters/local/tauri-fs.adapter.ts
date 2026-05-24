@@ -5,6 +5,7 @@ import {
 	readDir,
 	remove,
 	mkdir,
+	rename,
 } from '@tauri-apps/plugin-fs';
 import type {
 	WorkspacePickResult,
@@ -17,13 +18,13 @@ interface TauriWorkspacePickResult {
 }
 
 type WindowWithTauri = Window & {
-	__TAURI__?: unknown;
+	__TAURI_INTERNALS__?: unknown;
 };
 
 const isTauriRuntimeAvailable = (): boolean => {
 	return (
 		typeof window !== 'undefined' &&
-		(window as WindowWithTauri).__TAURI__ != null
+		(window as WindowWithTauri).__TAURI_INTERNALS__ != null
 	);
 };
 
@@ -91,6 +92,16 @@ export class TauriFsAdapter implements Adapter {
 		await remove(resolved);
 	}
 
+	async rename(
+		oldPath: string,
+		newPath: string,
+		root?: string,
+	): Promise<void> {
+		const resolvedOld = resolvePath(root, oldPath);
+		const resolvedNew = resolvePath(root, newPath);
+		await rename(resolvedOld, resolvedNew);
+	}
+
 	async list(path: string, root?: string): Promise<FileEntry[]> {
 		const resolved = resolvePath(root, path);
 		const entries = await readDir(resolved);
@@ -100,5 +111,14 @@ export class TauriFsAdapter implements Adapter {
 			isDirectory: e.isDirectory,
 			lastModified: 0,
 		}));
+	}
+
+	/**
+	 * Register a root path with Tauri's FS scope so read/write operations
+	 * are allowed. Must be called for every workspace root path on app start
+	 * (since FS scope registration doesn't survive restarts).
+	 */
+	async registerScope(root: string): Promise<void> {
+		await invoke('register_fs_scope', { path: root });
 	}
 }
