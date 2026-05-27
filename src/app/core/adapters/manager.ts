@@ -65,14 +65,18 @@ export class AdaptersManager {
 
 	/**
 	 * List directory entries on all specified adapters.
+	 * When recursive=true, walks subdirectories on each adapter.
 	 */
 	async list(
 		path: string,
 		adapterIds: string[],
 		root?: string,
+		recursive?: boolean,
 	): Promise<FileEntry[][]> {
 		const adapters = this.getAdaptersByIds(adapterIds);
-		return Promise.all(adapters.map((a) => a.list(path, root)));
+		return Promise.all(
+			adapters.map((a) => a.list(path, root, recursive)),
+		);
 	}
 
 	/**

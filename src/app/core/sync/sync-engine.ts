@@ -1,8 +1,8 @@
-import { effect, inject, Injectable, type OnDestroy } from '@angular/core';
+import { effect, inject, Injectable, signal, type OnDestroy } from '@angular/core';
 import { AdaptersManager } from '@core/adapters/manager';
 import { WorkspaceService } from '@core/services/workspace.service';
 import { timeout } from '@core/utils/async';
-import { VaultStore } from '@vault/store';
+import { VaultStore, VAULT_ENTRY_TYPES } from '@vault/store';
 import {
 	Adapter,
 	WatchEvent,
@@ -24,6 +24,25 @@ export class SyncEngineService implements OnDestroy {
 
 	/** Cleanup functions returned by each adapter's watch() subscription. */
 	private watchCleanups: (() => void)[] = [];
+
+	// ──────────────────────────────────────────────
+	// Reactive state (consumed by the header)
+	// ──────────────────────────────────────────────
+
+	/** Whether a background auto-sync cycle has failed. */
+	readonly syncFailed = signal(false);
+
+	/** Whether a sync operation (push/pull/syncAll) is in flight. */
+	readonly isSyncing = signal(false);
+
+	/** Human-readable description of the last sync error (null = no error). */
+	readonly lastSyncError = signal<string | null>(null);
+
+	/** Reset error state — called after a successful sync cycle. */
+	clearSyncError(): void {
+		this.syncFailed.set(false);
+		this.lastSyncError.set(null);
+	}
 
 	private readonly vault = inject(VaultStore);
 	private readonly manager = inject(AdaptersManager);
@@ -72,16 +91,53 @@ export class SyncEngineService implements OnDestroy {
 	/**
 	 * Force a pull cycle immediately (no debounce).
 	 * Used on workspace activation and by manual refresh.
+	 * Sets syncFailed / clears error on completion.
 	 */
 	async forcePull(): Promise<void> {
 		if (this.pulling) return;
 		this.pulling = true;
+		this.isSyncing.set(true);
 		try {
 			const adapters = this.getActiveAdapters();
 			await this.registerScopes(adapters);
 			await this.pullPhase(adapters);
+			// Auto-recovery: successful pull clears previous errors
+			this.clearSyncError();
+		} catch (err) {
+			this.syncFailed.set(true);
+			this.lastSyncError.set(this.formatError(err));
 		} finally {
 			this.pulling = false;
+			this.isSyncing.set(false);
+		}
+	}
+
+	/**
+	 * Pull then push — used by manual "Sync now" button.
+	 * Waits for both phases to complete before resolving.
+	 * Sets syncFailed / clears error on completion.
+	 */
+	async syncAll(): Promise<void> {
+		this.isSyncing.set(true);
+		try {
+			// Register scopes (needs user gesture for FS API permission on some platforms)
+			const adapters = this.getActiveAdapters();
+			await this.registerScopes(adapters);
+
+			// Pull first: imports external changes into the vault
+			await this.pullPhase(adapters);
+
+			// Push second: applies any pending vault changes to adapters
+			await this.pushPhase(adapters);
+
+			// Success — clear any previous error state
+			this.clearSyncError();
+		} catch (err) {
+			this.syncFailed.set(true);
+			this.lastSyncError.set(this.formatError(err));
+			throw err; // rethrow so callers (header, tests) know it failed
+		} finally {
+			this.isSyncing.set(false);
 		}
 	}
 
@@ -107,6 +163,8 @@ export class SyncEngineService implements OnDestroy {
 			}
 		} catch (err) {
 			console.error('[Sync] Failed to start watching:', err);
+			this.syncFailed.set(true);
+			this.lastSyncError.set(this.formatError(err));
 		}
 	}
 
@@ -132,12 +190,23 @@ export class SyncEngineService implements OnDestroy {
 	/**
 	 * Only push — triggered by entriesNeedingSync changes.
 	 * (Pull is handled separately by forcePull on activation.)
+	 * Clears error on success (auto-recovery), sets on failure.
 	 */
 	private async runSync(): Promise<void> {
 		const adapters = this.getActiveAdapters();
 		if (adapters.length === 0) return;
 
-		await this.pushPhase(adapters);
+		this.isSyncing.set(true);
+		try {
+			await this.pushPhase(adapters);
+			// Auto-recovery: successful push clears previous errors
+			this.clearSyncError();
+		} catch (err) {
+			this.syncFailed.set(true);
+			this.lastSyncError.set(this.formatError(err));
+		} finally {
+			this.isSyncing.set(false);
+		}
 	}
 
 	// ──────────────────────────────────────────────
@@ -146,6 +215,7 @@ export class SyncEngineService implements OnDestroy {
 
 	private async pushPhase(adapters: ActiveAdapterEntry[]): Promise<void> {
 		const entries = this.vault.entriesNeedingSync();
+		const errors: string[] = [];
 
 		for (const { adapter, root } of adapters) {
 			const pending = entries.filter((e) =>
@@ -155,12 +225,28 @@ export class SyncEngineService implements OnDestroy {
 
 			for (const entry of pending) {
 				try {
+					console.log(
+						`[Sync] Pushing "${entry.path}" to ${adapter.id} (deleted: ${String(entry.deleted)}, pendingRenameFrom: ${String(entry.pendingRenameFrom)})`,
+						entry,
+					);
 					if (entry.deleted) {
 						await adapter.delete(entry.path, root);
 					} else if (entry.pendingRenameFrom) {
 						const renameFrom: string = entry.pendingRenameFrom;
-						// Use rename() on the adapter so the old file is removed atomically
+						// Use rename() on the adapter so the old file/dir is removed atomically
 						await adapter.rename(renameFrom, entry.path, root);
+					} else if (
+						entry.type === VAULT_ENTRY_TYPES.FOLDER &&
+						adapter.createDir
+					) {
+						await adapter.createDir(entry.path, root);
+					} else if (entry.type === VAULT_ENTRY_TYPES.FOLDER) {
+						// Adapter doesn't support directories — skip.
+						// File writes will auto-create parent dirs via write().
+						await this.vault.markAdapterSynced(
+							entry.id,
+							adapter.id,
+						);
 					} else {
 						await adapter.write(
 							entry.path,
@@ -170,13 +256,16 @@ export class SyncEngineService implements OnDestroy {
 					}
 					await this.vault.markAdapterSynced(entry.id, adapter.id);
 				} catch (err) {
-					console.error(
-						`[Sync] Push failed for ${entry.path} on ${adapter.id}:`,
-						err,
-					);
+					const msg = `Push failed for ${entry.path} on ${adapter.id}: ${err instanceof Error ? err.message : String(err)}`;
+					console.error(`[Sync] ${msg}`, err);
+					errors.push(msg);
 					// Don't mark synced — will retry next cycle
 				}
 			}
+		}
+
+		if (errors.length > 0) {
+			throw new AggregateError(errors, 'Sync push phase completed with errors');
 		}
 	}
 
@@ -185,69 +274,95 @@ export class SyncEngineService implements OnDestroy {
 	// ──────────────────────────────────────────────
 
 	private async pullPhase(adapters: ActiveAdapterEntry[]): Promise<void> {
+		console.log(
+			`[Sync] Starting pull phase for ${String(adapters.length)} adapter(s)`,
+		);
+		const errors: string[] = [];
+
 		for (const { adapter, root } of adapters) {
 			try {
-				const remoteFiles = (await adapter.list('/', root)).filter(
-					(e: FileEntry) => !e.isDirectory,
+				const allEntries = await adapter.list('/', root, true);
+
+				// Sort: directories first — ensures parent folder entries exist
+				// before processing their children.
+				allEntries.sort((a, b) =>
+					a.isDirectory === b.isDirectory
+						? 0
+						: a.isDirectory
+							? -1
+							: 1,
 				);
 
-				const remotePaths = new Set(remoteFiles.map((e) => e.path));
+				const remotePaths = new Set(
+					allEntries
+						.filter((e: FileEntry) => !e.isDirectory)
+						.map((e) => e.path),
+				);
 
-				// Import each remote file through the canonical reconciliation path.
-				// applyExternalFile handles: new files, conflicts, clean overwrites.
-				for (const rf of remoteFiles) {
-					const content = await adapter.read(rf.path, root);
-					await this.vault.applyExternalFile(
-						rf.path,
-						content,
-						adapter.id,
-					);
-				}
-
-				// Orphan detection: vault entries not present on the remote adapter
-				// are cleaned up (handles remote-deleted and remote-renamed files).
-				const allEntries = this.vault.files();
+				// Import each remote entry through the canonical reconciliation path.
+				// Directories first (sorted above), then files.
+				console.log(
+					`[Sync] Pulling ${String(allEntries.length)} entries from ${adapter.id}...`,
+				);
 				for (const entry of allEntries) {
-					if (
-						!remotePaths.has(entry.path) &&
-						entry.pendingAdapters.includes(adapter.id)
-					) {
-						// Entry exists on this adapter's pending list but the file
-						// doesn't exist remotely — the only pending op it could have
-						// is a write. If the remote removed it, mark synced so we
-						// don't keep trying to push it.
-						await this.vault.markAdapterSynced(
-							entry.id,
+					if (entry.isDirectory) {
+						await this.vault.applyExternalFolder(
+							entry.path,
 							adapter.id,
 						);
+					} else {
+						const content = await adapter.read(entry.path, root);
+						await this.vault.applyExternalFile(
+							entry.path,
+							content,
+							adapter.id,
+						);
+					}
+				}
+
+				// Orphan detection: vault entries synced to this adapter but no
+				// longer on remote were deleted externally — soft-delete locally
+				// (watch may have missed the event). We delete via the vault so
+				// the deletion cascades to children if it's a folder.
+				const allVaultEntries = this.vault.files();
+				for (const vaultEntry of allVaultEntries) {
+					if (
+						!remotePaths.has(vaultEntry.path) &&
+						!vaultEntry.pendingAdapters.includes(adapter.id)
+					) {
+						await this.vault.delete(vaultEntry.id);
 					}
 				}
 			} catch (err) {
 				// NotAllowedError = browser FS API permission not available yet
 				// (e.g., after reload, no user gesture to re-grant yet).
-				// Log as warn — will retry on next cycle or when user clicks sync.
+				let msg: string;
 				if (
 					err instanceof DOMException &&
 					err.name === 'NotAllowedError'
 				) {
-					console.warn(
-						`[Sync] Pull skipped for ${adapter.id}: permission not available (click sync to re-grant)`,
-					);
+					msg = `Sync permission needed for ${adapter.id} — click Sync Now to re-grant access`;
+					console.warn(`[Sync] ${msg}`);
 				} else if (
 					err instanceof Error &&
 					(err.message.includes('permission denied') ||
 						err.message.includes('forbidden path'))
 				) {
-					console.warn(
-						`[Sync] Pull skipped for ${adapter.id}: ${err.message}`,
-					);
+					msg = `Sync skipped for ${adapter.id}: ${err.message}`;
+					console.warn(`[Sync] ${msg}`);
 				} else {
-					console.error(
-						`[Sync] Pull failed for adapter ${adapter.id}:`,
-						err,
-					);
+					msg = `Sync pull failed for ${adapter.id}: ${err instanceof Error ? err.message : String(err)}`;
+					console.error(`[Sync] ${msg}`, err);
 				}
+				errors.push(msg);
 			}
+		}
+
+		if (errors.length > 0) {
+			throw new AggregateError(
+				errors,
+				'Sync pull phase completed with errors',
+			);
 		}
 	}
 
@@ -268,6 +383,10 @@ export class SyncEngineService implements OnDestroy {
 		adapter: Adapter,
 		root?: string,
 	): Promise<void> {
+		console.log(
+			`[Sync] Received ${String(events.length)} external change(s) from ${adapter.id}:`,
+			events,
+		);
 		for (const event of events) {
 			try {
 				if (event.type === 'rename' && event.oldPath) {
@@ -348,5 +467,21 @@ export class SyncEngineService implements OnDestroy {
 				};
 			})
 			.filter((e): e is ActiveAdapterEntry => e !== null);
+	}
+
+	/**
+	 * Convert a caught error to a human-readable string.
+	 */
+	private formatError(err: unknown): string {
+		if (err instanceof DOMException && err.name === 'NotAllowedError') {
+			return 'Sync permission needed — click to re-grant access';
+		}
+		if (err instanceof AggregateError) {
+			return err.message;
+		}
+		if (err instanceof Error) {
+			return err.message;
+		}
+		return String(err);
 	}
 }

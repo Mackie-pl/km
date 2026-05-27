@@ -62,7 +62,7 @@ export class Editor implements OnDestroy {
 	// ──────────────────────────────────────────────
 
 	ngOnDestroy(): void {
-		this.crepe?.destroy();
+		void this.crepe?.destroy();
 	}
 
 	// ──────────────────────────────────────────────
@@ -72,15 +72,26 @@ export class Editor implements OnDestroy {
 	private async initEditor(): Promise<void> {
 		const containerRef = this.editorContainer();
 		if (!containerRef) return;
-		const container = containerRef.nativeElement;
+		const container = containerRef.nativeElement as HTMLElement;
 
 		const initialContent =
 			this.vault.getByPath(this.entryId())?.content ?? '';
 		this.lastSavedContent = initialContent;
 
+		console.log('Initializing editor with content:', initialContent);
 		this.crepe = new Crepe({
 			root: container,
 			defaultValue: initialContent,
+			features: {
+				[Crepe.Feature.Cursor]: true,
+			},
+			featureConfigs: {
+				[Crepe.Feature.Cursor]: {
+					color: '#ff0000',
+					width: 2,
+					virtual: false,
+				},
+			},
 		});
 
 		// Auto-save on user edit
@@ -114,7 +125,6 @@ export class Editor implements OnDestroy {
 				const view = ctx.get(editorViewCtx);
 				const parser = ctx.get(parserCtx);
 				const doc = parser(markdown);
-				if (!doc) return;
 
 				const { state } = view;
 				const tr = state.tr.replace(

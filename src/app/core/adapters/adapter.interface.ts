@@ -40,13 +40,24 @@ export interface Adapter {
 	delete(path: string, root?: string): Promise<void>;
 	/** Rename a file or directory (atomic if the backing FS supports it). */
 	rename(oldPath: string, newPath: string, root?: string): Promise<void>;
-	/** List entries in a directory (non-recursive). */
-	list(path: string, root?: string): Promise<FileEntry[]>;
+	/**
+	 * List entries in a directory.
+	 * When recursive=true, walks subdirectories and returns ALL entries
+	 * with full relative paths from the listed directory.
+	 */
+	list(
+		path: string,
+		root?: string,
+		recursive?: boolean,
+	): Promise<FileEntry[]>;
 	/** Optional: subscribe to filesystem changes. Returns an unsubscribe fn. */
 	watch?(
 		callback: (events: WatchEvent[]) => void,
 		root?: string,
 	): Promise<() => void>;
+
+	/** Optional: create a directory (and all parents). */
+	createDir?(path: string, root?: string): Promise<void>;
 
 	/**
 	 * Optional: register a root path with the platform's permission scope.

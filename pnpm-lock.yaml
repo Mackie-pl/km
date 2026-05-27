@@ -10,34 +10,34 @@ importers:
     dependencies:
       '@angular/animations':
         specifier: ^21.2.12
-        version: 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))
+        version: 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
       '@angular/cdk':
         specifier: ^21.0.0
-        version: 21.2.10(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
+        version: 21.2.10(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
       '@angular/common':
         specifier: ^21.2.12
-        version: 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
+        version: 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2)
       '@angular/compiler':
         specifier: ^21.2.12
         version: 21.2.12
       '@angular/core':
         specifier: ^21.2.12
-        version: 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
+        version: 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
       '@angular/forms':
         specifier: ^21.2.12
-        version: 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
+        version: 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
       '@angular/platform-browser':
         specifier: ^21.2.12
-        version: 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))
+        version: 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
       '@angular/platform-browser-dynamic':
         specifier: ^21.2.12
-        version: 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))
+        version: 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))
       '@angular/router':
         specifier: ^21.2.12
-        version: 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
+        version: 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
       '@lucide/angular':
         specifier: ^1.14.0
-        version: 1.14.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))
+        version: 1.14.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
       '@milkdown/crepe':
         specifier: ^7.21.1
         version: 7.21.1(prosemirror-model@1.25.4)(prosemirror-state@1.4.4)(prosemirror-view@1.41.8)(typescript@5.9.3)
@@ -46,25 +46,25 @@ importers:
         version: 7.21.1(@codemirror/language@6.12.3)(@codemirror/state@6.6.0)(@codemirror/view@6.43.0)(typescript@5.9.3)
       '@taiga-ui/addon-mobile':
         specifier: ^5.5.0
-        version: 5.5.0(0326d88ee6ce8eba0e6a9c337d4b0c56)
+        version: 5.5.0(f97f400e12e0c089b8f1fb19542ba118)
       '@taiga-ui/addon-table':
         specifier: ^5.5.0
-        version: 5.5.0(13a32ca8c47a5bb85dc460d274821471)
+        version: 5.5.0(246b44657f25c81f2bdca77ca2a40c57)
       '@taiga-ui/cdk':
         specifier: ^5.5.0
-        version: 5.5.0(6062f6dc1d4cb9f0fbf7e0040c4cc4bf)
+        version: 5.5.0(5af0ea84dd45bd4592dbea17daa22b15)
       '@taiga-ui/core':
         specifier: ^5.5.0
-        version: 5.5.0(50e8e65b01edfb8f2044582787489afa)
+        version: 5.5.0(9179dede19390adccea996e738fe2a57)
       '@taiga-ui/icons':
         specifier: ^5.5.0
         version: 5.5.0
       '@taiga-ui/kit':
         specifier: ^5.5.0
-        version: 5.5.0(e7ea3a97c5b37ce009aa5c2ee3723587)
+        version: 5.5.0(dd77475fd61484ddab9c0c477105265b)
       '@taiga-ui/polymorpheus':
         specifier: ^5.0.0
-        version: 5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))
+        version: 5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))
       '@taiga-ui/styles':
         specifier: ^5.5.0
         version: 5.5.0(@taiga-ui/design-tokens@0.299.0)
@@ -95,13 +95,10 @@ importers:
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
-      zone.js:
-        specifier: ~0.15.1
-        version: 0.15.1
     devDependencies:
       '@angular-devkit/build-angular':
         specifier: ^21.2.10
-        version: 21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@25.6.0)(chokidar@5.0.0)(jiti@2.7.0)(lightningcss@1.32.0)(tailwindcss@4.3.0)(typescript@5.9.3)
+        version: 21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@25.6.0)(chokidar@5.0.0)(jiti@2.7.0)(lightningcss@1.32.0)(tailwindcss@4.3.0)(typescript@5.9.3)
       '@angular-eslint/eslint-plugin':
         specifier: ^21.4.0
         version: 21.4.0(@typescript-eslint/utils@8.59.3(eslint@10.3.0(jiti@2.7.0))(typescript@5.9.3))(eslint@10.3.0(jiti@2.7.0))(typescript@5.9.3)
@@ -6634,9 +6631,6 @@ packages:
   zod@4.3.6:
     resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
 
-  zone.js@0.15.1:
-    resolution: {integrity: sha512-XE96n56IQpJM7NAoXswY3XRLcWFW83xe0BiAOeMD7K5k5xecOeul3Qcpx6GqEeeHNkW5DWL5zOyTbEfB4eti8w==}
-
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
 
@@ -6740,13 +6734,13 @@ snapshots:
     transitivePeerDependencies:
       - chokidar
 
-  '@angular-devkit/build-angular@21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@25.6.0)(chokidar@5.0.0)(jiti@2.7.0)(lightningcss@1.32.0)(tailwindcss@4.3.0)(typescript@5.9.3)':
+  '@angular-devkit/build-angular@21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@25.6.0)(chokidar@5.0.0)(jiti@2.7.0)(lightningcss@1.32.0)(tailwindcss@4.3.0)(typescript@5.9.3)':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@angular-devkit/architect': 0.2102.10(chokidar@5.0.0)
       '@angular-devkit/build-webpack': 0.2102.10(chokidar@5.0.0)(webpack-dev-server@5.2.3(tslib@2.8.1)(webpack@5.105.2))(webpack@5.105.2(esbuild@0.27.3))
       '@angular-devkit/core': 21.2.10(chokidar@5.0.0)
-      '@angular/build': 21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@25.6.0)(chokidar@5.0.0)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.32.0)(postcss@8.5.12)(tailwindcss@4.3.0)(terser@5.46.0)(tslib@2.8.1)(typescript@5.9.3)
+      '@angular/build': 21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@25.6.0)(chokidar@5.0.0)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.32.0)(postcss@8.5.12)(tailwindcss@4.3.0)(terser@5.46.0)(tslib@2.8.1)(typescript@5.9.3)
       '@angular/compiler-cli': 21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3)
       '@babel/core': 7.29.0
       '@babel/generator': 7.29.1
@@ -6799,8 +6793,8 @@ snapshots:
       webpack-merge: 6.0.1
       webpack-subresource-integrity: 5.1.0(webpack@5.105.2(esbuild@0.27.3))
     optionalDependencies:
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
-      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
+      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
       esbuild: 0.27.3
       tailwindcss: 4.3.0
     transitivePeerDependencies:
@@ -6883,12 +6877,12 @@ snapshots:
       eslint: 10.3.0(jiti@2.7.0)
       typescript: 5.9.3
 
-  '@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))':
+  '@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))':
     dependencies:
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
       tslib: 2.8.1
 
-  '@angular/build@21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@25.6.0)(chokidar@5.0.0)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.32.0)(postcss@8.5.12)(tailwindcss@4.3.0)(terser@5.46.0)(tslib@2.8.1)(typescript@5.9.3)':
+  '@angular/build@21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@25.6.0)(chokidar@5.0.0)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.32.0)(postcss@8.5.12)(tailwindcss@4.3.0)(terser@5.46.0)(tslib@2.8.1)(typescript@5.9.3)':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@angular-devkit/architect': 0.2102.10(chokidar@5.0.0)
@@ -6922,8 +6916,8 @@ snapshots:
       vite: 7.3.2(@types/node@25.6.0)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)
       watchpack: 2.5.1
     optionalDependencies:
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
-      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
+      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
       less: 4.4.2
       lmdb: 3.5.1
       postcss: 8.5.12
@@ -6943,11 +6937,11 @@ snapshots:
       - tsx
       - yaml
 
-  '@angular/cdk@21.2.10(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)':
+  '@angular/cdk@21.2.10(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)':
     dependencies:
-      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
-      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))
+      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
+      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
       parse5: 8.0.1
       rxjs: 7.8.2
       tslib: 2.8.1
@@ -6978,9 +6972,9 @@ snapshots:
       - chokidar
       - supports-color
 
-  '@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)':
+  '@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2)':
     dependencies:
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
       rxjs: 7.8.2
       tslib: 2.8.1
 
@@ -7004,44 +6998,43 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)':
+  '@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)':
     dependencies:
       rxjs: 7.8.2
       tslib: 2.8.1
     optionalDependencies:
       '@angular/compiler': 21.2.12
-      zone.js: 0.15.1
 
-  '@angular/forms@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)':
+  '@angular/forms@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)':
     dependencies:
-      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
-      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))
+      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
+      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
       '@standard-schema/spec': 1.1.0
       rxjs: 7.8.2
       tslib: 2.8.1
 
-  '@angular/platform-browser-dynamic@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))':
+  '@angular/platform-browser-dynamic@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))':
     dependencies:
-      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
+      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2)
       '@angular/compiler': 21.2.12
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
-      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
+      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
       tslib: 2.8.1
 
-  '@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))':
+  '@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))':
     dependencies:
-      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
+      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
       tslib: 2.8.1
     optionalDependencies:
-      '@angular/animations': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))
+      '@angular/animations': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
 
-  '@angular/router@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)':
+  '@angular/router@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)':
     dependencies:
-      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
-      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))
+      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
+      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
       rxjs: 7.8.2
       tslib: 2.8.1
 
@@ -8660,18 +8653,18 @@ snapshots:
   '@lmdb/lmdb-win32-x64@3.5.1':
     optional: true
 
-  '@lucide/angular@1.14.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))':
+  '@lucide/angular@1.14.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))':
     dependencies:
-      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
+      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
       tslib: 2.8.1
 
   '@marijn/find-cluster-break@1.0.2': {}
 
-  '@maskito/angular@5.2.2(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/forms@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2))(@maskito/core@5.2.2)':
+  '@maskito/angular@5.2.2(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/forms@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2))(@maskito/core@5.2.2)':
     dependencies:
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
-      '@angular/forms': 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
+      '@angular/forms': 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
       '@maskito/core': 5.2.2
       tslib: 2.8.1
 
@@ -9089,40 +9082,40 @@ snapshots:
       '@tybys/wasm-util': 0.10.2
     optional: true
 
-  '@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2)':
+  '@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2)':
     dependencies:
-      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
+      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
       '@types/dom-speech-recognition': 0.0.8
       rxjs: 7.8.2
       tslib: 2.8.1
 
-  '@ng-web-apis/intersection-observer@5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))':
+  '@ng-web-apis/intersection-observer@5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))':
     dependencies:
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
-      '@ng-web-apis/common': 5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2)
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
+      '@ng-web-apis/common': 5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2)
       tslib: 2.8.1
 
-  '@ng-web-apis/mutation-observer@5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))':
+  '@ng-web-apis/mutation-observer@5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))':
     dependencies:
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
-      '@ng-web-apis/common': 5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2)
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
+      '@ng-web-apis/common': 5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2)
       tslib: 2.8.1
 
   '@ng-web-apis/platform@5.2.0':
     dependencies:
       tslib: 2.8.1
 
-  '@ng-web-apis/resize-observer@5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))':
+  '@ng-web-apis/resize-observer@5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))':
     dependencies:
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
-      '@ng-web-apis/common': 5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2)
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
+      '@ng-web-apis/common': 5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2)
       tslib: 2.8.1
 
-  '@ng-web-apis/screen-orientation@5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))(rxjs@7.8.2)':
+  '@ng-web-apis/screen-orientation@5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))(rxjs@7.8.2)':
     dependencies:
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
-      '@ng-web-apis/common': 5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2)
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
+      '@ng-web-apis/common': 5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2)
       rxjs: 7.8.2
       tslib: 2.8.1
 
@@ -9540,48 +9533,48 @@ snapshots:
       estraverse: 5.3.0
       picomatch: 4.0.4
 
-  '@taiga-ui/addon-mobile@5.5.0(0326d88ee6ce8eba0e6a9c337d4b0c56)':
+  '@taiga-ui/addon-mobile@5.5.0(f97f400e12e0c089b8f1fb19542ba118)':
     dependencies:
-      '@angular/cdk': 21.2.10(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
-      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
-      '@ng-web-apis/common': 5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2)
+      '@angular/cdk': 21.2.10(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
+      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
+      '@ng-web-apis/common': 5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2)
       '@ng-web-apis/platform': 5.2.0
-      '@taiga-ui/cdk': 5.5.0(6062f6dc1d4cb9f0fbf7e0040c4cc4bf)
-      '@taiga-ui/core': 5.5.0(50e8e65b01edfb8f2044582787489afa)
-      '@taiga-ui/kit': 5.5.0(e7ea3a97c5b37ce009aa5c2ee3723587)
-      '@taiga-ui/layout': 5.5.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@taiga-ui/cdk@5.5.0(6062f6dc1d4cb9f0fbf7e0040c4cc4bf))(@taiga-ui/core@5.5.0(50e8e65b01edfb8f2044582787489afa))(@taiga-ui/kit@5.5.0(e7ea3a97c5b37ce009aa5c2ee3723587))(@taiga-ui/polymorpheus@5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))))(rxjs@7.8.2)
-      '@taiga-ui/polymorpheus': 5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))
+      '@taiga-ui/cdk': 5.5.0(5af0ea84dd45bd4592dbea17daa22b15)
+      '@taiga-ui/core': 5.5.0(9179dede19390adccea996e738fe2a57)
+      '@taiga-ui/kit': 5.5.0(dd77475fd61484ddab9c0c477105265b)
+      '@taiga-ui/layout': 5.5.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@taiga-ui/cdk@5.5.0(5af0ea84dd45bd4592dbea17daa22b15))(@taiga-ui/core@5.5.0(9179dede19390adccea996e738fe2a57))(@taiga-ui/kit@5.5.0(dd77475fd61484ddab9c0c477105265b))(@taiga-ui/polymorpheus@5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))))(rxjs@7.8.2)
+      '@taiga-ui/polymorpheus': 5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))
       rxjs: 7.8.2
       tslib: 2.8.1
 
-  '@taiga-ui/addon-table@5.5.0(13a32ca8c47a5bb85dc460d274821471)':
+  '@taiga-ui/addon-table@5.5.0(246b44657f25c81f2bdca77ca2a40c57)':
     dependencies:
-      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
-      '@ng-web-apis/intersection-observer': 5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))
-      '@taiga-ui/cdk': 5.5.0(6062f6dc1d4cb9f0fbf7e0040c4cc4bf)
-      '@taiga-ui/core': 5.5.0(50e8e65b01edfb8f2044582787489afa)
-      '@taiga-ui/i18n': 5.5.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))(rxjs@7.8.2)
-      '@taiga-ui/kit': 5.5.0(e7ea3a97c5b37ce009aa5c2ee3723587)
-      '@taiga-ui/polymorpheus': 5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))
+      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
+      '@ng-web-apis/intersection-observer': 5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))
+      '@taiga-ui/cdk': 5.5.0(5af0ea84dd45bd4592dbea17daa22b15)
+      '@taiga-ui/core': 5.5.0(9179dede19390adccea996e738fe2a57)
+      '@taiga-ui/i18n': 5.5.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@taiga-ui/kit': 5.5.0(dd77475fd61484ddab9c0c477105265b)
+      '@taiga-ui/polymorpheus': 5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))
       rxjs: 7.8.2
       tslib: 2.8.1
 
-  '@taiga-ui/cdk@5.5.0(6062f6dc1d4cb9f0fbf7e0040c4cc4bf)':
+  '@taiga-ui/cdk@5.5.0(5af0ea84dd45bd4592dbea17daa22b15)':
     dependencies:
-      '@angular/cdk': 21.2.10(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
-      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
-      '@angular/forms': 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
-      '@ng-web-apis/common': 5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2)
-      '@ng-web-apis/mutation-observer': 5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))
+      '@angular/cdk': 21.2.10(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
+      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
+      '@angular/forms': 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
+      '@ng-web-apis/common': 5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2)
+      '@ng-web-apis/mutation-observer': 5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))
       '@ng-web-apis/platform': 5.2.0
-      '@ng-web-apis/resize-observer': 5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))
-      '@ng-web-apis/screen-orientation': 5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))(rxjs@7.8.2)
-      '@taiga-ui/event-plugins': 5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
+      '@ng-web-apis/resize-observer': 5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))
+      '@ng-web-apis/screen-orientation': 5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@taiga-ui/event-plugins': 5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
       '@taiga-ui/font-watcher': 0.6.0
-      '@taiga-ui/polymorpheus': 5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))
+      '@taiga-ui/polymorpheus': 5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))
       rxjs: 7.8.2
       tslib: 2.8.1
     optionalDependencies:
@@ -9594,20 +9587,20 @@ snapshots:
       - '@types/semver'
       - chokidar
 
-  '@taiga-ui/core@5.5.0(50e8e65b01edfb8f2044582787489afa)':
+  '@taiga-ui/core@5.5.0(9179dede19390adccea996e738fe2a57)':
     dependencies:
-      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
-      '@angular/forms': 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
-      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))
-      '@angular/router': 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
-      '@ng-web-apis/common': 5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2)
-      '@ng-web-apis/mutation-observer': 5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))
+      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
+      '@angular/forms': 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
+      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
+      '@angular/router': 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
+      '@ng-web-apis/common': 5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2)
+      '@ng-web-apis/mutation-observer': 5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))
       '@ng-web-apis/platform': 5.2.0
-      '@taiga-ui/cdk': 5.5.0(6062f6dc1d4cb9f0fbf7e0040c4cc4bf)
-      '@taiga-ui/event-plugins': 5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
-      '@taiga-ui/i18n': 5.5.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))(rxjs@7.8.2)
-      '@taiga-ui/polymorpheus': 5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))
+      '@taiga-ui/cdk': 5.5.0(5af0ea84dd45bd4592dbea17daa22b15)
+      '@taiga-ui/event-plugins': 5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
+      '@taiga-ui/i18n': 5.5.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@taiga-ui/polymorpheus': 5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))
       '@taiga-ui/styles': 5.5.0(@taiga-ui/design-tokens@0.299.0)
       rxjs: 7.8.2
       tslib: 2.8.1
@@ -9616,19 +9609,19 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@taiga-ui/event-plugins@5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)':
+  '@taiga-ui/event-plugins@5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)':
     dependencies:
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
-      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
+      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
       rxjs: 7.8.2
       tslib: 2.8.1
 
   '@taiga-ui/font-watcher@0.6.0': {}
 
-  '@taiga-ui/i18n@5.5.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))(rxjs@7.8.2)':
+  '@taiga-ui/i18n@5.5.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))(rxjs@7.8.2)':
     dependencies:
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
-      '@ng-web-apis/common': 5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2)
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
+      '@ng-web-apis/common': 5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2)
       rxjs: 7.8.2
       tslib: 2.8.1
 
@@ -9636,44 +9629,44 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@taiga-ui/kit@5.5.0(e7ea3a97c5b37ce009aa5c2ee3723587)':
+  '@taiga-ui/kit@5.5.0(dd77475fd61484ddab9c0c477105265b)':
     dependencies:
-      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
-      '@angular/forms': 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
-      '@angular/router': 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
-      '@maskito/angular': 5.2.2(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/forms@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2))(@maskito/core@5.2.2)
+      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
+      '@angular/forms': 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
+      '@angular/router': 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
+      '@maskito/angular': 5.2.2(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/forms@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2))(@maskito/core@5.2.2)
       '@maskito/core': 5.2.2
       '@maskito/kit': 5.2.2(@maskito/core@5.2.2)
       '@maskito/phone': 5.2.2(@maskito/core@5.2.2)(@maskito/kit@5.2.2(@maskito/core@5.2.2))(libphonenumber-js@1.13.0)
-      '@ng-web-apis/common': 5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2)
-      '@ng-web-apis/intersection-observer': 5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))
-      '@ng-web-apis/mutation-observer': 5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))
+      '@ng-web-apis/common': 5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2)
+      '@ng-web-apis/intersection-observer': 5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))
+      '@ng-web-apis/mutation-observer': 5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))
       '@ng-web-apis/platform': 5.2.0
-      '@ng-web-apis/resize-observer': 5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))
-      '@taiga-ui/cdk': 5.5.0(6062f6dc1d4cb9f0fbf7e0040c4cc4bf)
-      '@taiga-ui/core': 5.5.0(50e8e65b01edfb8f2044582787489afa)
-      '@taiga-ui/i18n': 5.5.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))(rxjs@7.8.2)
-      '@taiga-ui/polymorpheus': 5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))
+      '@ng-web-apis/resize-observer': 5.2.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))
+      '@taiga-ui/cdk': 5.5.0(5af0ea84dd45bd4592dbea17daa22b15)
+      '@taiga-ui/core': 5.5.0(9179dede19390adccea996e738fe2a57)
+      '@taiga-ui/i18n': 5.5.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@ng-web-apis/common@5.2.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@types/dom-speech-recognition@0.0.8)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@taiga-ui/polymorpheus': 5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))
       '@taiga-ui/styles': 5.5.0(@taiga-ui/design-tokens@0.299.0)
       rxjs: 7.8.2
       tslib: 2.8.1
 
-  '@taiga-ui/layout@5.5.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@taiga-ui/cdk@5.5.0(6062f6dc1d4cb9f0fbf7e0040c4cc4bf))(@taiga-ui/core@5.5.0(50e8e65b01edfb8f2044582787489afa))(@taiga-ui/kit@5.5.0(e7ea3a97c5b37ce009aa5c2ee3723587))(@taiga-ui/polymorpheus@5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))))(rxjs@7.8.2)':
+  '@taiga-ui/layout@5.5.0(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@taiga-ui/cdk@5.5.0(5af0ea84dd45bd4592dbea17daa22b15))(@taiga-ui/core@5.5.0(9179dede19390adccea996e738fe2a57))(@taiga-ui/kit@5.5.0(dd77475fd61484ddab9c0c477105265b))(@taiga-ui/polymorpheus@5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))))(rxjs@7.8.2)':
     dependencies:
-      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
-      '@taiga-ui/cdk': 5.5.0(6062f6dc1d4cb9f0fbf7e0040c4cc4bf)
-      '@taiga-ui/core': 5.5.0(50e8e65b01edfb8f2044582787489afa)
-      '@taiga-ui/kit': 5.5.0(e7ea3a97c5b37ce009aa5c2ee3723587)
-      '@taiga-ui/polymorpheus': 5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))
+      '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
+      '@taiga-ui/cdk': 5.5.0(5af0ea84dd45bd4592dbea17daa22b15)
+      '@taiga-ui/core': 5.5.0(9179dede19390adccea996e738fe2a57)
+      '@taiga-ui/kit': 5.5.0(dd77475fd61484ddab9c0c477105265b)
+      '@taiga-ui/polymorpheus': 5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))
       rxjs: 7.8.2
       tslib: 2.8.1
 
-  '@taiga-ui/polymorpheus@5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))':
+  '@taiga-ui/polymorpheus@5.0.0(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))':
     dependencies:
-      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)
-      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)(zone.js@0.15.1))
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
+      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
       tslib: 2.8.1
 
   '@taiga-ui/styles@5.5.0(@taiga-ui/design-tokens@0.299.0)':
@@ -14374,7 +14367,5 @@ snapshots:
       zod: 4.3.6
 
   zod@4.3.6: {}
-
-  zone.js@0.15.1: {}
 
   zwitch@2.0.4: {}

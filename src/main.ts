@@ -1,6 +1,7 @@
 import { bootstrapApplication } from '@angular/platform-browser';
 import { appConfig } from './app/app.config';
 import { AppComponent } from '@ui/app.component';
+import { PlatformService } from '@services/platform.service';
 import { WorkspaceService } from '@services/workspace.service';
 import { VaultStore } from '@vault/store';
 import { SyncEngineService } from '@core/sync/sync-engine';
@@ -15,6 +16,7 @@ bootstrapApplication(AppComponent, appConfig)
 			workspaceService: ref.injector.get(WorkspaceService),
 			vaultStore: ref.injector.get(VaultStore),
 			syncEngine: ref.injector.get(SyncEngineService),
+			platformService: ref.injector.get(PlatformService),
 			getTestAdapters: () => TestFsAdapter.getInstances(),
 			/** Simulate an external change on the first TestFsAdapter */
 			simulateExternalChange: (

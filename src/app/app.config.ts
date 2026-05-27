@@ -1,5 +1,8 @@
 import { provideTaiga } from '@taiga-ui/core';
-import { ApplicationConfig } from '@angular/core';
+import {
+	ApplicationConfig,
+	provideZonelessChangeDetection,
+} from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { TuiDialogService } from '@taiga-ui/core/portals/dialog';
 
@@ -24,6 +27,7 @@ function isTauriRuntime(): boolean {
 
 export const appConfig: ApplicationConfig = {
 	providers: [
+		provideZonelessChangeDetection(),
 		provideRouter(routes, withComponentInputBinding()),
 		// Taiga UI dialog service — enables modal dialogs
 		TuiDialogService,
@@ -36,10 +40,6 @@ export const appConfig: ApplicationConfig = {
 			provide: ADAPTERS,
 			useFactory: () => {
 				const adapters: Adapter[] = [new TestFsAdapter()];
-				console.log(
-					'Bootstrapping adapters. Tauri runtime available:',
-					isTauriRuntime(),
-				);
 				if (isTauriRuntime()) {
 					adapters.push(new TauriFsAdapter());
 				} else {

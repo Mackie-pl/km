@@ -75,7 +75,7 @@ test.describe('App bootstrap', () => {
 
 		// Should show the workspace we created (the list item in workspace config)
 		await expect(
-			page.getByRole('main').getByText('notes', { exact: true }),
+			page.getByRole('main').getByText('TestVault', { exact: true }),
 		).toBeVisible();
 	});
 });

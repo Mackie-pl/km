@@ -25,8 +25,13 @@ const isShowDirectoryPickerSupported = (
  * Local extension of FileSystemDirectoryHandle to include the `entries()` method
  * and permission methods not yet in TypeScript's DOM lib.
  */
-interface FileSystemDirectoryHandleWithEntries extends FileSystemDirectoryHandle {
-	entries(): AsyncIterableIterator<[string, FileSystemHandle]>;
+interface FileSystemDirectoryHandleWithEntries extends Omit<
+	FileSystemDirectoryHandle,
+	'entries'
+> {
+	entries(): AsyncIterableIterator<
+		[string, FileSystemDirectoryHandle | FileSystemFileHandle]
+	>;
 	queryPermission(descriptor?: {
 		mode?: 'read' | 'readwrite';
 	}): Promise<'granted' | 'denied' | 'prompt'>;
@@ -176,7 +181,8 @@ export class BrowserFileSystemApiAdapter implements Adapter {
 		const parentDir = parent === '/' ? dir : await resolveDir(dir, parent);
 
 		try {
-			await parentDir.removeEntry(name);
+			// recursive: true handles both files and non-empty directories
+			await parentDir.removeEntry(name, { recursive: true });
 		} catch (error) {
 			// Silently ignore if the file doesn't exist
 			if (
@@ -202,11 +208,31 @@ export class BrowserFileSystemApiAdapter implements Adapter {
 		const newDir =
 			newParent === '/' ? dir : await resolveDir(dir, newParent);
 
+		// Check if old entry is a directory
+		const oldDirHandle = await oldDir
+			.getDirectoryHandle(oldName)
+			.catch(() => null);
+		if (oldDirHandle) {
+			// Directory rename: create target dir, recursively copy, remove old
+			const targetDir = await newDir.getDirectoryHandle(newName, {
+				create: true,
+			});
+			await BrowserFileSystemApiAdapter.copyDirectoryContents(
+				oldDirHandle,
+				targetDir,
+			);
+			await oldDir.removeEntry(oldName, { recursive: true });
+			return;
+		}
+
+		// File rename (existing logic)
 		const oldHandle = await oldDir.getFileHandle(oldName);
 		const oldFile = await oldHandle.getFile();
 		const content = await oldFile.text();
 
-		const newHandle = await newDir.getFileHandle(newName, { create: true });
+		const newHandle = await newDir.getFileHandle(newName, {
+			create: true,
+		});
 		const writable = await newHandle.createWritable();
 		await writable.write(content);
 		await writable.close();
@@ -214,24 +240,116 @@ export class BrowserFileSystemApiAdapter implements Adapter {
 		await oldDir.removeEntry(oldName);
 	}
 
-	async list(path: string, root?: string): Promise<FileEntry[]> {
+	/** Create a directory (and all parents). */
+	async createDir(path: string, root?: string): Promise<void> {
+		const dir = await this.resolveRoot(root);
+		const clean = path
+			.replace(/^\/+|\/+$/g, '')
+			.split('/')
+			.filter(Boolean);
+		let current = dir;
+		for (const segment of clean) {
+			current = await current.getDirectoryHandle(segment, {
+				create: true,
+			});
+		}
+	}
+
+	/**
+	 * Recursively copy all entries from src directory to dest directory.
+	 * Used by rename() for directory moves since FileSystemHandle.move()
+	 * is not supported for directories outside OPFS.
+	 */
+	private static async copyDirectoryContents(
+		src: FileSystemDirectoryHandle,
+		dest: FileSystemDirectoryHandle,
+	): Promise<void> {
+		for await (const [name, handle] of (
+			src as FileSystemDirectoryHandleWithEntries
+		).entries()) {
+			if (handle.kind === 'directory') {
+				const subDest = await dest.getDirectoryHandle(name, {
+					create: true,
+				});
+				const subSrc = await src.getDirectoryHandle(name);
+				await BrowserFileSystemApiAdapter.copyDirectoryContents(
+					subSrc,
+					subDest,
+				);
+			} else {
+				const fileHandle = await src.getFileHandle(name);
+				const file = await fileHandle.getFile();
+				const content = await file.text();
+				const newFile = await dest.getFileHandle(name, {
+					create: true,
+				});
+				const writable = await newFile.createWritable();
+				await writable.write(content);
+				await writable.close();
+			}
+		}
+	}
+
+	async list(
+		path: string,
+		root?: string,
+		recursive?: boolean,
+	): Promise<FileEntry[]> {
 		const dir = await this.resolveRoot(root);
 		const targetDir =
 			path === '/' || path === '' ? dir : await resolveDir(dir, path);
 
 		const result: FileEntry[] = [];
+		await this.listDirEntries(targetDir, path, result, recursive);
+		return result;
+	}
+
+	/**
+	 * Walk a single directory handle and optionally recurse into subdirectories.
+	 * This is shared between list() and the recursive path to avoid return-value
+	 * serialisation overhead.
+	 *
+	 * TypeScript analogy: fs.readdir() with a recursive option, but for the
+	 * File System Access API's async-iterable handle interface.
+	 */
+	private async listDirEntries(
+		dirHandle: FileSystemDirectoryHandle,
+		currentPath: string,
+		result: FileEntry[],
+		recursive?: boolean,
+	): Promise<void> {
 		for await (const [name, handle] of (
-			targetDir as FileSystemDirectoryHandleWithEntries
+			dirHandle as FileSystemDirectoryHandleWithEntries
 		).entries()) {
+			const fullPath =
+				currentPath === '/' || currentPath === ''
+					? name
+					: `${currentPath.replace(/\/+$/, '')}/${name}`;
 			result.push({
 				name,
-				path:
-					path === '/' ? name : `${path.replace(/\/+$/, '')}/${name}`,
+				path: fullPath,
 				isDirectory: handle.kind === 'directory',
 				lastModified: 0,
 			});
+
+			if (recursive && handle.kind === 'directory') {
+				try {
+					const subHandle = await dirHandle.getDirectoryHandle(name);
+					await this.listDirEntries(
+						subHandle,
+						fullPath,
+						result,
+						recursive,
+					);
+				} catch (err) {
+					// Permission denied or other error — skip this subtree
+					console.warn(
+						`[BrowserFsAdapter] Skipping unreadable directory: "${fullPath}"`,
+						err,
+					);
+				}
+			}
 		}
-		return result;
 	}
 
 	// ──────────────────────────────────────────────

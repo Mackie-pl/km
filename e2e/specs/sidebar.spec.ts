@@ -8,6 +8,7 @@ import { test, expect } from '../fixtures/test';
  */
 test.describe('Sidebar file highlighting', () => {
 	test.beforeEach(async ({ page }) => {
+		await page.goto('/');
 		const hasHook = await page.evaluate(() => {
 			return (
 				typeof (window as unknown as Record<string, unknown>)[
@@ -47,7 +48,7 @@ test.describe('Sidebar file highlighting', () => {
 		await expect(alphaBtn).toHaveAttribute('data-active', 'true');
 
 		const betaBtn = page.getByRole('button', { name: 'file-beta' }).first();
-		await expect(betaBtn).toHaveAttribute('data-active', 'false');
+		await expect(betaBtn).not.toHaveAttribute('data-active');
 	});
 
 	test('only one file is highlighted at a time', async ({
@@ -77,7 +78,7 @@ test.describe('Sidebar file highlighting', () => {
 
 		await page.goto('/e/note-two');
 		const twoBtn = page.getByRole('button', { name: 'note-two' }).first();
-		await expect(oneBtn).toHaveAttribute('data-active', 'false');
+		await expect(oneBtn).not.toHaveAttribute('data-active');
 		await expect(twoBtn).toHaveAttribute('data-active', 'true');
 	});
 

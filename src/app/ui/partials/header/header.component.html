@@ -24,16 +24,16 @@
 		>
 	</div>
 
-	<!-- Right side: sync button (browser only — browser FS API needs a user gesture for permission) + settings gear -->
+	<!-- Right side: sync button (shown only when auto-sync failed in browser) + settings gear -->
 	<div class="flex items-center gap-1">
-		@if (!platformService.isDesktopTauri() && hasActiveAdapters()) {
+		@if (!platformService.isDesktopTauri() && syncEngine.syncFailed()) {
 			<button
-				class="flex items-center justify-center size-8 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
+				class="flex items-center justify-center size-8 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-red-500 dark:text-red-400 hover:bg-gray-200 dark:hover:bg-gray-800"
 				(click)="syncNow()"
-				aria-label="Sync now"
-				title="Sync now"
+				aria-label="Sync now — auto-sync failed"
+				[attr.title]="syncEngine.lastSyncError() ?? 'Sync now'"
 			>
-				@if (syncStatus() === 'syncing') {
+				@if (syncEngine.isSyncing()) {
 					<svg lucideRefreshCw class="size-5 animate-spin"></svg>
 				} @else {
 					<svg lucideRefreshCw class="size-5"></svg>

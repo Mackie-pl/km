@@ -3,10 +3,13 @@
 /*
  * Entry button base + active state via [attr.data-active].
  * Avoids 12+ [class.*] bindings for the active file highlight.
+ *
+ * Also used as a container for folder rows (div.entry-btn) to
+ * share the same hover/active styles as file buttons.
  */
 
 .entry-btn {
-	@apply flex items-center w-full gap-3 px-3 py-2.5 rounded-lg border-none
+	@apply flex items-center w-full gap-2 px-3 py-2.5 rounded-lg border-none
 		bg-transparent cursor-pointer transition-colors duration-150 text-left
 		text-gray-500 dark:text-gray-400;
 

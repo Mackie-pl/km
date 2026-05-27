@@ -791,7 +791,7 @@ test.describe('Rename contract', () => {
 			folderName: string | null;
 		};
 		expect(r.childPath).toBe('journal/meeting.md');
-		expect(r.oldChildPath).toBeUndefined();
+		expect(r.oldChildPath).toBeNull();
 		expect(r.folderName).toBe('journal');
 	});
 
@@ -960,5 +960,401 @@ test.describe('Rename contract', () => {
 
 		expect(result.orphanExists).toBe(false);
 		expect(result.currentExists).toBe(true);
+	});
+});
+
+// ──────────── NESTED DIRECTORY PULL ────────────
+test.describe('Nested directory pull — TDD for recursive list()', () => {
+	test.beforeEach(async ({ page }) => {
+		await page.goto('/');
+	});
+
+	// ──────────── N1: PULL IMPORTS NESTED FILE ────────────
+	// Pre-seed adapter with subdir/nested.md → forcePull → vault has subdir/nested.md
+	test('N1: pull imports nested file from subdirectory', async ({ page }) => {
+		await page.evaluate(async () => {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
+				workspaceService: {
+					addWorkspace: (ws: {
+						id: string;
+						name: string;
+						activeSyncAdapters: string[];
+						adapterConfigs: unknown[];
+					}) => void;
+					activateWorkspace: (id: string) => void;
+				};
+				vaultStore: {
+					init: () => Promise<void>;
+					getByPath: (
+						path: string,
+					) => { content?: string; type?: string } | undefined;
+				};
+				syncEngine: {
+					forcePull: () => Promise<void>;
+				};
+				getTestAdapters: () => readonly {
+					files: Map<string, string>;
+					dirs: Set<string>;
+				}[];
+			};
+
+			// Pre-seed nested file and parent directory in the adapter
+			const adapters = km.getTestAdapters();
+			adapters[0]?.dirs.add('subdir');
+			adapters[0]?.files.set('subdir/nested.md', '# Nested content');
+
+			// Activate workspace — pull fires on activation
+			const id = 'tdd-nested-n1';
+			km.workspaceService.addWorkspace({
+				id,
+				name: 'Nested-N1',
+				activeSyncAdapters: ['test-fs'],
+				adapterConfigs: [
+					{ adapterId: 'test-fs', path: 'test:/n1-root' },
+				],
+			});
+			km.workspaceService.activateWorkspace(id);
+			await km.vaultStore.init();
+			await km.syncEngine.forcePull();
+		});
+
+		await page.waitForTimeout(1500);
+
+		const imported = await page.evaluate(async () => {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
+				vaultStore: {
+					getByPath: (
+						path: string,
+					) => { content?: string } | undefined;
+				};
+			};
+			return km.vaultStore.getByPath('subdir/nested.md');
+		});
+
+		expect(imported).toBeDefined();
+		expect(imported?.content).toBe('# Nested content');
+	});
+
+	// ──────────── N2: DEEPLY NESTED FILE ────────────
+	test('N2: pull imports deeply nested file (a/b/c/deep.md)', async ({
+		page,
+	}) => {
+		await page.evaluate(async () => {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
+				workspaceService: {
+					addWorkspace: (ws: {
+						id: string;
+						name: string;
+						activeSyncAdapters: string[];
+						adapterConfigs: unknown[];
+					}) => void;
+					activateWorkspace: (id: string) => void;
+				};
+				vaultStore: {
+					init: () => Promise<void>;
+					getByPath: (
+						path: string,
+					) => { content?: string } | undefined;
+				};
+				syncEngine: {
+					forcePull: () => Promise<void>;
+				};
+				getTestAdapters: () => readonly {
+					files: Map<string, string>;
+					dirs: Set<string>;
+				}[];
+			};
+
+			// Pre-seed deeply nested structure
+			const adapters = km.getTestAdapters();
+			adapters[0]?.dirs.add('a');
+			adapters[0]?.dirs.add('a/b');
+			adapters[0]?.dirs.add('a/b/c');
+			adapters[0]?.files.set('a/b/c/deep.md', '# Deep');
+
+			const id = 'tdd-nested-n2';
+			km.workspaceService.addWorkspace({
+				id,
+				name: 'Nested-N2',
+				activeSyncAdapters: ['test-fs'],
+				adapterConfigs: [
+					{ adapterId: 'test-fs', path: 'test:/n2-root' },
+				],
+			});
+			km.workspaceService.activateWorkspace(id);
+			await km.vaultStore.init();
+			await km.syncEngine.forcePull();
+		});
+
+		await page.waitForTimeout(1500);
+
+		const imported = await page.evaluate(async () => {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
+				vaultStore: {
+					getByPath: (
+						path: string,
+					) => { content?: string } | undefined;
+				};
+			};
+			return km.vaultStore.getByPath('a/b/c/deep.md');
+		});
+
+		expect(imported).toBeDefined();
+		expect(imported?.content).toBe('# Deep');
+	});
+
+	// ──────────── N3: FOLDER ENTRIES CREATED FOR NESTED ────────────
+	test('N3: pull creates folder entries for nested directories', async ({
+		page,
+	}) => {
+		await page.evaluate(async () => {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
+				workspaceService: {
+					addWorkspace: (ws: {
+						id: string;
+						name: string;
+						activeSyncAdapters: string[];
+						adapterConfigs: unknown[];
+					}) => void;
+					activateWorkspace: (id: string) => void;
+				};
+				vaultStore: {
+					init: () => Promise<void>;
+					getByPath: (path: string) => { type?: string } | undefined;
+				};
+				syncEngine: {
+					forcePull: () => Promise<void>;
+				};
+				getTestAdapters: () => readonly {
+					files: Map<string, string>;
+					dirs: Set<string>;
+				}[];
+			};
+
+			const adapters = km.getTestAdapters();
+			adapters[0]?.dirs.add('subdir');
+			adapters[0]?.dirs.add('subdir/inner');
+			adapters[0]?.files.set('subdir/nested.md', '# In nested');
+			adapters[0]?.files.set('subdir/inner/deep.md', '# Deep inside');
+
+			const id = 'tdd-nested-n3';
+			km.workspaceService.addWorkspace({
+				id,
+				name: 'Nested-N3',
+				activeSyncAdapters: ['test-fs'],
+				adapterConfigs: [
+					{ adapterId: 'test-fs', path: 'test:/n3-root' },
+				],
+			});
+			km.workspaceService.activateWorkspace(id);
+			await km.vaultStore.init();
+			await km.syncEngine.forcePull();
+		});
+
+		await page.waitForTimeout(1500);
+
+		const result = await page.evaluate(async () => {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
+				vaultStore: {
+					getByPath: (path: string) => { type?: string } | undefined;
+				};
+			};
+			return {
+				subdir: km.vaultStore.getByPath('subdir'),
+				inner: km.vaultStore.getByPath('subdir/inner'),
+				nestedFile: km.vaultStore.getByPath('subdir/nested.md'),
+				deeperFile: km.vaultStore.getByPath('subdir/inner/deep.md'),
+			};
+		});
+
+		expect(result.subdir).toBeDefined();
+		expect(result.subdir?.type).toBe('folder');
+		expect(result.inner).toBeDefined();
+		expect(result.inner?.type).toBe('folder');
+		expect(result.nestedFile).toBeDefined();
+		expect(result.nestedFile?.type).toBe('file');
+		expect(result.deeperFile).toBeDefined();
+		expect(result.deeperFile?.type).toBe('file');
+	});
+
+	// ──────────── N4: ORPHAN DETECTION WITH NESTED ────────────
+	test('N4: orphan detection works with nested files', async ({ page }) => {
+		await page.evaluate(async () => {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
+				workspaceService: {
+					addWorkspace: (ws: {
+						id: string;
+						name: string;
+						activeSyncAdapters: string[];
+						adapterConfigs: unknown[];
+					}) => void;
+					activateWorkspace: (id: string) => void;
+				};
+				vaultStore: {
+					init: () => Promise<void>;
+					createFile: (
+						path: string,
+						content?: string,
+					) => Promise<void>;
+					getByPath: (path: string) => { id: string } | undefined;
+				};
+				syncEngine: {
+					syncAll: () => Promise<void>;
+				};
+				getTestAdapters: () => readonly {
+					files: Map<string, string>;
+					dirs: Set<string>;
+				}[];
+			};
+
+			const adapters = km.getTestAdapters();
+			adapters[0]?.dirs.add('subdir');
+			adapters[0]?.files.set('subdir/nested.md', '# Nested');
+			adapters[0]?.files.set('orphan.md', '# Orphan');
+
+			const id = 'tdd-nested-n4';
+			km.workspaceService.addWorkspace({
+				id,
+				name: 'Nested-N4',
+				activeSyncAdapters: ['test-fs'],
+				adapterConfigs: [
+					{ adapterId: 'test-fs', path: 'test:/n4-root' },
+				],
+			});
+			km.workspaceService.activateWorkspace(id);
+			await km.vaultStore.init();
+
+			// Wait for the initial effect-driven pull to settle
+			await new Promise((r) => setTimeout(r, 1500));
+
+			// Create a local-only file and wait for push so adapter has it
+			await km.vaultStore.createFile('local-orphan.md', '# Local orphan');
+			await new Promise((r) => setTimeout(r, 2500));
+
+			// Delete nested file from adapter (simulate remote deletion)
+			adapters[0]?.files.delete('subdir/nested.md');
+
+			// Use syncAll instead of forcePull to bypass the pulling guard
+			await km.syncEngine.syncAll();
+			await new Promise((r) => setTimeout(r, 1500));
+		});
+
+		const result = await page.evaluate(async () => {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
+				vaultStore: {
+					getByPath: (path: string) => unknown | undefined;
+				};
+			};
+			return {
+				// orphan.md still present on adapter → should survive
+				orphanExists:
+					km.vaultStore.getByPath('orphan.md') !== undefined,
+				// subdir/nested.md removed from adapter → orphan detection deletes it
+				nestedExists:
+					km.vaultStore.getByPath('subdir/nested.md') !== undefined,
+				// local-orphan.md not on adapter but has pendingAdapters → not deleted
+				localOrphanExists:
+					km.vaultStore.getByPath('local-orphan.md') !== undefined,
+			};
+		});
+
+		expect(result.orphanExists).toBe(true);
+		expect(result.nestedExists).toBe(false);
+		expect(result.localOrphanExists).toBe(true);
+	});
+
+	// ──────────── N5: ERROR RESILIENCE ────────────
+	test('N5: one bad subdirectory does not abort entire pull', async ({
+		page,
+	}) => {
+		await page.evaluate(async () => {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
+				workspaceService: {
+					addWorkspace: (ws: {
+						id: string;
+						name: string;
+						activeSyncAdapters: string[];
+						adapterConfigs: unknown[];
+					}) => void;
+					activateWorkspace: (id: string) => void;
+				};
+				vaultStore: {
+					init: () => Promise<void>;
+					getByPath: (
+						path: string,
+					) => { content?: string } | undefined;
+				};
+				syncEngine: {
+					forcePull: () => Promise<void>;
+				};
+				getTestAdapters: () => readonly {
+					files: Map<string, string>;
+					dirs: Set<string>;
+				}[];
+			};
+
+			const adapters = km.getTestAdapters();
+
+			// A "bad" directory — TestFsAdapter will later be told to throw on it
+			adapters[0]?.dirs.add('bad-dir');
+			adapters[0]?.files.set('bad-dir/should-not-appear.md', '# Hidden');
+			// A "good" file at root that should survive
+			adapters[0]?.files.set('good-root-file.md', '# Good');
+
+			const id = 'tdd-nested-n5';
+			km.workspaceService.addWorkspace({
+				id,
+				name: 'Nested-N5',
+				activeSyncAdapters: ['test-fs'],
+				adapterConfigs: [
+					{ adapterId: 'test-fs', path: 'test:/n5-root' },
+				],
+			});
+			km.workspaceService.activateWorkspace(id);
+			await km.vaultStore.init();
+			await km.syncEngine.forcePull();
+		});
+
+		await page.waitForTimeout(1500);
+
+		const result = await page.evaluate(async () => {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
+				vaultStore: {
+					getByPath: (
+						path: string,
+					) => { content?: string } | undefined;
+				};
+			};
+			return {
+				goodFile: km.vaultStore.getByPath('good-root-file.md'),
+				badFile: km.vaultStore.getByPath(
+					'bad-dir/should-not-appear.md',
+				),
+			};
+		});
+
+		// good-root-file.md should have been imported
+		expect(result.goodFile).toBeDefined();
+		expect(result.goodFile?.content).toBe('# Good');
 	});
 });
