@@ -512,3 +512,289 @@ test.describe('Folder persistence', () => {
 		expect(hasFile).toBe(true);
 	});
 });
+
+// ──────────── B: PARENT ID AFTER ADAPTER RECONCILIATION ────────────
+test.describe('Parent ID after adapter reconciliation', () => {
+	test.beforeEach(async ({ page }) => {
+		await page.goto('/');
+		// Verify test hook is available
+		const hasHook = await page.evaluate(() => {
+			return (
+				typeof (window as unknown as Record<string, unknown>)[
+					'__KM_TEST__'
+				] === 'object'
+			);
+		});
+		expect(hasHook).toBe(true);
+	});
+
+	// ──────────── B1: CREATE FILE INSIDE FOLDER ────────────
+	test('B1: create file inside folder sets parentId to folder ID', async ({
+		page,
+	}) => {
+		const result = await page.evaluate(async () => {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
+				workspaceService: {
+					addWorkspace: (ws: {
+						id: string;
+						name: string;
+						activeSyncAdapters: string[];
+						adapterConfigs: unknown[];
+					}) => void;
+					activateWorkspace: (id: string) => void;
+				};
+				vaultStore: {
+					init: () => Promise<void>;
+					createFolder: (path: string) => Promise<void>;
+					createFile: (
+						path: string,
+						content?: string,
+						parentFolderPath?: string,
+					) => Promise<void>;
+					getByPath: (path: string) =>
+						| {
+								id: string;
+								parentId: string | null;
+						  }
+						| undefined;
+				};
+			};
+
+			const id = 'tdd-parent-b1';
+			km.workspaceService.addWorkspace({
+				id,
+				name: 'Parent-B1',
+				activeSyncAdapters: ['test-fs'],
+				adapterConfigs: [],
+			});
+			km.workspaceService.activateWorkspace(id);
+			await km.vaultStore.init();
+
+			await km.vaultStore.createFolder('projects');
+			const folder = km.vaultStore.getByPath('projects');
+			await km.vaultStore.createFile(
+				'readme.md',
+				'# Project',
+				'projects',
+			);
+
+			const file = km.vaultStore.getByPath('projects/readme.md');
+			return {
+				fileParentId: file?.parentId ?? null,
+				folderId: folder?.id ?? null,
+			};
+		});
+
+		expect(result.fileParentId).toBe(result.folderId);
+	});
+
+	// ──────────── B2: PULL IMPORTS FILE WITH CORRECT PARENT ID ────────────
+	test('B2: pull imports file with correct parentId', async ({ page }) => {
+		const result = await page.evaluate(async () => {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
+				workspaceService: {
+					addWorkspace: (ws: {
+						id: string;
+						name: string;
+						activeSyncAdapters: string[];
+						adapterConfigs: unknown[];
+					}) => void;
+					activateWorkspace: (id: string) => void;
+				};
+				vaultStore: {
+					init: () => Promise<void>;
+					getByPath: (path: string) =>
+						| {
+								id: string;
+								parentId: string | null;
+						  }
+						| undefined;
+				};
+				syncEngine: {
+					forcePull: () => Promise<void>;
+				};
+				getTestAdapters: () => readonly {
+					dirs: Set<string>;
+					files: Map<string, string>;
+				}[];
+			};
+
+			// Pre-seed adapter with folder + file before activation
+			const adapters = km.getTestAdapters();
+			adapters[0]?.dirs.add('notes');
+			adapters[0]?.files.set('notes/readme.md', '# Notes');
+
+			const id = 'tdd-parent-b2';
+			km.workspaceService.addWorkspace({
+				id,
+				name: 'Parent-B2',
+				activeSyncAdapters: ['test-fs'],
+				adapterConfigs: [
+					{ adapterId: 'test-fs', path: 'test:/test-root' },
+				],
+			});
+			km.workspaceService.activateWorkspace(id);
+			await km.vaultStore.init();
+			await km.syncEngine.forcePull();
+			await new Promise((r) => setTimeout(r, 2500));
+
+			const folder = km.vaultStore.getByPath('notes');
+			const file = km.vaultStore.getByPath('notes/readme.md');
+			return {
+				folderId: folder?.id ?? null,
+				fileParentId: file?.parentId ?? null,
+			};
+		});
+
+		expect(result.fileParentId).toBe(result.folderId);
+	});
+
+	// ──────────── B3: PULL IMPORTS DEEPLY NESTED FILE ────────────
+	test('B3: pull deeply nested file has correct parentId', async ({
+		page,
+	}) => {
+		const result = await page.evaluate(async () => {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
+				workspaceService: {
+					addWorkspace: (ws: {
+						id: string;
+						name: string;
+						activeSyncAdapters: string[];
+						adapterConfigs: unknown[];
+					}) => void;
+					activateWorkspace: (id: string) => void;
+				};
+				vaultStore: {
+					init: () => Promise<void>;
+					getByPath: (path: string) =>
+						| {
+								id: string;
+								parentId: string | null;
+								path: string;
+						  }
+						| undefined;
+				};
+				syncEngine: {
+					forcePull: () => Promise<void>;
+				};
+				getTestAdapters: () => readonly {
+					dirs: Set<string>;
+					files: Map<string, string>;
+				}[];
+			};
+
+			// Pre-seed nested structure: projects/web/index.md
+			const adapters = km.getTestAdapters();
+			adapters[0]?.dirs.add('projects');
+			adapters[0]?.dirs.add('projects/web');
+			adapters[0]?.files.set('projects/web/index.md', '# Web Project');
+
+			const id = 'tdd-parent-b3';
+			km.workspaceService.addWorkspace({
+				id,
+				name: 'Parent-B3',
+				activeSyncAdapters: ['test-fs'],
+				adapterConfigs: [
+					{ adapterId: 'test-fs', path: 'test:/test-root' },
+				],
+			});
+			km.workspaceService.activateWorkspace(id);
+			await km.vaultStore.init();
+			await km.syncEngine.forcePull();
+			await new Promise((r) => setTimeout(r, 2500));
+
+			const subfolder = km.vaultStore.getByPath('projects/web');
+			const file = km.vaultStore.getByPath('projects/web/index.md');
+			return {
+				subfolderId: subfolder?.id ?? null,
+				fileParentId: file?.parentId ?? null,
+				filePath: file?.path ?? null,
+			};
+		});
+
+		expect(result.fileParentId).toBe(result.subfolderId);
+		expect(result.filePath).toBe('projects/web/index.md');
+	});
+
+	// ──────────── B4: EXTERNAL WATCH IMPORTS FILE INSIDE FOLDER ────────────
+	test('B4: external watch import sets parentId on file inside folder', async ({
+		page,
+	}) => {
+		// Create a folder first
+		await page.evaluate(async () => {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
+				workspaceService: {
+					addWorkspace: (ws: {
+						id: string;
+						name: string;
+						activeSyncAdapters: string[];
+						adapterConfigs: unknown[];
+					}) => void;
+					activateWorkspace: (id: string) => void;
+				};
+				vaultStore: {
+					init: () => Promise<void>;
+					createFolder: (path: string) => Promise<void>;
+				};
+			};
+
+			const id = 'tdd-parent-b4';
+			km.workspaceService.addWorkspace({
+				id,
+				name: 'Parent-B4',
+				activeSyncAdapters: ['test-fs'],
+				adapterConfigs: [],
+			});
+			km.workspaceService.activateWorkspace(id);
+			await km.vaultStore.init();
+			await km.vaultStore.createFolder('docs');
+		});
+
+		// Simulate external file creation inside the folder
+		await page.evaluate(async () => {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
+				simulateExternalChange: (
+					type: 'create' | 'modify' | 'delete' | 'rename',
+					path: string,
+					content?: string,
+				) => void;
+			};
+			km.simulateExternalChange('create', 'docs/notes.md', '# New Notes');
+		});
+
+		await page.waitForTimeout(1500);
+
+		const result = await page.evaluate(async () => {
+			const km = (window as unknown as Record<string, unknown>)[
+				'__KM_TEST__'
+			] as {
+				vaultStore: {
+					getByPath: (path: string) =>
+						| {
+								id: string;
+								parentId: string | null;
+						  }
+						| undefined;
+				};
+			};
+			const folder = km.vaultStore.getByPath('docs');
+			const file = km.vaultStore.getByPath('docs/notes.md');
+			return {
+				folderId: folder?.id ?? null,
+				fileParentId: file?.parentId ?? null,
+			};
+		});
+
+		expect(result.fileParentId).toBe(result.folderId);
+	});
+});

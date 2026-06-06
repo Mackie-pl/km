@@ -12,20 +12,22 @@
 	<div class="space-y-1">
 		@if (treeNodes().length) {
 			<!-- New Folder button -->
-			<button
-				class="flex items-center w-full gap-3 px-3 py-2 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 text-sm"
-				(click)="createNewFolder()"
-				[attr.aria-label]="'New Folder'"
-			>
-				<svg lucideFolderPlus class="size-5 flex-shrink-0"></svg>
-			</button>
-			<button
-				class="flex items-center w-full gap-3 px-3 py-2 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 text-sm"
-				(click)="createNewFile()"
-				[attr.aria-label]="'New File'"
-			>
-				<svg lucideFilePlus class="size-5 flex-shrink-0"></svg>
-			</button>
+			<div class="flex items-center gap-1 px-3 py-2">
+				<button
+					class="flex items-center gap-3 px-3 py-2 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 text-sm"
+					(click)="createNewFolder()"
+					[attr.aria-label]="'New Folder'"
+				>
+					<svg lucideFolderPlus class="size-5 flex-shrink-0"></svg>
+				</button>
+				<button
+					class="flex items-center gap-3 px-3 py-2 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 text-sm"
+					(click)="createNewFile()"
+					[attr.aria-label]="'New File'"
+				>
+					<svg lucideFilePlus class="size-5 flex-shrink-0"></svg>
+				</button>
+			</div>
 
 			<hr class="mx-3 mb-1 border-gray-200 dark:border-gray-700" />
 
@@ -64,7 +66,7 @@
 						</footer>
 					} @else {
 						<nav
-							class="flex items-center w-full gap-3 px-3 py-2.5"
+							class="flex items-center w-full gap-3 px-3 py-2.5 pl-8"
 							[style.padding-left.px]="12 + node.depth * 16"
 						>
 							<svg
@@ -130,7 +132,7 @@
 					<!-- File row -->
 					<button
 						class="entry-btn font-semibold"
-						[style.padding-left.px]="8 + node.depth * 16"
+						[style.padding-left.px]="36 + node.depth * 16"
 						[tuiDropdown]="contextMenu"
 						[tuiDropdownManual]="
 							contextEntry()?.id === node.entry.id

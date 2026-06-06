@@ -190,6 +190,14 @@
 		"npx jscpd": true,
 		"npx eslint": true,
 		"npx playwright": true,
-		".\\node_modules\\.bin\\playwright": true
+		".\\node_modules\\.bin\\playwright": true,
+		"/^pnpm exec eslint src --ext \\.ts,\\.html 2>&1 \\| head -60$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^pnpm exec eslint src --ext \\.ts,\\.html 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		}
 	}
 }

@@ -67,6 +67,12 @@ export class VaultReconciler {
 				this.store.getActiveSyncAdapters(),
 				sourceAdapterId,
 			);
+			const parentPath = path.includes('/')
+				? path.slice(0, path.lastIndexOf('/'))
+				: '';
+			const parentEntry = parentPath
+				? this.store.getByPath(parentPath)
+				: null;
 			await this.store.put(
 				this.store.makeEntry({
 					workspaceId: wsId,
@@ -74,6 +80,7 @@ export class VaultReconciler {
 					path,
 					content,
 					pendingAdapters: adapters,
+					parentId: parentEntry?.id ?? null,
 				}),
 			);
 			return;

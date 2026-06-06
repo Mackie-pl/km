@@ -50,6 +50,9 @@ interface TreeNode {
 	],
 	templateUrl: './sidebar-vault-list.component.html',
 	styleUrl: './sidebar-vault-list.component.scss',
+	host: {
+		'(document:click)': 'closeContextMenu()',
+	},
 })
 export class SidebarVaultListComponent {
 	private readonly vaultDb = inject(VaultStore);
@@ -264,5 +267,10 @@ export class SidebarVaultListComponent {
 		if (!nav) {
 			console.error('Failed to navigate to file:', entry.path);
 		}
+	}
+
+	/** Close context menu on any click outside context menu items. */
+	closeContextMenu(): void {
+		this.contextEntry.set(null);
 	}
 }

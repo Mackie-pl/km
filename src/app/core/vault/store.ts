@@ -193,6 +193,12 @@ export class VaultStore {
 			: path;
 		if (parentFolderPath) {
 			const folder = this.getByPath(parentFolderPath);
+			console.log(
+				'Derived parent folder for new file:',
+				folder,
+				parentFolderPath,
+				fullPath,
+			);
 			parentId = folder?.id ?? null;
 		}
 
