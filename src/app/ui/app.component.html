@@ -40,4 +40,8 @@
 			</main>
 		</div>
 	</div>
+
+	@if (searchService.isOpen()) {
+		<app-search-overlay />
+	}
 </tui-root>

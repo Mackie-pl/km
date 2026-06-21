@@ -1,19 +1,15 @@
 import { Injectable, signal, computed, inject, effect } from '@angular/core';
-import { WorkspaceService } from '@core/services/workspace.service';
-import {
-	VAULT_ENTRY_TYPES,
-	type VaultEntryType,
-	type VaultEntry,
-} from './vault-entry';
+import { WorkspaceService, type Workspace } from '@core/services/workspace.service';
+import { VAULT_ENTRY_TYPES, type VaultEntry } from './vault-entry';
 import { VaultDatabase } from './vault-database';
 import { VaultReconciler } from './vault-reconciler';
+import { resolveUniquePath, makeVaultEntry } from './vault-utils';
+import { repoUrlToCloneDir, destroyGitFsBackend } from '@core/adapters/cloud/git/fs';
+import { GitTokenStore } from '@core/adapters/cloud/git/auth';
+import type { AdapterConfig } from '@core/adapters/adapter.interface';
 
 // Re-exports for backward compat with imports from @vault/store
-export {
-	VAULT_ENTRY_TYPES,
-	type VaultEntryType,
-	type VaultEntry,
-} from './vault-entry';
+export { VAULT_ENTRY_TYPES, type VaultEntry } from './vault-entry';
 
 @Injectable({
 	providedIn: 'root',
@@ -61,11 +57,13 @@ export class VaultStore {
 	);
 
 	/** Entries that still have at least one adapter pending sync. */
-	readonly entriesNeedingSync = computed(() =>
-		Array.from(this.entries().values()).filter(
-			(e) => e.pendingAdapters.length > 0,
-		),
-	);
+	readonly entriesNeedingSync = computed(() => {
+		const wsId = this.activeWorkspaceId();
+		if (!wsId) return [];
+		return Array.from(this.entries().values()).filter(
+			(e) => e.workspaceId === wsId && e.pendingAdapters.length > 0,
+		);
+	});
 
 	//
 	// =========================
@@ -75,6 +73,8 @@ export class VaultStore {
 
 	private readonly database = new VaultDatabase();
 	private initPromise: Promise<void> | null = null;
+	/** Tracks which workspace was last loaded via init(). Guards the constructor effect. */
+	private loadedWsId: string | null = null;
 
 	/**
 	 * Incremented every time entries are loaded from IndexedDB.
@@ -89,19 +89,62 @@ export class VaultStore {
 	 * entries (handles workspace switch where a different set of entries is needed).
 	 */
 	async init() {
-		this.initPromise ??= (async () => {
-			await this.database.open();
-		})();
-
+		this.initPromise ??= this.#openDatabase();
 		await this.initPromise;
 		await this.loadAll();
 	}
 
+	async #openDatabase(): Promise<void> {
+		await this.database.open();
+	}
+
 	constructor() {
+		// Reload entries when the active workspace changes to a different workspace.
+		// Skips the initial load (handled by explicit init()) to avoid races.
 		effect(() => {
 			const wsId = this.activeWorkspaceId();
-			if (!wsId) return;
+			if (!wsId || !this.loadedWsId) return;
+			if (wsId === this.loadedWsId) return;
 			void this.clearAndReload();
+		});
+
+		// When a workspace is removed from the service, purge its IndexedDB entries.
+		// This keeps VaultStore as the single authority over DB ↔ workspace linkage,
+		// avoiding a circular DI between WorkspaceService and VaultStore.
+		this.#watchWorkspaceRemovals();
+	}
+
+	/** Tracks workspace IDs seen previously, so we can detect removals. */
+	#lastSeenWorkspaces = new Map<string, Workspace>();
+	// True after the first workspace list is observed — guards against
+	// firing on the initial empty→populated transition.
+	#workspaceRemovalWatchReady = false;
+
+	/**
+	 * Watch `workspaceService.workspaces()` and purge IndexedDB entries for any
+	 * workspace ID that disappears from the list.
+	 */
+	#watchWorkspaceRemovals(): void {
+		effect(() => {
+			// Only dependency: the workspace list signal.
+			const current = this.workspaceService.workspaces();
+			const currentIds = new Set(current.map((w) => w.id));
+
+			if (this.#workspaceRemovalWatchReady) {
+				for (const [removedId, removedWs] of this.#lastSeenWorkspaces) {
+					if (!currentIds.has(removedId)) {
+						void this.purgeWorkspace(
+							removedId,
+							removedWs.adapterConfigs,
+						);
+					}
+				}
+			}
+
+			this.#workspaceRemovalWatchReady = true;
+			this.#lastSeenWorkspaces = new Map(
+				current.map((w) => [w.id, w]),
+			);
 		});
 	}
 
@@ -109,43 +152,11 @@ export class VaultStore {
 	private async clearAndReload(): Promise<void> {
 		this.loadVersion.set(0);
 		this.entries.set(new Map());
-		// init() opens the DB (if not already open) then loads entries.
-		// Safe to call multiple times — only opens DB once.
 		await this.init();
 	}
 
 	async ensureInitialized(): Promise<void> {
 		await this.init();
-	}
-
-	//
-	// =========================
-	// NAME DEDUP
-	// =========================
-	//
-
-	/**
-	 * Given an intended path, return the first non-conflicting variant
-	 * by appending " (2)", " (3)", etc. if the path already exists.
-	 *
-	 * Examples:
-	 *   "New Folder"       → "New Folder"          (if free)
-	 *   "New Folder"       → "New Folder (2)"      (if "New Folder" exists)
-	 *   "note.md"          → "note (2).md"         (if "note.md" exists)
-	 *   "note.md"          → "note (3).md"         (if both "note.md" and "note (2).md" exist)
-	 */
-	private resolveUniquePath(path: string): string {
-		let candidate = path;
-		let counter = 2;
-		while (this.getByPath(candidate)) {
-			const ext = path.includes('.')
-				? path.slice(path.lastIndexOf('.'))
-				: '';
-			const stem = ext ? path.slice(0, path.lastIndexOf('.')) : path;
-			candidate = `${stem} (${String(counter)})${ext}`;
-			counter++;
-		}
-		return candidate;
 	}
 
 	//
@@ -167,8 +178,49 @@ export class VaultStore {
 			map.set(entry.id, entry);
 		}
 		this.entries.set(map);
+		this.loadedWsId = wsId;
 		// Signal that the vault is ready for consumers (SyncEngine, etc.)
 		this.loadVersion.update((v) => v + 1);
+	}
+
+	//
+	// =========================
+	// PURGE (workspace removal)
+	// =========================
+
+	/**
+	 * Permanently delete ALL vault entries for a given workspace from IndexedDB.
+	 * Called when a workspace is removed. If the purged workspace is the currently
+	 * active one, the in-memory entries are also cleared.
+	 *
+	 * Also cleans up git adapter data: destroys the LightningFS IndexedDB database
+	 * for each git adapter and removes the encrypted token from the token store.
+	 */
+	async purgeWorkspace(
+		wsId: string,
+		adapterConfigs?: AdapterConfig[],
+	): Promise<void> {
+		await this.ensureInitialized();
+		await this.database.deleteAllByWorkspaceId(wsId);
+
+		// Clean up git adapter data (LightningFS DB + encrypted tokens)
+		if (adapterConfigs) {
+			for (const config of adapterConfigs) {
+				if (config.adapterId === 'git') {
+					const cloneDir = repoUrlToCloneDir(config.repoUrl);
+					await destroyGitFsBackend(cloneDir);
+					const tokenStore = new GitTokenStore();
+					await tokenStore.deleteToken(config.repoUrl);
+				}
+			}
+		}
+
+		// If the purged workspace is the one currently loaded, clear memory
+		if (this.activeWorkspaceId() === wsId) {
+			this.entries.set(new Map());
+			this.loadedWsId = null;
+			this.loadVersion.set(0);
+		}
 	}
 
 	//
@@ -177,13 +229,17 @@ export class VaultStore {
 	// =========================
 	//
 
-	async createFile(path: string, content = '', parentFolderPath?: string) {
+	async createFile(
+		path: string,
+		content = '',
+		parentFolderPath?: string,
+	): Promise<VaultEntry | undefined> {
 		await this.ensureInitialized();
 
 		const wsId = this.activeWorkspaceId();
 		if (!wsId) {
 			console.warn('VaultStore: no active workspace, cannot create file');
-			return;
+			return undefined;
 		}
 
 		// If parentFolderPath is given, derive parentId and full path
@@ -193,35 +249,32 @@ export class VaultStore {
 			: path;
 		if (parentFolderPath) {
 			const folder = this.getByPath(parentFolderPath);
-			console.log(
-				'Derived parent folder for new file:',
-				folder,
-				parentFolderPath,
-				fullPath,
-			);
 			parentId = folder?.id ?? null;
 		}
 
-		const resolvedPath = this.resolveUniquePath(fullPath);
+		const resolvedPath = resolveUniquePath(fullPath, (p) =>
+			this.getByPath(p),
+		);
 		const name = resolvedPath.split('/').pop() ?? '';
 
 		// Set pending adapters to all currently active adapters
 		const activeAdapters =
 			this.workspaceService.activeWorkspace()?.activeSyncAdapters ?? [];
 
-		await this.put(
-			this.makeEntry({
-				workspaceId: wsId,
-				name,
-				path: resolvedPath,
-				content,
-				parentId,
-				pendingAdapters: [...activeAdapters],
-			}),
-		);
+		const entry = makeVaultEntry({
+			workspaceId: wsId,
+			name,
+			path: resolvedPath,
+			content,
+			parentId,
+			pendingAdapters: [...activeAdapters],
+		});
+
+		await this.put(entry);
+		return entry;
 	}
 
-	async createFolder(path: string) {
+	async createFolder(path: string): Promise<VaultEntry | undefined> {
 		await this.ensureInitialized();
 
 		const wsId = this.activeWorkspaceId();
@@ -229,10 +282,10 @@ export class VaultStore {
 			console.warn(
 				'VaultStore: no active workspace, cannot create folder',
 			);
-			return;
+			return undefined;
 		}
 
-		const resolvedPath = this.resolveUniquePath(path);
+		const resolvedPath = resolveUniquePath(path, (p) => this.getByPath(p));
 		const name = resolvedPath.split('/').pop() ?? '';
 
 		// Folders persist to disk like files — set pending adapters so
@@ -240,15 +293,16 @@ export class VaultStore {
 		const activeAdapters =
 			this.workspaceService.activeWorkspace()?.activeSyncAdapters ?? [];
 
-		await this.put(
-			this.makeEntry({
-				workspaceId: wsId,
-				name,
-				path: resolvedPath,
-				type: VAULT_ENTRY_TYPES.FOLDER,
-				pendingAdapters: [...activeAdapters],
-			}),
-		);
+		const entry = makeVaultEntry({
+			workspaceId: wsId,
+			name,
+			path: resolvedPath,
+			type: VAULT_ENTRY_TYPES.FOLDER,
+			pendingAdapters: [...activeAdapters],
+		});
+
+		await this.put(entry);
+		return entry;
 	}
 
 	//
@@ -383,7 +437,9 @@ export class VaultStore {
 		];
 
 		// Resolve name conflicts — if the new path already exists, auto-dedup
-		const resolvedPath = this.resolveUniquePath(newPath);
+		const resolvedPath = resolveUniquePath(newPath, (p) =>
+			this.getByPath(p),
+		);
 		const resolvedName = resolvedPath.split('/').pop() ?? newName;
 
 		const updated: VaultEntry = {
@@ -400,33 +456,43 @@ export class VaultStore {
 
 		// Cascade to children if this is a folder
 		if (entry.type === VAULT_ENTRY_TYPES.FOLDER) {
-			const children = Array.from(this.entries().values()).filter(
-				(e) =>
-					e.workspaceId === wsId &&
-					!e.deleted &&
-					e.path.startsWith(oldPath + '/'),
+			await this.cascadeRenameChildren(
+				entry,
+				oldPath,
+				resolvedPath,
+				activeAdapters,
 			);
+		}
+	}
 
-			for (const child of children) {
-				const childNewPath =
-					resolvedPath + child.path.slice(oldPath.length);
-				const childNewName =
-					childNewPath.split('/').pop() ?? child.name;
+	/** Update all children of a renamed folder with new paths. */
+	async cascadeRenameChildren(
+		entry: VaultEntry,
+		oldPath: string,
+		newPath: string,
+		activeAdapters: string[],
+	): Promise<void> {
+		const children = Array.from(this.entries().values()).filter(
+			(e) =>
+				e.workspaceId === entry.workspaceId &&
+				!e.deleted &&
+				e.path.startsWith(oldPath + '/'),
+		);
 
-				await this.put({
-					...child,
-					name: childNewName,
-					path: childNewPath,
-					updatedAt: Date.now(),
-					revision: child.revision + 1,
-					pendingAdapters: [
-						...new Set([
-							...child.pendingAdapters,
-							...activeAdapters,
-						]),
-					],
-				});
-			}
+		for (const child of children) {
+			const childNewPath = newPath + child.path.slice(oldPath.length);
+			const childNewName = childNewPath.split('/').pop() ?? child.name;
+
+			await this.put({
+				...child,
+				name: childNewName,
+				path: childNewPath,
+				updatedAt: Date.now(),
+				revision: child.revision + 1,
+				pendingAdapters: [
+					...new Set([...child.pendingAdapters, ...activeAdapters]),
+				],
+			});
 		}
 	}
 
@@ -475,7 +541,7 @@ export class VaultStore {
 	// =========================
 	//
 
-	getByPath(path: string) {
+	getByPath(path: string): VaultEntry | undefined {
 		const wsId = this.activeWorkspaceId();
 		if (!wsId) return undefined;
 		return Array.from(this.entries().values()).find(
@@ -504,6 +570,32 @@ export class VaultStore {
 	//
 
 	/**
+	 * Mark all vault entries NOT found in `seenPaths` as needing sync
+	 * to the given adapter. Used when a new adapter is added to an
+	 * existing workspace — existing vault entries that weren't found
+	 * on the new adapter must be pushed to it so they don't get
+	 * orphan-detected on the next pull cycle.
+	 */
+	async markPendingForAdapter(
+		adapterId: string,
+		seenPaths: Set<string>,
+	): Promise<void> {
+		const wsId = this.activeWorkspaceId();
+		if (!wsId) return;
+
+		for (const [, entry] of this.entries()) {
+			if (entry.workspaceId !== wsId || entry.deleted) continue;
+			if (seenPaths.has(entry.path)) continue;
+			if (entry.pendingAdapters.includes(adapterId)) continue;
+
+			await this.put({
+				...entry,
+				pendingAdapters: [...entry.pendingAdapters, adapterId],
+			});
+		}
+	}
+
+	/**
 	 * Mark a single adapter as synced for this entry.
 	 * Removes the adapter from `pendingAdapters`.
 	 * Also clears `pendingRenameFrom` when the last adapter is synced.
@@ -517,11 +609,13 @@ export class VaultStore {
 		);
 
 		// Clear pendingRenameFrom when fully synced (no adapters left to push to)
-		const pendingRenameFrom =
+		const pendingRenameFrom: string | undefined =
 			pendingAdapters.length === 0 ? undefined : entry.pendingRenameFrom;
 
+		const { pendingRenameFrom: _oldRename, ...rest } = entry;
+
 		await this.put({
-			...entry,
+			...rest,
 			pendingAdapters,
 			...(pendingRenameFrom !== undefined ? { pendingRenameFrom } : {}),
 		});
@@ -543,42 +637,24 @@ export class VaultStore {
 		});
 	}
 
+	/**
+	 * Clear the `pendingRenameFrom` field on an entry without changing anything else.
+	 * Used by SyncPushPhase when a rename fails on an adapter that never had the
+	 * source file — allows the push to fall back to writing content directly.
+	 */
+	async clearPendingRename(id: string): Promise<void> {
+		const entry = this.entries().get(id);
+		if (!entry) return;
+
+		const { pendingRenameFrom: _old, ...rest } = entry;
+		await this.put(rest);
+	}
+
 	//
 	// =========================
 	// INTERNAL
 	// =========================
 	//
-
-	/**
-	 * Factory for creating a VaultEntry with sensible defaults.
-	 * Only used within this class to reduce boilerplate and jscpd clones.
-	 */
-	makeEntry(overrides: {
-		workspaceId: string;
-		name: string;
-		path: string;
-		type?: VaultEntryType;
-		content?: string;
-		pendingAdapters: string[];
-		parentId?: string | null;
-	}): VaultEntry {
-		return {
-			id: crypto.randomUUID(),
-			parentId: overrides.parentId ?? null,
-			type: overrides.type ?? VAULT_ENTRY_TYPES.FILE,
-			createdAt: Date.now(),
-			updatedAt: Date.now(),
-			deleted: false,
-			revision: 1,
-			workspaceId: overrides.workspaceId,
-			name: overrides.name,
-			path: overrides.path,
-			pendingAdapters: overrides.pendingAdapters,
-			...(overrides.content !== undefined
-				? { content: overrides.content }
-				: {}),
-		};
-	}
 
 	async put(entry: VaultEntry) {
 		await this.database.put(entry);

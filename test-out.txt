@@ -1,0 +1,369 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.8 [39m[90mC:/Users/hohen/km-test[39m
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mscheduleSync (push)[2m > [22m[2mshould push pending entries to adapters
+[22m[39m[Sync] Starting pull phase for 1 adapter(s)
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mscheduleSync (push)[2m > [22m[2mshould push pending entries to adapters
+[22m[39m[Sync] Pulling 0 entries from test-fs...
+
+[90mstdout[2m | src/app/core/vault/__tests__/vault-reconciler.spec.ts[2m > [22m[2mVaultReconciler (via VaultStore public API)[2m > [22m[2mapplyExternalFile[2m > [22m[2mshould overwrite existing entry with no pending changes
+[22m[39m[Vault] External file entry detected for "note.md" from adapter "remote-1"
+
+stderr | src/app/core/vault/__tests__/vault-store.spec.ts > VaultStore > createFile > should not create file without active workspace
+VaultStore: no active workspace, cannot create file
+
+[90mstdout[2m | src/app/core/vault/__tests__/vault-reconciler.spec.ts[2m > [22m[2mVaultReconciler (via VaultStore public API)[2m > [22m[2mapplyExternalFile[2m > [22m[2mshould create conflict copy when local pending changes exist and content differs
+[22m[39m[Vault] External file entry detected for "note.md" from adapter "remote-1"
+
+stderr | src/app/core/vault/__tests__/vault-reconciler.spec.ts > VaultReconciler (via VaultStore public API) > applyExternalFile > should create conflict copy when local pending changes exist and content differs
+[Vault] Local pending changes detected for "note.md" ÔÇö checking for content conflicts
+
+stderr | src/app/core/vault/__tests__/vault-reconciler.spec.ts > VaultReconciler (via VaultStore public API) > applyExternalFile > should create conflict copy when local pending changes exist and content differs
+[Vault] Conflict detected for "note.md" ÔÇö created "note.conflict-remote-1.md"
+
+[90mstdout[2m | src/app/core/vault/__tests__/vault-reconciler.spec.ts[2m > [22m[2mVaultReconciler (via VaultStore public API)[2m > [22m[2mapplyExternalFile[2m > [22m[2mshould NOT create conflict copy when external content matches local
+[22m[39m[Vault] External file entry detected for "note.md" from adapter "remote-1"
+[Vault] No content conflict for "note.md" ÔÇö marking as synced with "remote-1"
+
+stderr | src/app/core/vault/__tests__/vault-reconciler.spec.ts > VaultReconciler (via VaultStore public API) > applyExternalFile > should NOT create conflict copy when external content matches local
+[Vault] Local pending changes detected for "note.md" ÔÇö checking for content conflicts
+
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-store.spec.ts[2m > [22mVaultStore[2m > [22mworkspace lifecycle[2m > [22mshould have null workspaceId when no workspace active[32m 26[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-store.spec.ts[2m > [22mVaultStore[2m > [22mworkspace lifecycle[2m > [22mshould reflect active workspace ID[32m 5[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-store.spec.ts[2m > [22mVaultStore[2m > [22mcreateFile[2m > [22mshould create a file entry[32m 18[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-store.spec.ts[2m > [22mVaultStore[2m > [22mcreateFile[2m > [22mshould file be findable by path[32m 3[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-store.spec.ts[2m > [22mVaultStore[2m > [22mcreateFile[2m > [22mshould auto-dedup file name on collision[32m 6[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-store.spec.ts[2m > [22mVaultStore[2m > [22mcreateFile[2m > [22mshould set pendingAdapters from active adapters[32m 7[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-store.spec.ts[2m > [22mVaultStore[2m > [22mcreateFile[2m > [22mshould not create file without active workspace[32m 4[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-store.spec.ts[2m > [22mVaultStore[2m > [22mcreateFolder[2m > [22mshould create a folder entry[32m 4[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-store.spec.ts[2m > [22mVaultStore[2m > [22mcreateFolder[2m > [22mshould auto-dedup folder name on collision[32m 9[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-store.spec.ts[2m > [22mVaultStore[2m > [22mupdateFile[2m > [22mshould update file content and increment revision[32m 5[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-store.spec.ts[2m > [22mVaultStore[2m > [22mupdateFile[2m > [22mshould set pendingAdapters on update[32m 6[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-store.spec.ts[2m > [22mVaultStore[2m > [22mupdateFile[2m > [22mshould be no-op for non-existent entry[32m 4[2mms[22m[39m
+stderr | src/app/core/vault/__tests__/vault-reconciler.spec.ts > VaultReconciler (via VaultStore public API) > applyExternalFolder > should skip if path is taken by a file
+[Vault] Path "clash.md" is a file locally but external source has it as a directory ÔÇö skipping
+
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-reconciler.spec.ts[2m > [22mVaultReconciler (via VaultStore public API)[2m > [22mapplyExternalFile[2m > [22mshould create a new entry for unknown path[32m 50[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-reconciler.spec.ts[2m > [22mVaultReconciler (via VaultStore public API)[2m > [22mapplyExternalFile[2m > [22mshould mark new entry as pending for other adapters[32m 6[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-reconciler.spec.ts[2m > [22mVaultReconciler (via VaultStore public API)[2m > [22mapplyExternalFile[2m > [22mshould overwrite existing entry with no pending changes[32m 12[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-reconciler.spec.ts[2m > [22mVaultReconciler (via VaultStore public API)[2m > [22mapplyExternalFile[2m > [22mshould create conflict copy when local pending changes exist and content differs[32m 5[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-reconciler.spec.ts[2m > [22mVaultReconciler (via VaultStore public API)[2m > [22mapplyExternalFile[2m > [22mshould NOT create conflict copy when external content matches local[32m 8[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-reconciler.spec.ts[2m > [22mVaultReconciler (via VaultStore public API)[2m > [22mapplyExternalFile[2m > [22mshould restore a soft-deleted entry when external file appears[32m 5[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-reconciler.spec.ts[2m > [22mVaultReconciler (via VaultStore public API)[2m > [22mapplyExternalFolder[2m > [22mshould create a folder entry for new path[32m 3[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-reconciler.spec.ts[2m > [22mVaultReconciler (via VaultStore public API)[2m > [22mapplyExternalFolder[2m > [22mshould skip if folder already exists[32m 5[2mms[22m[39m
+[90mstdout[2m | src/app/core/vault/__tests__/vault-store.spec.ts[2m > [22m[2mVaultStore[2m > [22m[2mdelete[2m > [22m[2mshould cascade delete to children when deleting a folder
+[22m[39mDerived parent folder for new file: {
+  id: [32m'7d976d7a-f2ad-4be0-a17d-a3b277924ada'[39m,
+  parentId: [1mnull[22m,
+  type: [32m'folder'[39m,
+  createdAt: [33m1780748682679[39m,
+  updatedAt: [33m1780748682679[39m,
+  deleted: [33mfalse[39m,
+  revision: [33m1[39m,
+  workspaceId: [32m'e5797623-b332-4ae1-855c-fe1d3a01783d'[39m,
+  name: [32m'Projects'[39m,
+  path: [32m'Projects'[39m,
+  pendingAdapters: [ [32m'test-fs'[39m ]
+} Projects Projects/overview.md
+
+stderr | src/app/core/vault/__tests__/vault-reconciler.spec.ts > VaultReconciler (via VaultStore public API) > applyExternalRename > should preserve local changes as a new entry on rename conflict
+[Vault] External rename conflict for "old.md" Ôćĺ "new.md" ÔÇö local changes preserved
+
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-reconciler.spec.ts[2m > [22mVaultReconciler (via VaultStore public API)[2m > [22mapplyExternalFolder[2m > [22mshould skip if path is taken by a file[32m 5[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-reconciler.spec.ts[2m > [22mVaultReconciler (via VaultStore public API)[2m > [22mapplyExternalRename[2m > [22mshould apply a clean external rename[32m 4[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-reconciler.spec.ts[2m > [22mVaultReconciler (via VaultStore public API)[2m > [22mapplyExternalRename[2m > [22mshould preserve local changes as a new entry on rename conflict[32m 4[2mms[22m[39m
+[90mstdout[2m | src/app/core/vault/__tests__/vault-store.spec.ts[2m > [22m[2mVaultStore[2m > [22m[2mrenameEntry[2m > [22m[2mshould cascade rename folder children
+[22m[39mDerived parent folder for new file: {
+  id: [32m'f43de9ca-3117-433d-b30c-186aeb693b9a'[39m,
+  parentId: [1mnull[22m,
+  type: [32m'folder'[39m,
+  createdAt: [33m1780748682690[39m,
+  updatedAt: [33m1780748682690[39m,
+  deleted: [33mfalse[39m,
+  revision: [33m1[39m,
+  workspaceId: [32m'3d553013-b3d3-4ea1-8725-9a2080c66ad3'[39m,
+  name: [32m'OldFolder'[39m,
+  path: [32m'OldFolder'[39m,
+  pendingAdapters: [ [32m'test-fs'[39m ]
+} OldFolder OldFolder/file.md
+
+ [32mÔťô[39m src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22mSyncEngineService[2m > [22minitial state[2m > [22mshould start with no sync error[32m 27[2mms[22m[39m
+ [32mÔťô[39m src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22mSyncEngineService[2m > [22minitial state[2m > [22mshould clear error state via clearSyncError[32m 4[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-store.spec.ts[2m > [22mVaultStore[2m > [22mdelete[2m > [22mshould soft-delete a file[32m 4[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-store.spec.ts[2m > [22mVaultStore[2m > [22mdelete[2m > [22mshould cascade delete to children when deleting a folder[32m 6[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-store.spec.ts[2m > [22mVaultStore[2m > [22mrenameEntry[2m > [22mshould rename a file[32m 3[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-store.spec.ts[2m > [22mVaultStore[2m > [22mrenameEntry[2m > [22mshould set pendingRenameFrom on rename[32m 3[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-store.spec.ts[2m > [22mVaultStore[2m > [22mrenameEntry[2m > [22mshould cascade rename folder children[32m 3[2mms[22m[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-store.spec.ts[2m > [22mVaultStore[2m > [22mrenameEntry[2m > [22mshould auto-dedup rename destination on collision[32m 4[2mms[22m[39m
+ [31m├Ś[39m src/app/core/vault/__tests__/vault-store.spec.ts[2m > [22mVaultStore[2m > [22mentriesNeedingSync[2m > [22mshould return entries with pending adapters[32m 14[2mms[22m[39m
+[31m   Ôćĺ expected 1 to be 2 // Object.is equality[39m
+ [32mÔťô[39m src/app/core/vault/__tests__/vault-store.spec.ts[2m > [22mVaultStore[2m > [22mmarkAdapterSynced[2m > [22mshould clear pendingRenameFrom when fully synced[32m 4[2mms[22m[39m
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mscheduleSync (push)[2m > [22m[2mshould push pending entries to adapters
+[22m[39m[Sync] Pushing "note.md" to test-fs (deleted: false, pendingRenameFrom: undefined) {
+  id: [32m'b241de8d-1f56-430d-9376-9793797cd497'[39m,
+  parentId: [1mnull[22m,
+  type: [32m'file'[39m,
+  createdAt: [33m1780748682641[39m,
+  updatedAt: [33m1780748682641[39m,
+  deleted: [33mfalse[39m,
+  revision: [33m1[39m,
+  workspaceId: [32m'743d86af-fef7-4421-9207-9af6e2ac2c76'[39m,
+  name: [32m'note.md'[39m,
+  path: [32m'note.md'[39m,
+  pendingAdapters: [ [32m'test-fs'[39m ],
+  content: [32m'hello world'[39m
+}
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mscheduleSync (push)[2m > [22m[2mshould push deleted entries to adapters
+[22m[39m[Sync] Starting pull phase for 1 adapter(s)
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mscheduleSync (push)[2m > [22m[2mshould push deleted entries to adapters
+[22m[39m[Sync] Pulling 0 entries from test-fs...
+
+ [32mÔťô[39m src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22mSyncEngineService[2m > [22mscheduleSync (push)[2m > [22mshould push pending entries to adapters[33m 1140[2mms[22m[39m
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mscheduleSync (push)[2m > [22m[2mshould push rename operations to adapters
+[22m[39m[Sync] Starting pull phase for 1 adapter(s)
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mscheduleSync (push)[2m > [22m[2mshould push rename operations to adapters
+[22m[39m[Sync] Pulling 0 entries from test-fs...
+
+ [31m├Ś[39m src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22mSyncEngineService[2m > [22mscheduleSync (push)[2m > [22mshould push deleted entries to adapters[33m 1123[2mms[22m[39m
+[31m   Ôćĺ promise resolved "'temporary'" instead of rejecting[39m
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mscheduleSync (push)[2m > [22m[2mshould push rename operations to adapters
+[22m[39m[Sync] Pushing "old.md" to test-fs (deleted: false, pendingRenameFrom: undefined) {
+  id: [32m'4ec050d7-f76b-41de-86bc-5e843fefc8e9'[39m,
+  parentId: [1mnull[22m,
+  type: [32m'file'[39m,
+  createdAt: [33m1780748684885[39m,
+  updatedAt: [33m1780748684885[39m,
+  deleted: [33mfalse[39m,
+  revision: [33m1[39m,
+  workspaceId: [32m'ccf0c293-4502-4a56-add5-89bb8a74ad1c'[39m,
+  name: [32m'old.md'[39m,
+  path: [32m'old.md'[39m,
+  pendingAdapters: [ [32m'test-fs'[39m ],
+  content: [32m'rename me'[39m
+}
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mscheduleSync (push)[2m > [22m[2mshould set syncFailed on push error
+[22m[39m[Sync] Starting pull phase for 1 adapter(s)
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mscheduleSync (push)[2m > [22m[2mshould set syncFailed on push error
+[22m[39m[Sync] Pulling 0 entries from test-fs...
+
+ [31m├Ś[39m src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22mSyncEngineService[2m > [22mscheduleSync (push)[2m > [22mshould push rename operations to adapters[33m 1111[2mms[22m[39m
+[31m   Ôćĺ promise resolved "'rename me'" instead of rejecting[39m
+stderr | src/app/core/sync/__tests__/sync-engine.spec.ts > SyncEngineService > scheduleSync (push) > should set syncFailed on push error
+[Sync] Push failed for note.md on test-fs: Disk full Error: Disk full
+    at TestFsAdapter.testAdapter.write (C:/Users/hohen/km-test/src/app/core/sync/__tests__/sync-engine.spec.ts:210:11)
+    at SyncPushPhase.execute (C:/Users/hohen/km-test/src/app/core/sync/sync-push-phase.ts:52:21)
+    at SyncEngineService.runSync (C:/Users/hohen/km-test/src/app/core/sync/sync-engine.ts:186:25)
+    at SyncEngineService.scheduleSync (C:/Users/hohen/km-test/src/app/core/sync/sync-engine.ts:88:13)
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mscheduleSync (push)[2m > [22m[2mshould set syncFailed on push error
+[22m[39m[Sync] Pushing "note.md" to test-fs (deleted: false, pendingRenameFrom: undefined) {
+  id: [32m'2ef9f72c-8440-43c1-bc5d-efb60906c11a'[39m,
+  parentId: [1mnull[22m,
+  type: [32m'file'[39m,
+  createdAt: [33m1780748685997[39m,
+  updatedAt: [33m1780748685997[39m,
+  deleted: [33mfalse[39m,
+  revision: [33m1[39m,
+  workspaceId: [32m'c6156708-ff03-4608-87ac-a434bd77c7ca'[39m,
+  name: [32m'note.md'[39m,
+  path: [32m'note.md'[39m,
+  pendingAdapters: [ [32m'test-fs'[39m ],
+  content: [32m'content'[39m
+}
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mforcePull[2m > [22m[2mshould import files from adapters
+[22m[39m[Sync] Starting pull phase for 1 adapter(s)
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mforcePull[2m > [22m[2mshould import files from adapters
+[22m[39m[Sync] Pulling 3 entries from test-fs...
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mforcePull[2m > [22m[2mshould orphan-detect vault entries not on remote after pull
+[22m[39m[Sync] Starting pull phase for 1 adapter(s)
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mforcePull[2m > [22m[2mshould orphan-detect vault entries not on remote after pull
+[22m[39m[Sync] Pulling 0 entries from test-fs...
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mforcePull[2m > [22m[2mshould orphan-detect vault entries not on remote after pull
+[22m[39m[Sync] Starting pull phase for 1 adapter(s)
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mforcePull[2m > [22m[2mshould orphan-detect vault entries not on remote after pull
+[22m[39m[Sync] Pulling 0 entries from test-fs...
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mforcePull[2m > [22m[2mshould not orphan-remove entries with pending adapters
+[22m[39m[Sync] Starting pull phase for 1 adapter(s)
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mforcePull[2m > [22m[2mshould not orphan-remove entries with pending adapters
+[22m[39m[Sync] Pulling 0 entries from test-fs...
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mforcePull[2m > [22m[2mshould not orphan-remove entries with pending adapters
+[22m[39m[Sync] Starting pull phase for 1 adapter(s)
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mforcePull[2m > [22m[2mshould not orphan-remove entries with pending adapters
+[22m[39m[Sync] Pulling 0 entries from test-fs...
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mforcePull[2m > [22m[2mshould set syncFailed on pull error
+[22m[39m[Sync] Starting pull phase for 1 adapter(s)
+
+stderr | src/app/core/sync/__tests__/sync-engine.spec.ts > SyncEngineService > forcePull > should set syncFailed on pull error
+[Sync] Sync pull failed for test-fs: Connection lost Error: Connection lost
+    at TestFsAdapter.testAdapter.list (C:/Users/hohen/km-test/src/app/core/sync/__tests__/sync-engine.spec.ts:288:11)
+    at SyncPullPhase.pullOneAdapter (C:/Users/hohen/km-test/src/app/core/sync/sync-pull-phase.ts:47:36)
+    at SyncPullPhase.execute (C:/Users/hohen/km-test/src/app/core/sync/sync-pull-phase.ts:24:16)
+    at SyncEngineService.forcePull (C:/Users/hohen/km-test/src/app/core/sync/sync-engine.ts:102:25)
+    at C:/Users/hohen/km-test/src/app/core/sync/__tests__/sync-engine.spec.ts:291:4
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2msyncAll (pull + push)[2m > [22m[2mshould pull then push
+[22m[39m[Sync] Starting pull phase for 1 adapter(s)
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2msyncAll (pull + push)[2m > [22m[2mshould pull then push
+[22m[39m[Sync] Pulling 1 entries from test-fs...
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2msyncAll (pull + push)[2m > [22m[2mshould push vault changes after pulling external ones
+[22m[39m[Sync] Starting pull phase for 1 adapter(s)
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2msyncAll (pull + push)[2m > [22m[2mshould push vault changes after pulling external ones
+[22m[39m[Sync] Pulling 1 entries from test-fs...
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2msyncAll (pull + push)[2m > [22m[2mshould push vault changes after pulling external ones
+[22m[39m[Sync] Starting pull phase for 1 adapter(s)
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2msyncAll (pull + push)[2m > [22m[2mshould push vault changes after pulling external ones
+[22m[39m[Sync] Pulling 1 entries from test-fs...
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mwatch integration[2m > [22m[2mshould start and stop watching
+[22m[39m[Sync] Received 1 external change(s) from test-fs: [ { type: [32m'create'[39m, path: [32m'watch-test.md'[39m } ]
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mwatch integration[2m > [22m[2mshould start and stop watching
+[22m[39m[Sync] Starting pull phase for 1 adapter(s)
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mwatch integration[2m > [22m[2mshould start and stop watching
+[22m[39m[Sync] Pulling 1 entries from test-fs...
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mwatch integration[2m > [22m[2mshould handle external events through watch
+[22m[39m[Sync] Received 1 external change(s) from test-fs: [ { type: [32m'create'[39m, path: [32m'watch-file.md'[39m } ]
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mwatch integration[2m > [22m[2mshould handle external events through watch
+[22m[39m[Sync] Starting pull phase for 1 adapter(s)
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mwatch integration[2m > [22m[2mshould handle external events through watch
+[22m[39m[Sync] Pulling 1 entries from test-fs...
+
+ [32mÔťô[39m src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22mSyncEngineService[2m > [22mscheduleSync (push)[2m > [22mshould set syncFailed on push error[33m 1108[2mms[22m[39m
+ [32mÔťô[39m src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22mSyncEngineService[2m > [22mforcePull[2m > [22mshould import files from adapters[32m 8[2mms[22m[39m
+ [32mÔťô[39m src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22mSyncEngineService[2m > [22mforcePull[2m > [22mshould orphan-detect vault entries not on remote after pull[32m 4[2mms[22m[39m
+ [32mÔťô[39m src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22mSyncEngineService[2m > [22mforcePull[2m > [22mshould not orphan-remove entries with pending adapters[32m 7[2mms[22m[39m
+ [32mÔťô[39m src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22mSyncEngineService[2m > [22mforcePull[2m > [22mshould set syncFailed on pull error[32m 5[2mms[22m[39m
+ [32mÔťô[39m src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22mSyncEngineService[2m > [22msyncAll (pull + push)[2m > [22mshould pull then push[32m 3[2mms[22m[39m
+ [31m├Ś[39m src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22mSyncEngineService[2m > [22msyncAll (pull + push)[2m > [22mshould push vault changes after pulling external ones[32m 4[2mms[22m[39m
+[31m   Ôćĺ TestFsAdapter: file not found "local.md"[39m
+ [32mÔťô[39m src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22mSyncEngineService[2m > [22mwatch integration[2m > [22mshould start and stop watching[32m 64[2mms[22m[39m
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mwatch integration[2m > [22m[2mshould handle external delete through watch
+[22m[39m[Sync] Starting pull phase for 1 adapter(s)
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mwatch integration[2m > [22m[2mshould handle external delete through watch
+[22m[39m[Sync] Pulling 0 entries from test-fs...
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mwatch integration[2m > [22m[2mshould handle external delete through watch
+[22m[39m[Sync] Received 1 external change(s) from test-fs: [ { type: [32m'delete'[39m, path: [32m'delete-me.md'[39m } ]
+
+ [32mÔťô[39m src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22mSyncEngineService[2m > [22mwatch integration[2m > [22mshould handle external events through watch[32m 61[2mms[22m[39m
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mwatch integration[2m > [22m[2mshould handle external rename through watch
+[22m[39m[Sync] Received 1 external change(s) from test-fs: [ { type: [32m'rename'[39m, path: [32m'new-watch.md'[39m, oldPath: [32m'old-watch.md'[39m } ]
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mwatch integration[2m > [22m[2mshould handle external rename through watch
+[22m[39m[Sync] Starting pull phase for 1 adapter(s)
+
+[90mstdout[2m | src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22m[2mSyncEngineService[2m > [22m[2mwatch integration[2m > [22m[2mshould handle external rename through watch
+[22m[39m[Sync] Pulling 1 entries from test-fs...
+
+ [32mÔťô[39m src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22mSyncEngineService[2m > [22mwatch integration[2m > [22mshould handle external delete through watch[32m 63[2mms[22m[39m
+ [32mÔťô[39m src/app/core/sync/__tests__/sync-engine.spec.ts[2m > [22mSyncEngineService[2m > [22mwatch integration[2m > [22mshould handle external rename through watch[32m 61[2mms[22m[39m
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ» Failed Tests 4 ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+
+ FAIL  src/app/core/sync/__tests__/sync-engine.spec.ts > SyncEngineService > scheduleSync (push) > should push deleted entries to adapters
+AssertionError: promise resolved "'temporary'" instead of rejecting
+
+- Expected:
+Error {
+  "message": "rejected promise",
+}
+
++ Received:
+"temporary"
+
+ ÔŁ» src/app/core/sync/__tests__/sync-engine.spec.ts:174:44
+    172|    await pushPromise;
+    173|
+    174|    await expect(testAdapter.read('temp.md')).rejects.toThrow();
+       |                                            ^
+    175|   });
+    176|
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[1/4]ÔÄ»
+
+ FAIL  src/app/core/sync/__tests__/sync-engine.spec.ts > SyncEngineService > scheduleSync (push) > should push rename operations to adapters
+AssertionError: promise resolved "'rename me'" instead of rejecting
+
+- Expected:
+Error {
+  "message": "rejected promise",
+}
+
++ Received:
+"rename me"
+
+ ÔŁ» src/app/core/sync/__tests__/sync-engine.spec.ts:196:43
+    194|    await pushPromise;
+    195|
+    196|    await expect(testAdapter.read('old.md')).rejects.toThrow();
+       |                                           ^
+    197|    expect(await testAdapter.read('new.md')).toBe('rename me');
+    198|   });
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[2/4]ÔÄ»
+
+ FAIL  src/app/core/sync/__tests__/sync-engine.spec.ts > SyncEngineService > syncAll (pull + push) > should push vault changes after pulling external ones
+Error: TestFsAdapter: file not found "local.md"
+ ÔŁ» TestFsAdapter.read src/app/core/adapters/test-fs.adapter.ts:65:5
+     63|   if (content === undefined) {
+     64|    return Promise.reject(
+     65|     new Error(`TestFsAdapter: file not found "${path}"`),
+       |     ^
+     66|    );
+     67|   }
+ ÔŁ» src/app/core/sync/__tests__/sync-engine.spec.ts:331:42
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[3/4]ÔÄ»
+
+ FAIL  src/app/core/vault/__tests__/vault-store.spec.ts > VaultStore > entriesNeedingSync > should return entries with pending adapters
+AssertionError: expected 1 to be 2 // Object.is equality
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ÔŁ» src/app/core/vault/__tests__/vault-store.spec.ts:311:46
+    309|    await vault.createFile('b.md', 'bbb');
+    310|
+    311|    expect(vault.entriesNeedingSync().length).toBe(2);
+       |                                              ^
+    312|
+    313|    // Mark one as synced
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[4/4]ÔÄ»
+
+
+[2m Test Files [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (3)[39m
+[2m      Tests [22m [1m[31m4 failed[39m[22m[2m | [22m[1m[32m43 passed[39m[22m[90m (47)[39m
+[2m   Start at [22m 14:24:39
+[2m   Duration [22m 8.09s[2m (transform 523ms, setup 2.05s, import 580ms, tests 5.05s, environment 5.65s)[22m
+

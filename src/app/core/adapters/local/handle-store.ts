@@ -13,6 +13,8 @@
  *   Version:  1
  *   Store:    "handles" — keyPath: "root" (string, e.g. "browser:km-test-2")
  */
+import { idbRequestToPromise } from '@core/utils/idb-request';
+
 export class HandleStore {
 	private db: IDBDatabase | null = null;
 	private openPromise: Promise<void> | null = null;
@@ -55,18 +57,9 @@ export class HandleStore {
 	 */
 	async set(root: string, handle: FileSystemDirectoryHandle): Promise<void> {
 		const db = await this.ensureOpen();
-		return new Promise<void>((resolve, reject) => {
-			const tx = db.transaction('handles', 'readwrite');
-			const store = tx.objectStore('handles');
-			const request = store.put({ root, handle });
-
-			request.onsuccess = () => {
-				resolve();
-			};
-			request.onerror = () => {
-				reject(new Error(request.error?.message));
-			};
-		});
+		const tx = db.transaction('handles', 'readwrite');
+		const store = tx.objectStore('handles');
+		await idbRequestToPromise(store.put({ root, handle }));
 	}
 
 	/**
@@ -75,26 +68,16 @@ export class HandleStore {
 	 */
 	async get(root: string): Promise<FileSystemDirectoryHandle | undefined> {
 		const db = await this.ensureOpen();
-		return new Promise<FileSystemDirectoryHandle | undefined>(
-			(resolve, reject) => {
-				const tx = db.transaction('handles', 'readonly');
-				const store = tx.objectStore('handles');
-				const request = store.get(root);
-
-				request.onsuccess = () => {
-					const entry = request.result as
-						| {
-								root: string;
-								handle: FileSystemDirectoryHandle;
-						  }
-						| undefined;
-					resolve(entry?.handle);
-				};
-				request.onerror = () => {
-					reject(new Error(request.error?.message));
-				};
-			},
-		);
+		const tx = db.transaction('handles', 'readonly');
+		const store = tx.objectStore('handles');
+		const result = await idbRequestToPromise<unknown>(store.get(root));
+		const entry = result as
+			| {
+					root: string;
+					handle: FileSystemDirectoryHandle;
+			  }
+			| undefined;
+		return entry?.handle;
 	}
 
 	/**
@@ -103,18 +86,9 @@ export class HandleStore {
 	 */
 	async remove(root: string): Promise<void> {
 		const db = await this.ensureOpen();
-		return new Promise<void>((resolve, reject) => {
-			const tx = db.transaction('handles', 'readwrite');
-			const store = tx.objectStore('handles');
-			const request = store.delete(root);
-
-			request.onsuccess = () => {
-				resolve();
-			};
-			request.onerror = () => {
-				reject(new Error(request.error?.message));
-			};
-		});
+		const tx = db.transaction('handles', 'readwrite');
+		const store = tx.objectStore('handles');
+		await idbRequestToPromise(store.delete(root));
 	}
 
 	/**
@@ -123,17 +97,8 @@ export class HandleStore {
 	 */
 	async getAllKeys(): Promise<string[]> {
 		const db = await this.ensureOpen();
-		return new Promise<string[]>((resolve, reject) => {
-			const tx = db.transaction('handles', 'readonly');
-			const store = tx.objectStore('handles');
-			const request = store.getAllKeys();
-
-			request.onsuccess = () => {
-				resolve(request.result as string[]);
-			};
-			request.onerror = () => {
-				reject(new Error(request.error?.message));
-			};
-		});
+		const tx = db.transaction('handles', 'readonly');
+		const store = tx.objectStore('handles');
+		return (await idbRequestToPromise(store.getAllKeys())) as string[];
 	}
 }

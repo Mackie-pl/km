@@ -65,7 +65,7 @@ export class SidebarComponent {
 		const prefix = '/e/';
 		const url = this.currentUrl();
 		if (!url.startsWith(prefix)) return null;
-		return decodeURIComponent(url.slice(prefix.length));
+		return url.slice(prefix.length);
 	});
 
 	/** Signal that stays in sync with the current router URL. */

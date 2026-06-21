@@ -7,15 +7,6 @@ export const DEVICE_TYPE = {
 
 export type DeviceType = (typeof DEVICE_TYPE)[keyof typeof DEVICE_TYPE];
 
-export const VAULT_OPERATION_TYPE = {
-	WRITE_FILE: 'write_file',
-	DELETE_FILE: 'delete_file',
-	RENAME_FILE: 'rename_file',
-} as const;
-
-export type VaultOperationType =
-	(typeof VAULT_OPERATION_TYPE)[keyof typeof VAULT_OPERATION_TYPE];
-
 export const PLATFORM = {
 	ANDROID: 'android',
 	WINDOWS: 'windows',

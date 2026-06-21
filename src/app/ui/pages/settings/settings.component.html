@@ -3,39 +3,69 @@
   Uses Tailwind utilities for layout; Lucide icons for theme indicators.
 -->
 <div class="max-w-md mx-auto p-6">
-  <h2 class="text-xl font-semibold mb-6 text-gray-900 dark:text-gray-100">
-    Settings
-  </h2>
+	<h2 class="text-xl font-semibold mb-6 text-gray-900 dark:text-gray-100">
+		Settings
+	</h2>
 
-  <!-- Theme Section -->
-  <section class="mb-6">
-    <h3
-      class="text-xs font-semibold uppercase tracking-wider mb-3 text-gray-500 dark:text-gray-400"
-    >
-      Appearance
-    </h3>
-    <div class="grid grid-cols-3 gap-3">
-      @for (t of themes; track t.value) {
-        <button
-          class="flex flex-col items-center gap-2 py-4 px-2 rounded-xl border-2 cursor-pointer transition-all duration-200"
-          [ngClass]="
-            theme() === t.value
-              ? 'border-indigo-500 dark:border-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 text-gray-900 dark:text-gray-100'
-              : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
-          "
-          (click)="setTheme(t.value)"
-        >
-          <!-- Lucide icon per theme -->
-          @if (t.value === "light") {
-            <svg lucideSun class="size-6"></svg>
-          } @else if (t.value === "dark") {
-            <svg lucideMoon class="size-6"></svg>
-          } @else {
-            <svg lucideMonitor class="size-6"></svg>
-          }
-          <span class="text-sm font-medium">{{ t.label }}</span>
-        </button>
-      }
-    </div>
-  </section>
+	<!-- Theme Section -->
+	<section class="mb-6">
+		<h3
+			class="text-xs font-semibold uppercase tracking-wider mb-3 text-gray-500 dark:text-gray-400"
+		>
+			Appearance
+		</h3>
+		<div class="grid grid-cols-3 gap-3">
+			@for (t of themes; track t.value) {
+				<app-theme-button
+					[value]="t.value"
+					[label]="t.label"
+					[selected]="theme() === t.value"
+					(select)="setTheme(t.value)"
+				/>
+			}
+		</div>
+	</section>
+
+	<!-- Debug Section -->
+	<section class="mb-6">
+		<h3
+			class="text-xs font-semibold uppercase tracking-wider mb-3 text-gray-500 dark:text-gray-400"
+		>
+			Developer
+		</h3>
+		<label
+			class="flex items-center justify-between py-3 px-4 rounded-xl cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-150"
+		>
+			<div class="flex flex-col">
+				<span
+					class="text-sm font-medium text-gray-900 dark:text-gray-100"
+				>
+					Sync debug logs
+				</span>
+				<span class="text-xs text-gray-500 dark:text-gray-400">
+					Show verbose sync events in the browser console
+				</span>
+			</div>
+			<button
+				type="button"
+				role="switch"
+				class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200"
+				[ngClass]="
+					debugSync().debugSync
+						? 'bg-indigo-500 dark:bg-indigo-400'
+						: 'bg-gray-300 dark:bg-gray-600'
+				"
+				(click)="toggleDebugSync()"
+			>
+				<span
+					class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transform transition duration-200"
+					[ngClass]="
+						debugSync().debugSync
+							? 'translate-x-5'
+							: 'translate-x-0'
+					"
+				></span>
+			</button>
+		</label>
+	</section>
 </div>

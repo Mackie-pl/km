@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { VaultStore } from '@vault/store';
 import { Router } from '@angular/router';
+import { navigateToEntry } from '@core/utils/router-utils';
 
 @Component({
 	selector: 'app-empty',
@@ -17,6 +18,6 @@ export class Empty {
 	async addNote(): Promise<void> {
 		const fileName = `untitled-${Date.now().toString()}.md`;
 		await this.vaultDb.createFile(fileName);
-		void this.router.navigate(['/e', fileName]);
+		void navigateToEntry(this.router, fileName);
 	}
 }

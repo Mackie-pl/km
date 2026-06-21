@@ -28,7 +28,7 @@ A cross-platform, minimalistic note-taking app built with Angular + Tauri 2.0.
 ```
 src/
   app/
-    core/          — Data layer (vault, sync, adapters, journal)
+    core/          — Data layer (vault, sync, adapters)
     ui/            — Angular components (sidebar, editor, settings, wizard)
   main.ts          — Bootstrap + E2E test hook (`__KM_TEST__`)
   styles.scss      — Tailwind v4 + Taiga UI theme

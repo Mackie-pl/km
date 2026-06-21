@@ -24,8 +24,16 @@
 		>
 	</div>
 
-	<!-- Right side: sync button (shown only when auto-sync failed in browser) + settings gear -->
+	<!-- Right side: search + sync (shown only when auto-sync failed in browser) + settings gear -->
 	<div class="flex items-center gap-1">
+		<button
+			class="flex items-center justify-center size-8 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
+			(click)="openSearch()"
+			aria-label="Search files"
+			title="Search (Ctrl+K)"
+		>
+			<svg lucideSearch class="size-5"></svg>
+		</button>
 		@if (!platformService.isDesktopTauri() && syncEngine.syncFailed()) {
 			<button
 				class="flex items-center justify-center size-8 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-red-500 dark:text-red-400 hover:bg-gray-200 dark:hover:bg-gray-800"
@@ -33,11 +41,11 @@
 				aria-label="Sync now — auto-sync failed"
 				[attr.title]="syncEngine.lastSyncError() ?? 'Sync now'"
 			>
-				@if (syncEngine.isSyncing()) {
-					<svg lucideRefreshCw class="size-5 animate-spin"></svg>
-				} @else {
-					<svg lucideRefreshCw class="size-5"></svg>
-				}
+				<svg
+					lucideRefreshCw
+					class="size-5"
+					[class.animate-spin]="syncEngine.isSyncing()"
+				></svg>
 			</button>
 		}
 

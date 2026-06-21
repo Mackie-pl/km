@@ -245,6 +245,180 @@ const DEFAULTS = {
 
 ---
 
+## Defensive Programming
+
+### ✅ Guard clauses — fail fast at the top
+
+Validate inputs, state, and preconditions immediately. Don't let bad data propagate.
+
+```typescript
+// ❌ BAD — processes with invalid state
+loadNotes() {
+  if (this.workspaceId()) {
+    this.fetchNotes(this.workspaceId());
+  }
+}
+
+// ✅ GOOD — guard clause, fail fast
+loadNotes() {
+  const id = this.workspaceId();
+  if (!id) return;
+  this.fetchNotes(id);
+}
+```
+
+```typescript
+// ✅ GOOD: Validate at function entry
+async deleteNote(id: string): Promise<void> {
+  if (!id.trim()) throw new Error('Cannot delete note: id is empty');
+  if (!this.notes().has(id)) throw new Error(`Note not found: ${id}`);
+  // ... proceed safely
+}
+```
+
+### ✅ Null/undefined safety — check before accessing
+
+Optional values must be narrowed before use. Never assume a value is present.
+
+```typescript
+// ❌ BAD
+this.note()!.content;
+
+// ✅ GOOD
+const note = this.note();
+if (note) {
+	render(note.content);
+}
+```
+
+When dealing with chained optional access, always provide a fallback:
+
+```typescript
+// ⚠️ Acceptable if the access chain is purely display-only
+const title = note?.title ?? 'Untitled';
+
+// ✅ Better: narrow explicitly when you need the value for logic
+const n = this.selectedNote();
+if (!n) return;
+process(n.content);
+```
+
+### ✅ Validate at every boundary — never trust external data
+
+Every point where data enters your system (forms, localStorage, IPC, file reads, URL params, `JSON.parse`) is a boundary. Validate immediately.
+
+```typescript
+// ✅ GOOD: Validate localStorage
+function loadTheme(): Theme {
+	const raw = localStorage.getItem('theme');
+	if (raw !== 'light' && raw !== 'dark') return 'light'; // fallback
+	return raw;
+}
+```
+
+```typescript
+// ✅ GOOD: Validate Tauri IPC response
+interface FileMeta {
+	readonly name: string;
+	readonly size: number;
+}
+function parseFileMeta(input: unknown): FileMeta {
+	if (typeof input !== 'object' || input === null)
+		throw new Error('Invalid file meta');
+	if (!('name' in input) || typeof input.name !== 'string')
+		throw new Error('File meta: name must be string');
+	if (!('size' in input) || typeof input.size !== 'number')
+		throw new Error('File meta: size must be number');
+	return { name: input.name, size: input.size };
+}
+```
+
+### ✅ Wrap third-party calls in try/catch
+
+Never assume external libraries, browser APIs, or Tauri commands won't throw.
+
+```typescript
+// ✅ GOOD
+async function readFile(path: string): Promise<string> {
+	try {
+		return await invoke('read_text_file', { path });
+	} catch (err) {
+		console.error(`Failed to read file: ${path}`, err);
+		throw new AppError(
+			ERROR_CODES.FILE_READ_ERROR,
+			`Could not read ${path}`,
+		);
+	}
+}
+```
+
+### ✅ Defensive copies — don't mutate shared state
+
+When receiving arrays or objects from external sources or signals, copy before mutating.
+
+```typescript
+// ❌ BAD — mutates the original array in place
+sortNotes() {
+  this.notes().sort((a, b) => a.title.localeCompare(b.title));
+}
+
+// ✅ GOOD — creates a sorted copy
+sortNotes() {
+  this.notes.update(list => [...list].sort((a, b) => a.title.localeCompare(b.title)));
+}
+```
+
+```typescript
+// ✅ GOOD: Copy before mutating external data
+updateNote(id: string, updates: Partial<Note>) {
+  this.notes.update(list =>
+    list.map(n => n.id === id ? { ...n, ...updates } : n)
+  );
+}
+```
+
+### ✅ Default/fallback values — always have a plan B
+
+Optional configuration, environment variables, and function parameters should have sensible defaults.
+
+```typescript
+// ✅ GOOD
+const SETTINGS_DEFAULTS = {
+	theme: 'light',
+	fontSize: 14,
+	autoSave: true,
+} as const;
+
+function loadSettings(
+	overrides?: Partial<typeof SETTINGS_DEFAULTS>,
+): typeof SETTINGS_DEFAULTS {
+	return { ...SETTINGS_DEFAULTS, ...overrides };
+}
+```
+
+### ✅ Prefer early returns to deep nesting
+
+Flatten conditional logic with early returns instead of deeply nested `if` blocks.
+
+```typescript
+// ❌ BAD — nested
+if (user) {
+	if (user.isActive) {
+		if (user.canEdit) {
+			// render editor
+		}
+	}
+}
+
+// ✅ GOOD — early returns
+if (!user) return;
+if (!user.isActive) return;
+if (!user.canEdit) return;
+// render editor
+```
+
+---
+
 ## Checklist
 
 Before committing code:
@@ -256,3 +430,8 @@ Before committing code:
 - [ ] API boundary types explicitly defined
 - [ ] Input props have explicit types
 - [ ] Mutable data marked `readonly` where appropriate
+- [ ] Guard clauses at function entry for all preconditions
+- [ ] External data validated at the boundary
+- [ ] Third-party calls wrapped in try/catch
+- [ ] Shared arrays/objects defensively copied before mutation
+- [ ] Early returns used to flatten deep nesting

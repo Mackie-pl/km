@@ -1,3 +1,4 @@
+import { idbRequestToPromise } from '@core/utils/idb-request';
 import type { VaultEntry } from './vault-entry';
 
 /**
@@ -58,7 +59,7 @@ export class VaultDatabase {
 		const store = tx.objectStore('entries');
 		const index = store.index('workspaceId');
 		const request = index.getAll(wsId) as IDBRequest<VaultEntry[]>;
-		return this.awaitRequest(request);
+		return idbRequestToPromise(request);
 	}
 
 	/** Persist a single entry — insert or update. */
@@ -67,19 +68,45 @@ export class VaultDatabase {
 		const tx = this.db.transaction('entries', 'readwrite');
 		const store = tx.objectStore('entries');
 		const request = store.put(entry);
-		await this.awaitRequest(request);
+		await idbRequestToPromise(request);
 	}
 
-	// ── Private helpers ──
+	/** Delete all entries for a given workspace. Used when removing a workspace. */
+	async deleteAllByWorkspaceId(wsId: string): Promise<void> {
+		if (!this.db) return;
+		const entries = await this.loadAll(wsId);
+		if (entries.length === 0) return;
 
-	private awaitRequest<T>(request: IDBRequest<T>): Promise<T> {
-		return new Promise<T>((resolve, reject) => {
-			request.onsuccess = () => {
-				resolve(request.result);
+		const tx = this.db.transaction('entries', 'readwrite');
+		const store = tx.objectStore('entries');
+		for (const entry of entries) {
+			store.delete(entry.id);
+		}
+
+		return new Promise<void>((resolve, reject) => {
+			tx.oncomplete = () => {
+				resolve();
 			};
-			request.onerror = () => {
-				reject(new Error(request.error?.message));
+			tx.onerror = () => {
+				reject(new Error(tx.error?.message ?? 'Transaction failed'));
 			};
 		});
+	}
+
+	/** Delete all entries from the store. Used in tests to reset state. */
+	async clear(): Promise<void> {
+		if (!this.db) return;
+		const tx = this.db.transaction('entries', 'readwrite');
+		const store = tx.objectStore('entries');
+		const request = store.clear();
+		await idbRequestToPromise(request);
+	}
+
+	/** Close the database connection. Safe to call multiple times. */
+	close(): void {
+		if (this.db) {
+			this.db.close();
+			this.db = null;
+		}
 	}
 }

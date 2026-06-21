@@ -1,4 +1,4 @@
-import { TuiRoot } from '@taiga-ui/core';
+import { TuiRoot } from '@taiga-ui/core/components/root';
 import { TuiDialogService } from '@taiga-ui/core/portals/dialog';
 import { PolymorpheusComponent } from '@taiga-ui/polymorpheus';
 import { Component, effect, inject, signal } from '@angular/core';
@@ -13,6 +13,8 @@ import { WorkspaceConfig } from '@ui/pages/workspace-config/workspace-config';
 import { SidebarComponent } from '@ui/partials/sidebar/sidebar.component';
 import { HeaderComponent } from '@ui/partials/header/header.component';
 import { NoWorkspaceComponent } from './no-workspace/no-workspace.component';
+import { SearchOverlayComponent } from '@ui/partials/search-overlay/search-overlay.component';
+import { SearchService } from '@core/services/search.service';
 
 /**
  * App shell — sidebar + header + main content area.
@@ -31,9 +33,14 @@ import { NoWorkspaceComponent } from './no-workspace/no-workspace.component';
 		SidebarComponent,
 		HeaderComponent,
 		NoWorkspaceComponent,
+		SearchOverlayComponent,
 	],
 	templateUrl: './app.component.html',
 	styleUrl: './app.component.scss',
+	host: {
+		'(document:keydown.meta.k)': 'onSearchShortcut($event)',
+		'(document:keydown.control.k)': 'onSearchShortcut($event)',
+	},
 })
 export class AppComponent {
 	private readonly router = inject(Router);
@@ -41,6 +48,7 @@ export class AppComponent {
 	private readonly dialogService = inject(TuiDialogService);
 	readonly workspaceService = inject(WorkspaceService);
 	private readonly vaultDb = inject(VaultStore);
+	readonly searchService = inject(SearchService);
 
 	private nativeMenuInitialized = false;
 
@@ -49,8 +57,6 @@ export class AppComponent {
 	private readonly _theme = inject(ThemeService);
 
 	constructor() {
-		console.warn('AppComponent initialized');
-
 		// Defer vault (IndexedDB) initialization until a workspace is active.
 		// This prevents loading entries for no workspace, and ensures the vault
 		// always scopes data to the current workspace.
@@ -85,6 +91,12 @@ export class AppComponent {
 				console.error('Failed to initialize native menu:', error);
 			});
 		});
+	}
+
+	/** Open the search overlay on Cmd+K / Ctrl+K. */
+	onSearchShortcut(event: Event): void {
+		event.preventDefault();
+		this.searchService.open();
 	}
 
 	/** Whether the sidebar is collapsed on desktop (visible by default) */

@@ -1,0 +1,27 @@
+<div
+	class="flex items-center gap-2 px-4 py-2 border-b border-gray-200 dark:border-gray-700"
+>
+	<!-- Icon picker button — opens the full dialog -->
+	<button
+		class="flex items-center justify-center size-8 rounded-lg border-none bg-transparent cursor-pointer text-lg transition-colors duration-150 hover:bg-gray-200 dark:hover:bg-gray-800"
+		(click)="openIconPicker()"
+		[attr.aria-label]="'Note icon'"
+	>
+		@if (isLucideIcon()) {
+			<ng-container [ngComponentOutlet]="lucideComponent()" />
+		} @else {
+			{{ displayIcon() }}
+		}
+	</button>
+
+	<!-- Tag pills -->
+	<div class="flex items-center gap-1.5 flex-wrap">
+		@for (tag of displayTags(); track tag) {
+			<span
+				class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+			>
+				{{ tag }}
+			</span>
+		}
+	</div>
+</div>

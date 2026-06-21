@@ -22,22 +22,25 @@ const isShowDirectoryPickerSupported = (
 };
 
 /**
- * Local extension of FileSystemDirectoryHandle to include the `entries()` method
- * and permission methods not yet in TypeScript's DOM lib.
+ * Augment the global FileSystemDirectoryHandle with methods not yet in TypeScript's DOM lib.
+ *
+ * - `entries()` — exists at runtime (the handle is async iterable) but isn't typed.
+ * - `queryPermission()` / `requestPermission()` — available in browsers but not in TS yet.
+ *
+ * Remove this block once TypeScript adds these to its DOM definitions.
  */
-interface FileSystemDirectoryHandleWithEntries extends Omit<
-	FileSystemDirectoryHandle,
-	'entries'
-> {
-	entries(): AsyncIterableIterator<
-		[string, FileSystemDirectoryHandle | FileSystemFileHandle]
-	>;
-	queryPermission(descriptor?: {
-		mode?: 'read' | 'readwrite';
-	}): Promise<'granted' | 'denied' | 'prompt'>;
-	requestPermission(descriptor?: {
-		mode?: 'read' | 'readwrite';
-	}): Promise<'granted' | 'denied' | 'prompt'>;
+declare global {
+	interface FileSystemDirectoryHandle {
+		entries(): AsyncIterableIterator<
+			[string, FileSystemDirectoryHandle | FileSystemFileHandle]
+		>;
+		queryPermission(descriptor?: {
+			mode?: 'read' | 'readwrite';
+		}): Promise<'granted' | 'denied' | 'prompt'>;
+		requestPermission(descriptor?: {
+			mode?: 'read' | 'readwrite';
+		}): Promise<'granted' | 'denied' | 'prompt'>;
+	}
 }
 
 /**
@@ -264,9 +267,7 @@ export class BrowserFileSystemApiAdapter implements Adapter {
 		src: FileSystemDirectoryHandle,
 		dest: FileSystemDirectoryHandle,
 	): Promise<void> {
-		for await (const [name, handle] of (
-			src as FileSystemDirectoryHandleWithEntries
-		).entries()) {
+		for await (const [name, handle] of src.entries()) {
 			if (handle.kind === 'directory') {
 				const subDest = await dest.getDirectoryHandle(name, {
 					create: true,
@@ -318,9 +319,7 @@ export class BrowserFileSystemApiAdapter implements Adapter {
 		result: FileEntry[],
 		recursive?: boolean,
 	): Promise<void> {
-		for await (const [name, handle] of (
-			dirHandle as FileSystemDirectoryHandleWithEntries
-		).entries()) {
+		for await (const [name, handle] of dirHandle.entries()) {
 			const fullPath =
 				currentPath === '/' || currentPath === ''
 					? name
@@ -393,15 +392,12 @@ export class BrowserFileSystemApiAdapter implements Adapter {
 				`BrowserFsAdapter: no handle for root "${root}". Pick a folder first.`,
 			);
 
-		// Cast to extended interface for permission methods not yet in DOM lib
-		const handleWithPerms = handle as FileSystemDirectoryHandleWithEntries;
-
-		// 3. Lazy permission check — prompts only when user does actual file I/O
-		const permission = await handleWithPerms.queryPermission({
+		// Permission methods now available directly via global augmentation
+		const permission = await handle.queryPermission({
 			mode: 'readwrite',
 		});
 		if (permission !== 'granted') {
-			const result = await handleWithPerms.requestPermission({
+			const result = await handle.requestPermission({
 				mode: 'readwrite',
 			});
 			if (result !== 'granted') {
@@ -427,13 +423,12 @@ export class BrowserFileSystemApiAdapter implements Adapter {
 	async ensurePermission(root: string): Promise<boolean> {
 		try {
 			const handle = await this.resolveRoot(root);
-			const handleWithPerms =
-				handle as FileSystemDirectoryHandleWithEntries;
-			const perm = await handleWithPerms.queryPermission({
+			// Permission methods available directly via global augmentation
+			const perm = await handle.queryPermission({
 				mode: 'readwrite',
 			});
 			if (perm === 'granted') return true;
-			const result = await handleWithPerms.requestPermission({
+			const result = await handle.requestPermission({
 				mode: 'readwrite',
 			});
 			return result === 'granted';

@@ -110,7 +110,6 @@ UI -> IndexedDB directly.
 - Real markdown files are canonical
 - IndexedDB is rebuildable cache/index
 - Sync is asynchronous
-- Prefer append-only operation journal
 
 ---
 

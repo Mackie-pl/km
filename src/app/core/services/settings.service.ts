@@ -6,9 +6,9 @@ import { STORAGE_KEY } from '../types/constants';
  * Currently a skeleton — adapter settings have moved to workspace scope.
  * Ready for future global settings (e.g., editor preferences, UI layout).
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface AppSettings {
-	// Placeholder for future global settings
+	/** When true, verbose sync logs appear in the console. Default: false. */
+	debugSync?: boolean;
 }
 
 /**
@@ -22,7 +22,9 @@ function isValidAppSettings(value: unknown): value is AppSettings {
  * Factory function for default settings
  */
 function createDefaultSettings(): AppSettings {
-	return {};
+	return {
+		debugSync: false,
+	};
 }
 
 /**
@@ -48,6 +50,16 @@ export class SettingsService {
 			const current = this.settings();
 			this.persistSettings(current);
 		});
+	}
+
+	/**
+	 * Toggle sync debug logging on/off.
+	 */
+	toggleDebugSync(): void {
+		this.settings.update((s) => ({
+			...s,
+			debugSync: !(s.debugSync ?? false),
+		}));
 	}
 
 	/**
@@ -107,4 +119,3 @@ export class SettingsService {
 		}
 	}
 }
-

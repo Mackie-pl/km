@@ -1,0 +1,34 @@
+<!-- Expanded adapter management panel for a single workspace -->
+<div class="border-t border-gray-200 dark:border-gray-700 px-3 py-3">
+	@if (workspace().activeSyncAdapters.length > 0) {
+	<span
+		class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+	>
+		Sync Adapters
+	</span>
+
+	<div class="flex flex-col gap-2 mt-2 mb-4">
+		@for (adapterId of workspace().activeSyncAdapters; track adapterId) {
+		<app-adapter-row
+			[workspace]="workspace()"
+			[adapterId]="adapterId"
+			[isConfiguring]="isConfiguring(adapterId)"
+			(edit)="onEditAdapter(adapterId)"
+			(remove)="removeAdapter(adapterId)"
+			(configSave)="onAdapterConfigSave(adapterId, $event)"
+			(configCancel)="onAdapterConfigCancel()"
+		></app-adapter-row>
+		}
+	</div>
+	}
+
+	<app-add-adapter-section
+		[workspace]="workspace()"
+	></app-add-adapter-section>
+
+	@if (workspace().activeSyncAdapters.length === 0) {
+	<div class="text-xs text-gray-400 dark:text-gray-500 text-center py-2">
+		No sync adapters configured.
+	</div>
+	}
+</div>

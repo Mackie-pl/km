@@ -18,6 +18,12 @@ export interface WatchEvent {
 	oldPath?: string;
 }
 
+/** Result of an adapter connection test. */
+export interface ConnectionTestResult {
+	ok: boolean;
+	error?: string;
+}
+
 /**
  * Storage adapter — text-oriented file I/O abstraction.
  *
@@ -31,6 +37,13 @@ export interface Adapter {
 
 	isAvailable(): boolean;
 	pickWorkspaceFolder(): Promise<WorkspacePickResult | null>;
+
+	/**
+	 * Optional: test whether the remote/store is reachable with the given config.
+	 * Called during config form save to validate the connection before persisting.
+	 * Returns { ok: true } on success, { ok: false, error: string } on failure.
+	 */
+	testConnection?(config: AdapterConfig): Promise<ConnectionTestResult>;
 
 	/** Read a file's text content. */
 	read(path: string, root?: string): Promise<string>;
@@ -95,11 +108,46 @@ export interface TestFsAdapterConfig {
 	path: string;
 }
 
+/** Configuration for the Git protocol cloud adapter */
+export interface GitAdapterConfig {
+	readonly adapterId: 'git';
+	/** Remote repository URL (e.g. https://github.com/user/repo.git) */
+	repoUrl: string;
+	/** Branch to sync with (defaults to 'main') */
+	branch: string;
+	/** Personal Access Token for authentication */
+	token: string;
+	/** Author name for commits */
+	authorName: string;
+	/** Author email for commits */
+	authorEmail: string;
+	/** Polling interval in ms for watch() (default: 30000) */
+	pollIntervalMs: number;
+}
+
+/** Configuration stub for the future GDrive cloud adapter */
+export interface GDriveAdapterConfig {
+	readonly adapterId: 'gdrive';
+	/** Google Drive folder ID or path */
+	path: string;
+}
+
 /** Discriminated union of all adapter-specific configurations */
 export type AdapterConfig =
 	| TauriFsAdapterConfig
 	| BrowserFsAdapterConfig
-	| TestFsAdapterConfig;
+	| TestFsAdapterConfig
+	| GitAdapterConfig
+	| GDriveAdapterConfig;
 
 /** All known adapter IDs — derived from the discriminated union */
 export type AdapterId = AdapterConfig['adapterId'];
+
+/**
+ * Extract the root path/identifier from an adapter config.
+ * Local adapters store it in `path`, git uses `repoUrl`.
+ */
+export function getAdapterRoot(config: AdapterConfig): string {
+	if (config.adapterId === 'git') return config.repoUrl;
+	return config.path;
+}

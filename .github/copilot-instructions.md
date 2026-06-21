@@ -18,6 +18,8 @@ You are an expert full-stack developer helping build a cross-platform, minimalis
 
 7. **Small Files** — If a file exceeds ~200 lines, it's probably doing too much. Split by responsibility.
 
+8. **No IIAFE Nesting** — Never wrap an `await` expression in an anonymous `async () => {}()` (IIAFE) just to assign a promise to a variable. Extract a named private method instead. The IIAFE pattern adds unnecessary nesting, reduces readability, and makes stack traces harder to follow. A flat `#method` is always clearer.
+
 ## Tech Stack
 
 - **Frontend:** Angular (Latest), TypeScript
@@ -37,6 +39,7 @@ Core principles:
 - **No magic strings/numbers** — use `readonly const` objects or enum-like structures
 - **Type guards** — narrow types at boundaries (JSON, APIs, external data)
 - **Error codes** — discriminate errors by code/name, never by message
+- **Defensive programming** — guard clauses, null-safety, boundary validation, try/catch around third-party calls, defensive copies, fallback defaults, early returns (see [CODING_STANDARDS.md](../docs/CODING_STANDARDS.md#defensive-programming))
 
 Example:
 
@@ -66,6 +69,7 @@ if (isFileSystemPickerSupported(window)) {
 - **Reactivity:** Strictly use Angular Signals (`signal`, `computed`, `effect`) for state management. Avoid RxJS `BehaviorSubjects` unless absolutely necessary for complex asynchronous data streams.
 - **Control Flow:** Use the modern Angular Control Flow syntax (`@if`, `@for`, `@defer`) instead of structural directives (`*ngIf`, `*ngFor`).
 - **Inputs/Outputs:** Use Signal inputs (`input()`) and model inputs (`model()`) over the `@Input()` decorator.
+- **Use `timeout()` over raw `setTimeout`:** Always import the promisified `timeout` helper from `@core/utils/async` instead of using `new Promise(r => setTimeout(r, N))` or `await new Promise(r => setTimeout(r, N))`. This is cleaner, more readable, and avoids unnecessary Promise wrappers. Reserve raw `setTimeout` only when you need the return value (timer ID) for cancellation via `clearTimeout`.
 
 ### Tailwind CSS
 

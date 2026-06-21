@@ -141,56 +141,6 @@ export class WorkspaceService {
 		this.persist();
 	}
 
-	/**
-	 * Open the native folder picker and add the selected folder as a new workspace.
-	 * Returns the newly added workspace, or null if the user cancelled.
-	 */
-	// async pickAndAddWorkspace(): Promise<Workspace | null> {
-	// 	try {
-	// 		const adapter = this.adapterManager.getWorkspacePickerAdapter();
-	// 		if (!adapter) {
-	// 			console.error('No workspace picker adapter is available.');
-	// 			return null;
-	// 		}
-
-	// 		const result = await adapter.pickWorkspaceFolder();
-	// 		if (!result) {
-	// 			return null;
-	// 		}
-
-	// 		const id = `ws-${Date.now().toString()}`;
-	// 		const newWorkspace: Workspace = {
-	// 			id,
-	// 			name: result.name,
-	// 			activeSyncAdapters: [],
-	// 			adapterConfigs: [],
-	// 		};
-
-	// 		this.addWorkspace(newWorkspace);
-	// 		this.activateWorkspace(id);
-
-	// 		return newWorkspace;
-	// 	} catch (error) {
-	// 		console.error('Failed to pick workspace folder:', error);
-	// 		return null;
-	// 	}
-	// }
-
-	// addWorkspaceWithoutLocalAdapter(name: string): Workspace {
-	// 	const id = `ws-${Date.now().toString()}`;
-	// 	const newWorkspace: Workspace = {
-	// 		id,
-	// 		name,
-	// 		activeSyncAdapters: [],
-	// 		adapterConfigs: [],
-	// 	};
-
-	// 	this.addWorkspace(newWorkspace);
-	// 	this.activateWorkspace(id);
-
-	// 	return newWorkspace;
-	// }
-
 	// ========================================================================
 	// Per-workspace adapter management
 	// ========================================================================

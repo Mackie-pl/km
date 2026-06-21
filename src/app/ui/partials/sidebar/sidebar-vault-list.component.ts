@@ -1,53 +1,26 @@
-import {
-	Component,
-	ElementRef,
-	computed,
-	inject,
-	input,
-	signal,
-	viewChild,
-} from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import {
-	LucideChevronRight,
-	LucideFilePlus,
-	LucideFileText,
-	LucideFolder,
-	LucideFolderPlus,
-	LucidePencil,
-	LucideTrash2,
-} from '@lucide/angular';
-import {
-	TuiDropdownDirective,
-	TuiDropdownManual,
-} from '@taiga-ui/core/portals/dropdown';
+import { LucideFilePlus, LucideFolderPlus } from '@lucide/angular';
+import { navigateToEntry } from '@core/utils/router-utils';
+import { parseFrontmatter } from '@core/utils/frontmatter-parser';
 import { VaultStore, VaultEntry } from '@vault/store';
-
-interface TreeNode {
-	entry: VaultEntry;
-	depth: number;
-}
+import { SyncEngineService } from '@core/sync/sync-engine';
+import {
+	SidebarTreeRowComponent,
+	TreeNode,
+} from './sidebar-tree-row.component';
 
 /**
  * Self-contained vault file & folder tree for the sidebar.
  *
  * Renders a nested tree view with expand/collapse for folders.
- * Owns rename state, context menu, and long-press logic for mobile.
+ * Delegates individual tree rows to `SidebarTreeRowComponent`
+ * to keep nesting depth under the lint limit.
  */
 @Component({
 	selector: 'app-sidebar-vault-list',
 	standalone: true,
-	imports: [
-		LucideChevronRight,
-		LucideFilePlus,
-		LucideFileText,
-		LucideFolder,
-		LucideFolderPlus,
-		LucidePencil,
-		LucideTrash2,
-		TuiDropdownDirective,
-		TuiDropdownManual,
-	],
+	imports: [LucideFilePlus, LucideFolderPlus, SidebarTreeRowComponent],
 	templateUrl: './sidebar-vault-list.component.html',
 	styleUrl: './sidebar-vault-list.component.scss',
 	host: {
@@ -57,6 +30,7 @@ interface TreeNode {
 export class SidebarVaultListComponent {
 	private readonly vaultDb = inject(VaultStore);
 	private readonly router = inject(Router);
+	private readonly syncEngine = inject(SyncEngineService);
 
 	/** Whether the parent sidebar is collapsed (desktop only — hides labels). */
 	readonly collapsed = input(false);
@@ -106,7 +80,12 @@ export class SidebarVaultListComponent {
 			const children = childrenMap.get(parentId);
 			if (!children) return;
 			for (const entry of children) {
-				result.push({ entry, depth });
+				let icon: string | undefined;
+				if (entry.type === 'file' && entry.content) {
+					const { metadata } = parseFrontmatter(entry.content);
+					icon = metadata.icon;
+				}
+				result.push({ entry, depth, ...(icon !== undefined ? { icon } : {}) });
 				if (entry.type === 'folder' && expanded.has(entry.id)) {
 					walk(entry.id, depth + 1);
 				}
@@ -128,35 +107,36 @@ export class SidebarVaultListComponent {
 	/** The entry ID being created-as-new (shows rename input for the new entry name). */
 	readonly newEntryRenamingId = signal<string | null>(null);
 
-	/** Ref to the rename input for auto-focus. */
-	private readonly renameInput =
-		viewChild<ElementRef<HTMLInputElement>>('renameInput');
-
-	/** Timer for long-press detection on touch devices. */
-	private longPressTimer: number | null = null;
-
 	// ---- Tree actions ----
 
 	/** Toggle a folder's expand/collapse state. */
 	toggleFolder(id: string): void {
+		const wasExpanded = this.expandedFolders().has(id);
 		this.expandedFolders.update((set) => {
 			const next = new Set(set);
-			if (next.has(id)) {
+			if (wasExpanded) {
 				next.delete(id);
 			} else {
 				next.add(id);
 			}
 			return next;
 		});
+
+		// On expand, re-list the folder's children from disk so externally
+		// created/deleted files appear without a page reload.
+		// Tauri has native watching; this is a no-op there.
+		if (!wasExpanded) {
+			const entry = this.vaultDb.getById(id);
+			if (entry?.path) {
+				void this.syncEngine.refreshFolder(entry.path);
+			}
+		}
 	}
 
 	/** Create a new folder with an auto-generated name and start renaming. */
 	async createNewFolder(): Promise<void> {
-		this.contextEntry.set(null); // close context menu
-		const name = 'New Folder';
-		await this.vaultDb.createFolder(name);
-		// Find the newly created folder to start renaming it
-		const entry = this.vaultDb.getByPath(name);
+		this.closeContextMenu();
+		const entry = await this.vaultDb.createFolder('New Folder');
 		if (entry) {
 			this.newEntryRenamingId.set(entry.id);
 			this.renamingId.set(entry.id);
@@ -168,17 +148,20 @@ export class SidebarVaultListComponent {
 	 * Auto-expands the parent folder when provided.
 	 */
 	async createNewFile(folderEntry?: VaultEntry): Promise<void> {
-		this.contextEntry.set(null); // close context menu
-		const name = 'new-note.md';
-		await this.vaultDb.createFile(name, '', folderEntry?.path);
-		const lookupPath = folderEntry ? `${folderEntry.path}/${name}` : name;
-		const entry = this.vaultDb.getByPath(lookupPath);
+		this.closeContextMenu();
+		const entry = await this.vaultDb.createFile(
+			'new-note.md',
+			'',
+			folderEntry?.path,
+		);
 		if (entry) {
 			this.newEntryRenamingId.set(entry.id);
 			this.renamingId.set(entry.id);
+			// Open the newly created file in the editor immediately
+			await this.openFile(entry);
 		}
 		// Auto-expand the folder so the user sees the new file
-		if (folderEntry) {
+		if (folderEntry?.id) {
 			this.expandedFolders.update((set) => {
 				const next = new Set(set);
 				next.add(folderEntry.id);
@@ -189,25 +172,9 @@ export class SidebarVaultListComponent {
 
 	// ---- Context menu actions ----
 
-	/** Open context menu on right-click (desktop). */
-	onContextMenu(event: MouseEvent, entry: VaultEntry): void {
-		event.preventDefault();
+	/** Handles the child row's context menu output — opens the context menu for the entry. */
+	onEntryContextMenu(entry: VaultEntry): void {
 		this.contextEntry.set(entry);
-	}
-
-	/** Start long-press timer for touch devices. */
-	onTouchStartRename(_event: TouchEvent, entry: VaultEntry): void {
-		this.longPressTimer = window.setTimeout(() => {
-			this.contextEntry.set(entry);
-		}, 500);
-	}
-
-	/** Cancel long-press if finger lifted before threshold. */
-	onTouchEndRename(): void {
-		if (this.longPressTimer !== null) {
-			window.clearTimeout(this.longPressTimer);
-			this.longPressTimer = null;
-		}
 	}
 
 	/** Start inline rename for the given entry. */
@@ -215,12 +182,6 @@ export class SidebarVaultListComponent {
 		if (!entry) return;
 		this.contextEntry.set(null); // close context menu
 		this.renamingId.set(entry.id);
-
-		window.setTimeout(() => {
-			const input = this.renameInput()?.nativeElement;
-			input?.focus();
-			input?.select();
-		});
 	}
 
 	/** Commit the rename — validates and calls VaultStore. */
@@ -230,7 +191,19 @@ export class SidebarVaultListComponent {
 		const trimmed = newName.trim();
 		if (!trimmed || trimmed.includes('/')) return;
 
+		// Capture the old path to detect if the renamed entry is currently open
+		const entry = this.vaultDb.getById(id);
+		const oldPath = entry?.path;
+
 		await this.vaultDb.renameEntry(id, trimmed);
+
+		// If the renamed entry was the one being viewed, navigate to its new path
+		if (oldPath && this.activeEntryPath() === oldPath) {
+			const renamed = this.vaultDb.getById(id);
+			if (renamed && renamed.path !== oldPath) {
+				await this.openFile(renamed);
+			}
+		}
 	}
 
 	/** Cancel inline rename without saving. */
@@ -258,19 +231,34 @@ export class SidebarVaultListComponent {
 
 	/** Navigate to the editor route for the given file. */
 	async openFile(entry: VaultEntry): Promise<void> {
-		const nav = await this.router
-			.navigate(['/e', entry.path])
-			.catch((err: unknown) => {
-				console.error('Navigation error:', err);
-				return false;
-			});
+		const nav = await navigateToEntry(this.router, entry.path);
 		if (!nav) {
 			console.error('Failed to navigate to file:', entry.path);
 		}
 	}
 
-	/** Close context menu on any click outside context menu items. */
+	// ---- Background (empty area) context menu ----
+
+	/** Whether the empty-area context menu (New File / New Folder) is open. */
+	readonly backgroundMenuOpen = signal(false);
+
+	/** X coordinate for the background context menu position. */
+	readonly backgroundMenuX = signal(0);
+
+	/** Y coordinate for the background context menu position. */
+	readonly backgroundMenuY = signal(0);
+
+	/** Open the empty-area context menu on right-click in the tree background. */
+	onBackgroundContextMenu(event: MouseEvent): void {
+		event.preventDefault();
+		this.backgroundMenuX.set(event.clientX);
+		this.backgroundMenuY.set(event.clientY);
+		this.backgroundMenuOpen.set(true);
+	}
+
+	/** Close both the entry context menu and the background context menu. */
 	closeContextMenu(): void {
 		this.contextEntry.set(null);
+		this.backgroundMenuOpen.set(false);
 	}
 }

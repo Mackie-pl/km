@@ -86,7 +86,6 @@ It exists for:
 - backlinks
 - UI state
 - sync metadata
-- operation journal
 
 Everything in IndexedDB should be rebuildable from vault files.
 
@@ -410,7 +409,6 @@ Avoid opaque merge systems early.
 vault
 ├── entries
 ├── sync_metadata
-├── operation_journal
 ├── embeddings
 ├── search_index
 ├── backlinks
@@ -420,31 +418,7 @@ vault
 
 ---
 
-# Operation Journal
-
-Operation journal is INTERNAL ONLY.
-
-Used for:
-
-- undo
-- retries
-- batching
-- crash recovery
-- background processing
-
-Example:
-
-```json
-{
-	"type": "write_file",
-	"path": "notes/test.md",
-	"timestamp": 123456
-}
-```
-
-Operations are ephemeral implementation details.
-
-They are NOT canonical storage.
+<!-- Operation Journal section removed — the feature was never wired up and has been deleted. -->
 
 ---
 

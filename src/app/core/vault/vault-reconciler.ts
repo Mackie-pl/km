@@ -1,5 +1,8 @@
+import { isTempFilePath } from '@core/utils/file-patterns';
 import { VAULT_ENTRY_TYPES, type VaultEntry } from './vault-entry';
+import { makeVaultEntry } from './vault-utils';
 import type { VaultStore } from './store';
+import { debugLog } from '@core/utils/debug-logger';
 
 /**
  * Handles inbound sync reconciliation for VaultStore.
@@ -56,68 +59,41 @@ export class VaultReconciler {
 		content: string,
 		sourceAdapterId: string,
 	): Promise<void> {
+		// Defense: never create vault entries for temp/swap files.
+		// The adapter should filter these, but this is an extra safety net.
+		if (isTempFilePath(path)) return;
+
 		const wsId = await this.init();
 		if (!wsId) return;
 
 		const existing = this.store.getByPath(path);
 
 		if (!existing) {
-			const name = path.split('/').pop() ?? '';
-			const adapters = this.adaptersExcept(
-				this.store.getActiveSyncAdapters(),
-				sourceAdapterId,
+			debugLog(
+				`[Vault] new entry "${path}" from ${sourceAdapterId} (${String(content.length)}B)`,
 			);
-			const parentPath = path.includes('/')
-				? path.slice(0, path.lastIndexOf('/'))
-				: '';
-			const parentEntry = parentPath
-				? this.store.getByPath(parentPath)
-				: null;
-			await this.store.put(
-				this.store.makeEntry({
-					workspaceId: wsId,
-					name,
-					path,
-					content,
-					pendingAdapters: adapters,
-					parentId: parentEntry?.id ?? null,
-				}),
+			await this.#applyNewExternalFile(
+				path,
+				content,
+				sourceAdapterId,
+				wsId,
 			);
 			return;
 		}
 
 		if (existing.deleted) {
-			await this.store.put({
-				...existing,
-				content,
-				deleted: false,
-				...this.revisionSpread(existing, sourceAdapterId),
-			});
+			debugLog(
+				`[Vault] restore "${path}" (was deleted) from ${sourceAdapterId} — entry ${existing.id}`,
+			);
+			await this.#restoreDeletedFile(existing, content, sourceAdapterId);
 			return;
 		}
 
-		console.log(
-			`[Vault] External file entry detected for "${path}" from adapter "${sourceAdapterId}"`,
-		);
-
 		if (existing.pendingAdapters.length > 0) {
-			console.warn(
-				`[Vault] Local pending changes detected for "${path}" — checking for content conflicts`,
+			debugLog(
+				`[Vault] reconcile "${path}" from ${sourceAdapterId} — pending ${JSON.stringify(existing.pendingAdapters)}, content ${String(content.length)}B vs vault ${String((existing.content ?? '').length)}B`,
 			);
-			if (existing.content === content) {
-				console.log(
-					`[Vault] No content conflict for "${path}" — marking as synced with "${sourceAdapterId}"`,
-				);
-				await this.store.put({
-					...existing,
-					pendingAdapters: this.adaptersExcept(
-						existing.pendingAdapters,
-						sourceAdapterId,
-					),
-				});
-				return;
-			}
-			await this.handleExternalConflict(
+			await this.#handleExternalFileWithPendingChanges(
 				existing,
 				path,
 				content,
@@ -127,12 +103,105 @@ export class VaultReconciler {
 			return;
 		}
 
-		// Clean overwrite
+		// Clean overwrite — skip if content hasn't actually changed
+		// (avoiding revision-bombing from polling / repeated reads)
+		if (existing.content === content) {
+			debugLog(
+				`[Vault] skip "${path}" from ${sourceAdapterId} — content unchanged (rev ${String(existing.revision)})`,
+			);
+			return;
+		}
+
+		debugLog(
+			`[Vault] overwrite "${path}" from ${sourceAdapterId} — entry ${existing.id} rev ${String(existing.revision)}→${String(existing.revision + 1)}`,
+		);
 		await this.store.put({
 			...existing,
 			content,
 			...this.revisionSpread(existing, sourceAdapterId),
 		});
+	}
+
+	/** Create a new entry for an external file that doesn't exist in the vault. */
+	async #applyNewExternalFile(
+		path: string,
+		content: string,
+		sourceAdapterId: string,
+		wsId: string,
+	): Promise<void> {
+		const name = path.split('/').pop() ?? '';
+		const adapters = this.adaptersExcept(
+			this.store.getActiveSyncAdapters(),
+			sourceAdapterId,
+		);
+		const parentPath = path.includes('/')
+			? path.slice(0, path.lastIndexOf('/'))
+			: '';
+		const parentEntry = parentPath
+			? this.store.getByPath(parentPath)
+			: null;
+		const entry = makeVaultEntry({
+			workspaceId: wsId,
+			name,
+			path,
+			content,
+			pendingAdapters: adapters,
+			parentId: parentEntry?.id ?? null,
+		});
+		debugLog(
+			`[Vault] created entry ${entry.id} "${path}"${parentPath ? ` parent=${parentPath}` : ''} pending=${JSON.stringify(adapters)}`,
+		);
+		await this.store.put(entry);
+	}
+
+	/** Restore a soft-deleted entry when the external file reappears. */
+	async #restoreDeletedFile(
+		existing: VaultEntry,
+		content: string,
+		sourceAdapterId: string,
+	): Promise<void> {
+		await this.store.put({
+			...existing,
+			content,
+			deleted: false,
+			...this.revisionSpread(existing, sourceAdapterId),
+		});
+		debugLog(
+			`[Vault] restored "${existing.path}" entry ${existing.id} (was deleted)`,
+		);
+	}
+
+	/** Handle external file when local pending changes exist — may create conflict copy. */
+	async #handleExternalFileWithPendingChanges(
+		existing: VaultEntry,
+		path: string,
+		content: string,
+		sourceAdapterId: string,
+		wsId: string,
+	): Promise<void> {
+		debugLog(
+			`[Vault] Checking content conflict for "${path}" (pending adapters: ${String(existing.pendingAdapters)})`,
+		);
+		if (existing.content === content) {
+			debugLog(
+				`[Vault] conflict-free "${path}" — content matches, clearing ${sourceAdapterId} from pending ${JSON.stringify(existing.pendingAdapters)}`,
+			);
+			await this.store.put({
+				...existing,
+				pendingAdapters: this.adaptersExcept(
+					existing.pendingAdapters,
+					sourceAdapterId,
+				),
+			});
+			return;
+		}
+		await this.handleExternalConflict(
+			existing,
+			path,
+			content,
+			sourceAdapterId,
+			wsId,
+		);
 	}
 
 	private async handleExternalConflict(
@@ -163,7 +232,7 @@ export class VaultReconciler {
 		};
 		await this.store.put(entry);
 		console.warn(
-			`[Vault] Conflict detected for "${path}" — created "${conflictName}"`,
+			`[Vault] Conflict "${path}": local vs ${sourceAdapterId} — created "${conflictName}" (${String(content.length)}B)`,
 		);
 	}
 
@@ -200,7 +269,7 @@ export class VaultReconciler {
 			sourceAdapterId,
 		);
 
-		const folderEntry = this.store.makeEntry({
+		const folderEntry = makeVaultEntry({
 			workspaceId: wsId,
 			name: folderName,
 			path,
@@ -224,11 +293,19 @@ export class VaultReconciler {
 		if (!wsId) return;
 
 		const existing = this.store.getByPath(oldPath);
-		if (!existing) return;
+		if (!existing) {
+			debugLog(
+				`[Vault] rename skip: "${oldPath}" → "${newPath}" from ${sourceAdapterId} — no vault entry at old path`,
+			);
+			return;
+		}
 
 		const newName = newPath.split('/').pop() ?? '';
 
 		if (existing.pendingAdapters.length > 0) {
+			debugLog(
+				`[Vault] rename conflict "${oldPath}" → "${newPath}" from ${sourceAdapterId} — pending ${JSON.stringify(existing.pendingAdapters)}`,
+			);
 			await this.handleExternalRenameConflict(
 				existing,
 				oldPath,
@@ -240,6 +317,9 @@ export class VaultReconciler {
 			return;
 		}
 
+		debugLog(
+			`[Vault] rename clean "${oldPath}" → "${newPath}" from ${sourceAdapterId} — entry ${existing.id}`,
+		);
 		await this.handleCleanExternalRename(
 			existing,
 			oldPath,
@@ -263,7 +343,7 @@ export class VaultReconciler {
 			sourceAdapterId,
 		);
 		await this.store.put(
-			this.store.makeEntry({
+			makeVaultEntry({
 				workspaceId: wsId,
 				name: newName,
 				path: newPath,
@@ -298,43 +378,12 @@ export class VaultReconciler {
 		await this.store.put(updated);
 
 		if (existing.type === VAULT_ENTRY_TYPES.FOLDER) {
-			await this.cascadeRenameChildren(
+			await this.store.cascadeRenameChildren(
 				existing,
 				oldPath,
 				newPath,
 				adapters,
 			);
-		}
-	}
-
-	private async cascadeRenameChildren(
-		existing: VaultEntry,
-		oldPath: string,
-		newPath: string,
-		activeAdapters: string[],
-	): Promise<void> {
-		const entriesSnapshot = this.store.getEntriesSnapshot();
-		const children = Array.from(entriesSnapshot.values()).filter(
-			(e) =>
-				e.workspaceId === existing.workspaceId &&
-				!e.deleted &&
-				e.path.startsWith(oldPath + '/'),
-		);
-
-		for (const child of children) {
-			const childNewPath = newPath + child.path.slice(oldPath.length);
-			const childNewName = childNewPath.split('/').pop() ?? child.name;
-
-			await this.store.put({
-				...child,
-				name: childNewName,
-				path: childNewPath,
-				updatedAt: Date.now(),
-				revision: child.revision + 1,
-				pendingAdapters: [
-					...new Set([...child.pendingAdapters, ...activeAdapters]),
-				],
-			});
 		}
 	}
 }

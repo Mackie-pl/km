@@ -3,6 +3,8 @@ import { SettingsComponent } from '@ui/pages/settings/settings.component';
 import { WorkspaceConfig } from '@ui/pages/workspace-config/workspace-config';
 import { WorkspaceWizardComponent } from '@ui/pages/workspace-config/workspace-wizard.component';
 import { Empty } from '@ui/pages/empty/empty';
+import { filePathMatcher } from '@core/utils/route-matchers';
+import { entryExistsGuard } from '@core/utils/entry-exists.guard';
 
 export const routes: Routes = [
 	{
@@ -18,7 +20,8 @@ export const routes: Routes = [
 		component: WorkspaceWizardComponent,
 	},
 	{
-		path: 'e/:entryId',
+		matcher: filePathMatcher,
+		canMatch: [entryExistsGuard],
 		loadComponent: () =>
 			import('@ui/pages/editor/editor').then((m) => m.Editor),
 	},

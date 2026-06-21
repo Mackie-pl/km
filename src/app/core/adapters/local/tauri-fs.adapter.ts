@@ -6,12 +6,21 @@ import {
 	remove,
 	mkdir,
 	rename,
+	watchImmediate,
 } from '@tauri-apps/plugin-fs';
 import type {
 	WorkspacePickResult,
 	Adapter,
 	FileEntry,
+	WatchEvent,
 } from '../adapter.interface';
+import type {
+	WatchEvent as TauriWatchEvent,
+	WatchEventKindModify,
+} from '@tauri-apps/plugin-fs';
+import { isTempFilePath } from '@core/utils/file-patterns';
+import { debugLog } from '@core/utils/debug-logger';
+import { resolvePath, walkDirectory } from './walk-directory';
 
 interface TauriWorkspacePickResult {
 	path: string;
@@ -39,22 +48,27 @@ const isTauriRuntimeAvailable = (): boolean => {
  * @example resolve('/home/user/vault', '/notes/ideas.md') → '/home/user/vault/notes/ideas.md'
  * @example resolve('C:/Users/me/vault', 'notes/ideas.md') → 'C:/Users/me/vault/notes/ideas.md'
  */
-function resolvePath(root: string | undefined, path: string): string {
-	// Normalize all backslashes to forward slashes so the resolved path
-	// has consistent separators regardless of OS. Tauri's FS scope check
-	// compares paths literally — mixed separators cause scope mismatches
-	// and "failed to get metadata" errors on Windows (#153203830).
-	const normalizedRoot = (root ?? '').replace(/\\/g, '/');
-	const normalizedPath = path.replace(/\\/g, '/');
-	if (!normalizedRoot) return normalizedPath.replace(/^\/+/, '');
-	const cleanRoot = normalizedRoot.replace(/\/+$/, '');
-	const cleanPath = normalizedPath.replace(/^\/+/, '');
-	return `${cleanRoot}/${cleanPath}`;
-}
-
 export class TauriFsAdapter implements Adapter {
 	readonly id = 'tauri-fs';
 	readonly isLocal = true;
+
+	/**
+	 * Buffer for pairing rename-from → rename-to events from the Tauri watcher.
+	 * The `notify` crate emits two separate events for a rename:
+	 *   1. modify(rename, from) — old path
+	 *   2. modify(rename, to)   — new path
+	 * Without buffering, only the "to" event reaches the sync engine as
+	 * a plain modify, creating a new vault entry while leaking the old one.
+	 */
+	#pendingRename: { oldPath: string; rootPath: string } | null = null;
+
+	/** Logger shorthand — auto‑stringifies non‑strings, prepends tag. */
+	#log(...args: unknown[]): void {
+		const line = args
+			.map((a) => (typeof a === 'string' ? a : JSON.stringify(a)))
+			.join(' ');
+		debugLog('[TauriFsAdapter]', line);
+	}
 
 	isAvailable(): boolean {
 		return isTauriRuntimeAvailable();
@@ -141,95 +155,21 @@ export class TauriFsAdapter implements Adapter {
 		root?: string,
 		recursive?: boolean,
 	): Promise<FileEntry[]> {
-		const resolved = resolvePath(root, path);
-		const entries = await readDir(resolved);
-
-		const result: FileEntry[] = [];
-
-		for (const e of entries) {
-			const fullPath =
-				path === '/' || path === ''
-					? e.name
-					: `${path.replace(/\/+$/, '')}/${e.name}`;
-			result.push({
-				path: fullPath,
+		if (!recursive) {
+			const resolved = resolvePath(root, path);
+			const entries = await readDir(resolved);
+			return entries.map((e) => ({
+				path:
+					path === '/' || path === ''
+						? e.name
+						: `${path.replace(/\/+$/, '')}/${e.name}`,
 				name: e.name,
 				isDirectory: e.isDirectory,
 				lastModified: 0,
-			});
-
-			// Recurse into subdirectories
-			// TODO: if profiling shows IPC overhead from per-subdirectory readDir calls,
-			// replace with a single native Rust walkdir command that returns all entries at once.
-			if (recursive && e.isDirectory && !e.isSymlink) {
-				await this.listRecursive(fullPath, root, result);
-			}
+			}));
 		}
 
-		return result;
-	}
-
-	/**
-	 * Recursive helper for list(). Walks a subdirectory and adds all entries
-	 * to the shared result array.
-	 *
-	 * Uses `isSymlink` on DirEntry to prevent descending into symlinks
-	 * (which could introduce cycles). The `visited` set tracks resolved
-	 * paths as an additional safety net for edge cases where the same
-	 * directory is reachable through multiple non-symlink paths
-	 * (e.g. hard-linked parent directories on some filesystems).
-	 *
-	 * TODO: if profiling shows IPC overhead from per-subdirectory readDir calls,
-	 * replace with a single native Rust walkdir command that returns all entries at once.
-	 */
-	private async listRecursive(
-		dirPath: string,
-		root: string | undefined,
-		result: FileEntry[],
-		visited = new Set<string>(),
-	): Promise<void> {
-		const resolved = resolvePath(root, dirPath);
-
-		// Use the resolved absolute path as a visited key for cycle detection.
-		// This catches the same directory being reachable via multiple paths
-		// (e.g. hard-linked directories). Symlinks are already filtered by
-		// `isSymlink` in the caller, so this is an additional safety net.
-		if (visited.has(resolved)) {
-			console.warn(
-				`[TauriFsAdapter] Skipping already-visited directory: "${dirPath}" (resolved: "${resolved}")`,
-			);
-			return;
-		}
-		visited.add(resolved);
-
-		let children;
-		try {
-			children = await readDir(resolved);
-		} catch (err) {
-			// Permission denied or other error — skip this subtree
-			console.warn(
-				`[TauriFsAdapter] Skipping unreadable directory: "${dirPath}"`,
-				err,
-			);
-			return;
-		}
-
-		for (const e of children) {
-			const fullPath =
-				dirPath === '/' || dirPath === ''
-					? e.name
-					: `${dirPath.replace(/\/+$/, '')}/${e.name}`;
-			result.push({
-				path: fullPath,
-				name: e.name,
-				isDirectory: e.isDirectory,
-				lastModified: 0,
-			});
-
-			if (e.isDirectory && !e.isSymlink) {
-				await this.listRecursive(fullPath, root, result, visited);
-			}
-		}
+		return walkDirectory(path, root);
 	}
 
 	/** Create a directory (and all parents) on the filesystem. */
@@ -251,5 +191,279 @@ export class TauriFsAdapter implements Adapter {
 			// "failed to get metadata" errors on Windows.
 			path: root.replace(/\\/g, '/'),
 		});
+	}
+
+	// ──────────────────────────────────────────────
+	// File watching
+	// ──────────────────────────────────────────────
+
+	/**
+	 * Subscribe to filesystem changes using Tauri's native file watcher.
+	 *
+	 * Uses `watchImmediate()` from `@tauri-apps/plugin-fs` which wraps
+	 * Rust's `notify` crate under the hood — no polling, OS-level events.
+	 *
+	 * TypeScript analogy: Like `fs.watch()` in Node.js but backed by
+	 * native kernel events (inotify on Linux, ReadDirectoryChanges on Windows).
+	 *
+	 * @param callback - Called with our flattened WatchEvent[] on each change
+	 * @param root - Workspace root path (absolute filesystem path)
+	 * @returns An unsubscribe function to stop watching
+	 */
+	async watch(
+		callback: (events: WatchEvent[]) => void,
+		root?: string,
+	): Promise<() => void> {
+		const resolvedPath = resolvePath(root ?? '', '');
+
+		try {
+			const unwatch = await watchImmediate(
+				resolvedPath,
+				(tauriEvent: TauriWatchEvent) => {
+					this.#log('Raw event:', JSON.stringify(tauriEvent));
+					const mapped = this.mapWatchEvent(tauriEvent, resolvedPath);
+					this.#log('Mapped events:', JSON.stringify(mapped));
+					if (mapped.length > 0) {
+						callback(mapped);
+					}
+				},
+				{ recursive: true },
+			);
+			return unwatch;
+		} catch (err) {
+			console.error(
+				`[TauriFsAdapter] Failed to start watcher on "${resolvedPath}":`,
+				err,
+			);
+			// Return no-op cleanup so the caller doesn't crash
+			return () => undefined;
+		}
+	}
+
+	/**
+	 * Map a Tauri WatchEvent (discriminated union) to our flat WatchEvent[].
+	 *
+	 * Tauri events carry OS-level metadata (access, open, close, etc.) that
+	 * we don't need. This narrows down to the subset that matters:
+	 * file/folder create, content modify, delete, and rename.
+	 *
+	 * Rename events from the Tauri watcher arrive as two separate events:
+	 * modify(rename, from) then modify(rename, to). The "from" is buffered
+	 * in #pendingRename; when the matching "to" arrives, a single rename
+	 * WatchEvent is emitted with both oldPath and path set.
+	 */
+	private mapWatchEvent(
+		event: TauriWatchEvent,
+		rootPath: string,
+	): WatchEvent[] {
+		const kind = event.type;
+
+		// Skip high-level 'any' / 'other' events (open/close/access)
+		if (kind === 'any' || kind === 'other') return [];
+		if (typeof kind !== 'object') return [];
+
+		if ('access' in kind) return [];
+
+		// Filter out paths that look like temp/swap files — these are created
+		// by external editors during atomic saves and should not propagate
+		// to the sync engine (which would try to read them, fail, and potentially
+		// trigger content loss via delete+recreate sequences).
+		const originalCount = event.paths.length;
+		const cleanPaths = event.paths.filter((p) => !isTempFilePath(p));
+		if (cleanPaths.length !== originalCount) {
+			this.#log(
+				'Filtered temp paths:',
+				event.paths.filter((p) => isTempFilePath(p)),
+			);
+		}
+		if (cleanPaths.length === 0) {
+			this.#log('All paths filtered — dropping event');
+			return [];
+		}
+
+		if ('create' in kind) {
+			const mapped = cleanPaths.map((p) => ({
+				type: 'create' as const,
+				path: TauriFsAdapter.stripRoot(p, rootPath),
+			}));
+			this.#log(
+				'Create event:',
+				mapped.map((e) => e.path),
+			);
+			return mapped;
+		}
+		if ('modify' in kind) {
+			return this.mapModifyEvent(kind.modify, cleanPaths, rootPath);
+		}
+		if ('remove' in kind) {
+			const mapped = cleanPaths.map((p) => ({
+				type: 'delete' as const,
+				path: TauriFsAdapter.stripRoot(p, rootPath),
+			}));
+			this.#log(
+				'Remove event:',
+				mapped.map((e) => e.path),
+			);
+			return mapped;
+		}
+		this.#log('Unhandled event kind:', Object.keys(kind));
+		return [];
+	}
+
+	/**
+	 * Map a Tauri modify WatchEvent to our flat WatchEvent[].
+	 * Extracted from mapWatchEvent to keep complexity under 10.
+	 * Handles rename buffering to pair from→to events.
+	 */
+	private mapModifyEvent(
+		modify: WatchEventKindModify,
+		paths: string[],
+		rootPath: string,
+	): WatchEvent[] {
+		// Skip metadata-only events
+		if (modify.kind === 'metadata' || modify.kind === 'other') {
+			this.#log(
+				'Skip modify: kind=',
+				modify.kind,
+				'paths=',
+				paths.map((p) => TauriFsAdapter.stripRoot(p, rootPath)),
+			);
+			return [];
+		}
+
+		// ── Rename handling ────────────────────────────
+		if (modify.kind === 'rename') {
+			return this.#mapRenameEvent(modify, paths, rootPath);
+		}
+
+		// Any non-rename modify: clear buffer (safety against orphaned from-events)
+		this.#pendingRename = null;
+
+		this.#log(
+			'Content modify:',
+			paths.map((p) => TauriFsAdapter.stripRoot(p, rootPath)),
+		);
+		return paths.map((p) => ({
+			type: 'modify' as const,
+			path: TauriFsAdapter.stripRoot(p, rootPath),
+		}));
+	}
+
+	/**
+	 * Map a rename event from the Tauri watcher.
+	 * Complexity is inherent (3 modes: both/from/to with guards).
+	 * Extracted from mapModifyEvent to keep that method under 10.
+	 */
+	#mapRenameEvent(
+		modify: WatchEventKindModify & { kind: 'rename' },
+		paths: string[],
+		rootPath: string,
+	): WatchEvent[] {
+		// 'both': old and new path in one event (some platforms)
+		if (modify.mode === 'both') {
+			return this.#mapRenameBoth(paths, rootPath);
+		}
+		// 'from': buffer the old path for pairing
+		if (modify.mode === 'from') {
+			if (!paths[0]) return [];
+			this.#log(
+				'Rename FROM buffered:',
+				TauriFsAdapter.stripRoot(paths[0], rootPath),
+			);
+			this.#pendingRename = { oldPath: paths[0], rootPath };
+			return [];
+		}
+		// 'to': pair with buffered from
+		if (modify.mode === 'to') {
+			return this.#mapRenameTo(paths, rootPath);
+		}
+		return [];
+	}
+
+	/** Handle rename mode 'both' — old and new path in one event. */
+	#mapRenameBoth(paths: string[], rootPath: string): WatchEvent[] {
+		this.#pendingRename = null;
+		if (paths.length < 2) {
+			// Only one path survived temp-file filtering (e.g. a
+			// .crswap→real-file rename). Emit modify so the sync
+			// engine can coalesce it with any preceding delete.
+			if (paths.length === 1 && paths[0]) {
+				this.#log(
+					'Rename BOTH (1 path, filtered) -> modify:',
+					TauriFsAdapter.stripRoot(paths[0], rootPath),
+				);
+				return [
+					{
+						type: 'modify' as const,
+						path: TauriFsAdapter.stripRoot(paths[0], rootPath),
+					},
+				];
+			}
+			return [];
+		}
+		const oldPath = paths[0];
+		const newPath = paths[1];
+		if (!oldPath || !newPath) return [];
+		const mappedOld = TauriFsAdapter.stripRoot(oldPath, rootPath);
+		const mappedNew = TauriFsAdapter.stripRoot(newPath, rootPath);
+		this.#log('Rename BOTH:', mappedOld, '->', mappedNew);
+		return [
+			{
+				type: 'rename' as const,
+				path: mappedNew,
+				oldPath: mappedOld,
+			},
+		];
+	}
+
+	/** Handle rename mode 'to' — pair with buffered 'from' event. */
+	#mapRenameTo(paths: string[], rootPath: string): WatchEvent[] {
+		const pending = this.#pendingRename;
+		this.#pendingRename = null;
+		if (!paths[0]) return [];
+		const target = TauriFsAdapter.stripRoot(paths[0], rootPath);
+		if (!pending) {
+			// No buffered "from" path — the rename-from event was
+			// filtered out (e.g. a temp-file path from an atomic
+			// save, like .crswap). Emit a modify so the sync engine's
+			// coalescer can merge this with any preceding delete for
+			// the same path, keeping the vault entry alive.
+			this.#log('Rename TO (no pending FROM) -> modify:', target);
+			return [
+				{
+					type: 'modify' as const,
+					path: target,
+				},
+			];
+		}
+		if (pending.rootPath !== rootPath) {
+			this.#log('Rename TO root mismatch, dropping');
+			return [];
+		}
+		const old = TauriFsAdapter.stripRoot(pending.oldPath, rootPath);
+		this.#log('Rename TO paired with FROM:', old, '->', target);
+		return [
+			{
+				type: 'rename' as const,
+				path: target,
+				oldPath: old,
+			},
+		];
+	}
+
+	/**
+	 * Strip the root path prefix from an absolute path to get a vault-relative path.
+	 *
+	 * @example '/home/user/vault/notes/a.md' with root '/home/user/vault' → 'notes/a.md'
+	 */
+	private static stripRoot(path: string, rootPath: string): string {
+		const normalized = path.replace(/\\/g, '/');
+		const cleanRoot = rootPath.replace(/\/+$/, '');
+		if (normalized.startsWith(cleanRoot + '/')) {
+			return normalized.slice(cleanRoot.length + 1);
+		}
+		if (normalized === cleanRoot) return '';
+		// Fallback: return as-is (shouldn't happen with proper roots)
+		return normalized;
 	}
 }

@@ -8,12 +8,8 @@ import {
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import {
-	LucideFolder,
-	LucideStickyNote,
-	LucidePlus,
-	LucideCloud,
-} from '@lucide/angular';
+import { LucideFolder, LucideStickyNote, LucideCloud } from '@lucide/angular';
+import { FolderBrowseContent } from './_folder-browse-button';
 import { AdaptersManager } from '@core/adapters/manager';
 import { WorkspaceService } from '@services/workspace.service';
 import type { AdapterConfig } from '@core/adapters/adapter.interface';
@@ -42,12 +38,13 @@ type CreationMode = 'folder' | 'standalone';
 		FormsModule,
 		LucideFolder,
 		LucideStickyNote,
-		LucidePlus,
 		LucideCloud,
+		FolderBrowseContent,
 	],
 	templateUrl: './workspace-wizard.component.html',
 	styleUrl: './workspace-wizard.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
+	host: { class: 'p-8' },
 })
 export class WorkspaceWizardComponent {
 	private readonly router = inject(Router);
@@ -143,28 +140,38 @@ export class WorkspaceWizardComponent {
 			: this.workspaceName().trim() || 'Untitled';
 
 		const id = `ws-${Date.now().toString()}`;
-		const pickerAdapter = this.adapterManager.getWorkspacePickerAdapter();
-		const activeSyncAdapters =
-			this.isFolderMode() && this.folderPath() && pickerAdapter
-				? [pickerAdapter.id]
-				: [];
-		const adapterConfig: AdapterConfig[] = [];
-		if (this.isFolderMode() && this.folderPath() && pickerAdapter) {
-			adapterConfig.push({
-				adapterId: pickerAdapter.id,
-				path: this.folderPath() ?? '',
-			});
-		}
+		const { activeSyncAdapters, adapterConfigs } =
+			this.#buildAdapterConfig();
 		const workspace = {
 			id,
 			name,
 			activeSyncAdapters,
-			adapterConfigs: adapterConfig,
+			adapterConfigs,
 		};
 
 		this.workspaceService.addWorkspace(workspace);
 		this.workspaceService.activateWorkspace(id);
 		// Navigate away from wizard
 		void this.router.navigate(['/']);
+	}
+
+	/** Build adapter config and active adapter list from the current wizard state. */
+	#buildAdapterConfig(): {
+		activeSyncAdapters: string[];
+		adapterConfigs: AdapterConfig[];
+	} {
+		const pickerAdapter = this.adapterManager.getWorkspacePickerAdapter();
+		const activeSyncAdapters =
+			this.isFolderMode() && this.folderPath() && pickerAdapter
+				? [pickerAdapter.id]
+				: [];
+		const adapterConfigs: AdapterConfig[] = [];
+		if (this.isFolderMode() && this.folderPath() && pickerAdapter) {
+			adapterConfigs.push({
+				adapterId: pickerAdapter.id,
+				path: this.folderPath() ?? '',
+			} as AdapterConfig);
+		}
+		return { activeSyncAdapters, adapterConfigs };
 	}
 }

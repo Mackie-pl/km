@@ -1,4 +1,11 @@
 import { bootstrapApplication } from '@angular/platform-browser';
+import { Buffer } from 'buffer';
+
+// Tauri's webview (Chromium) doesn't have Node.js's global `Buffer`, but
+// isomorphic-git's internal code references it directly. Polyfill it once
+// before anything else — this is a no-op in environments that already have it.
+(globalThis as unknown as Record<string, unknown>)['Buffer'] = Buffer;
+
 import { appConfig } from './app/app.config';
 import { AppComponent } from '@ui/app.component';
 import { PlatformService } from '@services/platform.service';

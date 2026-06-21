@@ -1,5 +1,5 @@
 <div
-	class="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex items-center justify-center p-8"
+	class="text-gray-900 dark:text-gray-100 flex items-center justify-center p-8"
 >
 	<div
 		class="w-full max-w-xl rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-8 shadow-lg"
@@ -7,40 +7,27 @@
 		<div class="space-y-2 mb-6">
 			<h1 class="text-3xl font-semibold tracking-tight">Workspaces</h1>
 			<p class="text-sm text-gray-500 dark:text-gray-400">
-				Choose a folder that contains your markdown notes.
+				Configure workspaces and their sync adapters.
 			</p>
 		</div>
 
 		<!-- Existing workspaces list -->
 		@if (workspaces().length > 0) {
-		<div class="space-y-2 mb-6">
-			<div class="text-sm font-medium text-gray-700 dark:text-gray-300">
-				Existing Workspaces
-			</div>
-			@for (workspace of workspaces(); track workspace.id) {
-			<div
-				class="flex items-center gap-1 w-full p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
-				[class.border-indigo-500]="activeWorkspace()?.id === workspace.id"
-				[class.dark:border-indigo-400]="activeWorkspace()?.id === workspace.id"
-				[class.bg-indigo-50]="activeWorkspace()?.id === workspace.id"
-				[class.dark:bg-indigo-900/50]="activeWorkspace()?.id === workspace.id"
-				(click)="selectWorkspace(workspace.id)"
-			>
-				<div class="flex-1 font-medium text-sm">
-					{{ workspace.name }}
-				</div>
-				<button
-					type="button"
-					(click)="removeWorkspace(workspace.id, workspace.name); $event.stopPropagation()"
-					class="flex items-center justify-center size-7 rounded-md border-none bg-transparent cursor-pointer transition-colors duration-150 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 flex-shrink-0"
-					[attr.aria-label]="'Remove ' + workspace.name"
-				>
-					<svg lucideTrash2 class="size-4"></svg>
-				</button>
-			</div>
-			}
-		</div>
-		}
+		<span
+			class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+		>
+			Existing Workspaces
+		</span>
+
+		@for (workspace of workspaces(); track workspace.id) {
+		<app-workspace-card
+			[workspace]="workspace"
+			[isActive]="activeWorkspace()?.id === workspace.id"
+			[isExpanded]="expandedWorkspaceId() === workspace.id"
+			(toggleExpand)="toggleExpand(workspace.id)"
+			class="mb-2 block"
+		></app-workspace-card>
+		} }
 
 		<!-- Add new workspace button -->
 		<button

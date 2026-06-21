@@ -1,186 +1,87 @@
 <!--
   Vault file & folder tree — single template used by both desktop and mobile sidebar.
-  Labels hide when collapsed() is true (desktop collapsed state).
-  Uses flat tree rendering with depth-based indentation.
+  Labels hide via [class.sr-only] when collapsed() is true.
+  Renders tree via SidebarTreeRowComponent to stay within nesting limits.
 -->
-<div class="px-1">
-	<div
-		class="px-3 pb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
-	>
-		Vault
-	</div>
-	<div class="space-y-1">
-		@if (treeNodes().length) {
-			<!-- New Folder button -->
-			<div class="flex items-center gap-1 px-3 py-2">
-				<button
-					class="flex items-center gap-3 px-3 py-2 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 text-sm"
-					(click)="createNewFolder()"
-					[attr.aria-label]="'New Folder'"
-				>
-					<svg lucideFolderPlus class="size-5 flex-shrink-0"></svg>
-				</button>
-				<button
-					class="flex items-center gap-3 px-3 py-2 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 text-sm"
-					(click)="createNewFile()"
-					[attr.aria-label]="'New File'"
-				>
-					<svg lucideFilePlus class="size-5 flex-shrink-0"></svg>
-				</button>
-			</div>
-
-			<hr class="mx-3 mb-1 border-gray-200 dark:border-gray-700" />
-
-			<!-- Tree nodes -->
-			@for (node of treeNodes(); track node.entry.id) {
-				@if (renamingId() === node.entry.id) {
-					<!-- Renaming state -->
-					@if (node.entry.type === 'folder') {
-						<footer
-							class="flex items-center w-full gap-3 px-3 py-2.5"
-							[style.padding-left.px]="12 + node.depth * 16"
-						>
-							<svg
-								lucideFolder
-								class="size-5 flex-shrink-0"
-							></svg>
-							<input
-								#renameInput
-								autofocus
-								[value]="node.entry.name"
-								(blur)="
-									commitRename(
-										node.entry.id,
-										$any($event.target).value
-									)
-								"
-								(keydown.enter)="
-									commitRename(
-										node.entry.id,
-										$any($event.target).value
-									)
-								"
-								(keydown.escape)="cancelRename()"
-								class="flex-1 bg-transparent border-b border-indigo-500 dark:border-indigo-400 text-sm text-gray-900 dark:text-gray-100 outline-none"
-							/>
-						</footer>
-					} @else {
-						<nav
-							class="flex items-center w-full gap-3 px-3 py-2.5 pl-8"
-							[style.padding-left.px]="12 + node.depth * 16"
-						>
-							<svg
-								lucideFileText
-								class="size-5 flex-shrink-0"
-							></svg>
-							<input
-								#renameInput
-								autofocus
-								[value]="node.entry.name"
-								(blur)="
-									commitRename(
-										node.entry.id,
-										$any($event.target).value
-									)
-								"
-								(keydown.escape)="cancelRename()"
-								(keydown.enter)="
-									commitRename(
-										node.entry.id,
-										$any($event.target).value
-									)
-								"
-								class="flex-1 bg-transparent border-b border-indigo-500 dark:border-indigo-400 text-sm text-gray-900 dark:text-gray-100 outline-none"
-							/>
-						</nav>
-					}
-				} @else if (node.entry.type === 'folder') {
-					<!-- Folder row -->
-					<div
-						class="entry-btn group"
-						[style.padding-left.px]="8 + node.depth * 16"
-						[tuiDropdownManual]="
-							contextEntry()?.id === node.entry.id
-						"
-						[tuiDropdown]="contextMenu"
-						(contextmenu)="onContextMenu($event, node.entry)"
-						(touchstart)="onTouchStartRename($event, node.entry)"
-						(touchend)="onTouchEndRename()"
-						[attr.aria-label]="node.entry.name"
-					>
-						<button
-							class="flex items-center justify-center size-5 flex-shrink-0 border-none bg-transparent cursor-pointer transition-transform duration-150 text-gray-500 dark:text-gray-400"
-							[class.rotate-90]="
-								expandedFolders().has(node.entry.id)
-							"
-							(click)="toggleFolder(node.entry.id)"
-							[attr.aria-label]="'Expand folder'"
-						>
-							<svg lucideChevronRight class="size-4"></svg>
-						</button>
-						<svg
-							lucideFolder
-							class="size-5 flex-shrink-0 text-gray-500 dark:text-gray-400"
-						></svg>
-						@if (!collapsed()) {
-							<span class="text-sm truncate">{{
-								node.entry.name
-							}}</span>
-						}
-					</div>
-				} @else {
-					<!-- File row -->
-					<button
-						class="entry-btn font-semibold"
-						[style.padding-left.px]="36 + node.depth * 16"
-						[tuiDropdown]="contextMenu"
-						[tuiDropdownManual]="
-							contextEntry()?.id === node.entry.id
-						"
-						(click)="openFile(node.entry)"
-						(contextmenu)="onContextMenu($event, node.entry)"
-						(touchstart)="onTouchStartRename($event, node.entry)"
-						(touchend)="onTouchEndRename()"
-						[attr.data-active]="
-							node.entry.path === activeEntryPath()
-								? 'true'
-								: null
-						"
-						[attr.aria-label]="node.entry.name"
-					>
-						<svg lucideFileText class="size-5 flex-shrink-0"></svg>
-						@if (!collapsed()) {
-							<span class="text-sm truncate">{{
-								node.entry.name
-							}}</span>
-						}
-					</button>
-				}
-			}
-		} @else {
-			<!-- New Folder button (empty state) -->
+<div
+	class="flex h-full flex-col px-1"
+	(contextmenu)="onBackgroundContextMenu($event)"
+>
+	<!-- Header row: label + action buttons (only when items exist) -->
+	<div class="flex items-center justify-between px-3 py-2">
+		<span
+			class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+		>
+			Vault
+		</span>
+		<span
+			[class.hidden]="!treeNodes().length"
+			class="flex items-center gap-1"
+		>
 			<button
-				class="flex items-center w-full gap-3 px-3 py-2 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 text-sm"
+				class="flex items-center gap-3 rounded-lg border-none bg-transparent px-3 py-2 text-left text-sm text-gray-500 transition-colors duration-150 hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
 				(click)="createNewFolder()"
 				[attr.aria-label]="'New Folder'"
 			>
 				<svg lucideFolderPlus class="size-5 flex-shrink-0"></svg>
-				@if (!collapsed()) {
-					<span class="text-sm font-medium">New Folder</span>
-				}
 			</button>
 			<button
-				class="flex items-center w-full gap-3 px-3 py-2 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 text-sm"
+				class="flex items-center gap-3 rounded-lg border-none bg-transparent px-3 py-2 text-left text-sm text-gray-500 transition-colors duration-150 hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
 				(click)="createNewFile()"
 				[attr.aria-label]="'New File'"
 			>
 				<svg lucideFilePlus class="size-5 flex-shrink-0"></svg>
-				@if (!collapsed()) {
-					<span class="text-sm font-medium">New File</span>
-				}
+			</button>
+		</span>
+	</div>
+
+	<!-- Content area -->
+	<div class="flex-1 space-y-1 overflow-y-auto">
+		@if (treeNodes().length) {
+			<hr class="mx-3 mb-1 border-gray-200 dark:border-gray-700" />
+
+			@for (node of treeNodes(); track node.entry.id) {
+				<app-sidebar-tree-row
+					[node]="node"
+					[collapsed]="collapsed()"
+					[activeEntryPath]="activeEntryPath()"
+					[contextEntry]="contextEntry()"
+					[renamingId]="renamingId()"
+					[expandedFolders]="expandedFolders()"
+					(toggleFolder)="toggleFolder($event)"
+					(openFile)="openFile($event)"
+					(onContextMenu)="onEntryContextMenu($event)"
+					(startRename)="startRename($event)"
+					(commitRename)="commitRename($event.id, $event.name)"
+					(cancelRename)="cancelRename()"
+					(deleteEntry)="deleteEntry($event)"
+					(createNewFileInFolder)="createNewFile($event)"
+				/>
+			}
+		} @else {
+			<!-- Empty state: New Folder / New File buttons -->
+			<button
+				class="flex w-full items-center gap-3 rounded-lg border-none bg-transparent px-3 py-2 text-left text-sm text-gray-500 transition-colors duration-150 hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+				(click)="createNewFolder()"
+				[attr.aria-label]="'New Folder'"
+			>
+				<svg lucideFolderPlus class="size-5 flex-shrink-0"></svg>
+				<span class="text-sm font-medium" [class.sr-only]="collapsed()"
+					>New Folder</span
+				>
+			</button>
+			<button
+				class="flex w-full items-center gap-3 rounded-lg border-none bg-transparent px-3 py-2 text-left text-sm text-gray-500 transition-colors duration-150 hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+				(click)="createNewFile()"
+				[attr.aria-label]="'New File'"
+			>
+				<svg lucideFilePlus class="size-5 flex-shrink-0"></svg>
+				<span class="text-sm font-medium" [class.sr-only]="collapsed()"
+					>New File</span
+				>
 			</button>
 			<div
-				class="px-3 py-2 rounded-lg text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800"
+				class="rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-500 dark:bg-gray-800 dark:text-gray-400"
 			>
 				No notes yet
 			</div>
@@ -188,33 +89,31 @@
 	</div>
 </div>
 
-<!-- Context menu template -->
-<ng-template #contextMenu>
-	@if (contextEntry(); as entry) {
-		<div class="flex flex-col min-w-32 py-1">
-			@if (entry.type === 'folder') {
-				<button
-					class="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors duration-150 border-none bg-transparent cursor-pointer text-left"
-					(click)="createNewFile(entry)"
-				>
-					<svg lucideFilePlus class="size-4 flex-shrink-0"></svg>
-					New File
-				</button>
-			}
+<!-- Background (empty area) context menu — positioned at cursor -->
+@if (backgroundMenuOpen()) {
+	<div
+		class="fixed z-50"
+		[style.left.px]="backgroundMenuX()"
+		[style.top.px]="backgroundMenuY()"
+		(contextmenu)="$event.preventDefault()"
+	>
+		<div
+			class="flex min-w-36 flex-col rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+		>
 			<button
-				class="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors duration-150 border-none bg-transparent cursor-pointer text-left"
-				(click)="startRename(entry)"
+				class="flex cursor-pointer items-center gap-3 border-none bg-transparent px-3 py-2.5 text-left text-sm text-gray-900 transition-colors duration-150 hover:bg-gray-200 dark:text-gray-100 dark:hover:bg-gray-800"
+				(click)="createNewFile()"
 			>
-				<svg lucidePencil class="size-4 flex-shrink-0"></svg>
-				Rename
+				<svg lucideFilePlus class="size-4 flex-shrink-0"></svg>
+				New File
 			</button>
 			<button
-				class="flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors duration-150 border-none bg-transparent cursor-pointer text-left"
-				(click)="deleteEntry(entry)"
+				class="flex cursor-pointer items-center gap-3 border-none bg-transparent px-3 py-2.5 text-left text-sm text-gray-900 transition-colors duration-150 hover:bg-gray-200 dark:text-gray-100 dark:hover:bg-gray-800"
+				(click)="createNewFolder()"
 			>
-				<svg lucideTrash2 class="size-4 flex-shrink-0"></svg>
-				Delete
+				<svg lucideFolderPlus class="size-4 flex-shrink-0"></svg>
+				New Folder
 			</button>
 		</div>
-	}
-</ng-template>
+	</div>
+}

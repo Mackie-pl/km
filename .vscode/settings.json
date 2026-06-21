@@ -198,6 +198,112 @@
 		"/^pnpm exec eslint src --ext \\.ts,\\.html 2>&1$/": {
 			"approve": true,
 			"matchCommandLine": true
+		},
+		"/^pnpm run test -- --run 2>&1 \\| head -80$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^pnpm run test -- --run 2>&1 \\| Select-Object -First 80$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"npx vitest": true,
+		"/^pnpm run lint 2>&1 \\| Select-String -Pattern \"\\^C:\" \\| ForEach-Object \\{ \\$_ \\}$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^pnpm exec vitest run 2>&1 \\| Select-Object -Last 30$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^pnpm exec vitest run 2>&1 \\| Select-Object -Last 15$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^pnpm run test 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^npx ng build 2>&1 \\| tail -30$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^npx ng build 2>&1 \\| Select-Object -Last 30$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^pnpm run test 2>&1 \\| Select-Object -Last 15$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^npx tsc --noEmit 2>&1 \\| head -50$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"eslint": true,
+		"/^ng build 2>&1 \\| Select-String -Pattern \"error\" -SimpleMatch$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^ng build 2>&1 \\| Select-String -Pattern \"error TS\" -SimpleMatch -Context 3$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^ng build 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^pnpm exec vitest run --reporter=verbose 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^ng build 2>&1 \\| Select-String -Pattern \"error TS\" -Context 2$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^ng build 2>&1 \\| Select-String \"sync-engine\"$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^ng build 2>&1 \\| Select-String -Pattern \"error\" -SimpleMatch -Context 1,1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^pnpm run test --run 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^pnpx vitest run 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^pnpm exec vitest run 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^cd km-test ; npx tsc --noEmit 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^cd km-test ; npx tsc --noEmit --pretty 2>&1 \\| head -20$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^cd km-test ; pnpm exec vitest run --reporter=verbose src/app/core/adapters 2>&1$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^cd km-test ; npx tsc --noEmit 2>&1 \\| grep -v \"vitest\\.config\\\\\\|vitest\\.setup\"$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^ng build 2>&1 \\| Select-String -Pattern \"ERROR\\|error\\|complete\\|fail\"$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^npx ng build --clear-cache 2>&1 \\| Select-String -Pattern \"ERROR\\|error\\|Application bundle\"$/": {
+			"approve": true,
+			"matchCommandLine": true
 		}
 	}
 }

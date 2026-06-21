@@ -7,7 +7,104 @@
   ],
   "permissions": [
     "core:default",
+    "core:window:allow-start-dragging",
     "opener:default",
+    "http:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        {
+          "url": "https://github.com"
+        },
+        {
+          "url": "https://gitlab.com"
+        },
+        {
+          "url": "https://bitbucket.org"
+        },
+        {
+          "url": "https://codeberg.org"
+        },
+        {
+          "url": "https://sourceforge.net"
+        },
+        {
+          "url": "https://launchpad.net"
+        },
+        {
+          "url": "https://sourcehut.org"
+        },
+        {
+          "url": "https://git.sr.ht"
+        },
+        {
+          "url": "https://gitea.com"
+        },
+        {
+          "url": "https://forgejo.org"
+        },
+        {
+          "url": "https://gogs.io"
+        },
+        {
+          "url": "https://www.rhodecode.com"
+        },
+        {
+          "url": "https://www.assembla.com"
+        },
+        {
+          "url": "https://beanstalkapp.com"
+        },
+        {
+          "url": "https://codebasehq.com"
+        },
+        {
+          "url": "https://plan.io"
+        },
+        {
+          "url": "https://pagure.io"
+        },
+        {
+          "url": "https://notabug.org"
+        },
+        {
+          "url": "https://git.disroot.org"
+        },
+        {
+          "url": "https://gitlab.com"
+        },
+        {
+          "url": "https://github.com/enterprise"
+        },
+        {
+          "url": "https://gitflic.ru"
+        },
+        {
+          "url": "https://savannah.gnu.org"
+        },
+        {
+          "url": "https://kernel.org"
+        },
+        {
+          "url": "https://gitbox.apache.org"
+        },
+        {
+          "url": "https://git.eclipse.org"
+        },
+        {
+          "url": "https://git.debian.org"
+        },
+        {
+          "url": "https://opendev.org"
+        },
+        {
+          "url": "https://git.kernel.org"
+        },
+        {
+          "url": "https://code.google.com"
+        }
+      ]
+    },
     "dialog:allow-open",
     "fs:default",
     "fs:allow-write-text-file",
@@ -16,6 +113,7 @@
     "fs:allow-rename",
     "fs:allow-remove",
     "fs:allow-read-dir",
+    "fs:allow-watch",
     "fs:scope-app-recursive",
     {
       "identifier": "fs:scope",

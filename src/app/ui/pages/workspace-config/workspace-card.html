@@ -1,0 +1,54 @@
+<div
+	class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-colors overflow-hidden"
+	[class.border-indigo-500]="isActive()"
+	[class.dark:border-indigo-400]="isActive()"
+	[class.bg-indigo-50]="isActive() && !isExpanded()"
+	[class.dark:bg-indigo-900/50]="isActive() && !isExpanded()"
+>
+	<!-- Card header: clickable row -->
+	<div
+		class="flex items-center gap-1 w-full p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+		(click)="select()"
+	>
+		<!-- Expand/collapse chevron -->
+		<button
+			type="button"
+			(click)="onToggleExpand(); $event.stopPropagation()"
+			class="flex items-center justify-center size-7 rounded-md border-none bg-transparent cursor-pointer transition-colors duration-150 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex-shrink-0"
+			[attr.aria-label]="isExpanded() ? 'Collapse' : 'Expand'"
+		>
+			@if (isExpanded()) {
+			<svg lucideChevronDown class="size-4"></svg>
+			} @else {
+			<svg lucideChevronRight class="size-4"></svg>
+			}
+		</button>
+
+		<div class="flex-1 font-medium text-sm">{{ workspace().name }}</div>
+
+		<!-- Active indicator -->
+		@if (isActive()) {
+		<span
+			class="inline-flex items-center rounded-full bg-indigo-100 dark:bg-indigo-900/50 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300"
+		>
+			Active
+		</span>
+		}
+
+		<button
+			type="button"
+			(click)="remove(); $event.stopPropagation()"
+			class="flex items-center justify-center size-7 rounded-md border-none bg-transparent cursor-pointer transition-colors duration-150 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 flex-shrink-0"
+			[attr.aria-label]="'Remove ' + workspace().name"
+		>
+			<svg lucideTrash2 class="size-4"></svg>
+		</button>
+	</div>
+
+	<!-- Expanded panel: adapter management -->
+	@if (isExpanded()) {
+	<app-workspace-adapter-panel
+		[workspace]="workspace()"
+	></app-workspace-adapter-panel>
+	}
+</div>

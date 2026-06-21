@@ -1,0 +1,43 @@
+<div
+	class="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2"
+>
+	<svg lucideCloud class="size-4 text-gray-400 shrink-0"></svg>
+	<span class="flex-1 text-sm text-gray-900 dark:text-gray-100">
+		{{ getLabel(adapterId()) }}
+	</span>
+
+	@if (isLocal(adapterId())) {
+	<span
+		class="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-2 py-0.5 text-xs font-medium text-gray-500 dark:text-gray-400"
+	>
+		Local
+	</span>
+	} @else {
+	<button
+		type="button"
+		(click)="edit.emit()"
+		class="flex items-center justify-center size-6 rounded-md border-none bg-transparent cursor-pointer transition-colors duration-150 text-gray-400 hover:text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+		[attr.aria-label]="'Edit ' + adapterId()"
+	>
+		<svg lucideSettings class="size-3.5"></svg>
+	</button>
+
+	<button
+		type="button"
+		(click)="remove.emit()"
+		class="flex items-center justify-center size-6 rounded-md border-none bg-transparent cursor-pointer transition-colors duration-150 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30"
+		[attr.aria-label]="'Remove ' + adapterId()"
+	>
+		<svg lucideTrash2 class="size-3.5"></svg>
+	</button>
+	} @if (isConfiguring() && !isLocal(adapterId())) {
+	<div class="w-full pt-2 mt-1 border-t border-gray-200 dark:border-gray-700">
+		<app-adapter-config-form
+			[adapterId]="adapterId()"
+			[existingConfig]="getConfig(workspace(), adapterId())"
+			(save)="configSave.emit($event)"
+			(cancel)="configCancel.emit()"
+		></app-adapter-config-form>
+	</div>
+	}
+</div>

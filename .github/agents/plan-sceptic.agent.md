@@ -115,7 +115,7 @@ This project is a **minimalistic, cross-platform note-taking app**:
 - **Stack**: Angular (standalone, signals), Tailwind v4, Taiga UI, Tauri 2.0
 - **Architecture**: UI → Vault Engine → Operations → Adapters (filesystem-native)
 - **Storage**: Markdown files are canonical; IndexedDB is rebuildable cache
-- **Sync**: Asynchronous, append-only operation journal
+- **Sync**: Asynchronous, adapters for both local network and cloud providers
 - **AI**: Local embeddings, offline-first inference
 
 Refer to `docs/CODING_STANDARDS.md` and `.github/copilot-instructions.md` for the full

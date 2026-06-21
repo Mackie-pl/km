@@ -221,28 +221,45 @@ export class TestFsAdapter implements Adapter {
 		oldPath?: string,
 	): void {
 		if (type === 'rename' && oldPath) {
-			const existingContent = this.files.get(oldPath);
-			this.files.set(path, content ?? existingContent ?? '');
-			this.files.delete(oldPath);
-			const events: WatchEvent[] = [{ type, path, oldPath }];
-			for (const cb of this.watchCallbacks) {
-				try {
-					cb(events);
-				} catch {
-					// Ignore callback errors in tests
-				}
-			}
+			this.#handleRenameEvent(path, content, oldPath);
 			return;
 		}
 
+		this.#applyFileChange(type, path, content);
+
+		const events: WatchEvent[] = [{ type, path }];
+		this.#notifyWatchers(events);
+	}
+
+	/** Handle a rename (move) event — transfers content and triggers callbacks. */
+	#handleRenameEvent(
+		path: string,
+		content: string | undefined,
+		oldPath: string,
+	): void {
+		const existingContent = this.files.get(oldPath);
+		this.files.set(path, content ?? existingContent ?? '');
+		this.files.delete(oldPath);
+		const events: WatchEvent[] = [{ type: 'rename', path, oldPath }];
+		this.#notifyWatchers(events);
+	}
+
+	/** Apply a file create/update/delete to the in-memory map. */
+	#applyFileChange(
+		type: WatchEvent['type'],
+		path: string,
+		content?: string,
+	): void {
 		if (type !== 'delete' && content !== undefined) {
 			this.files.set(path, content);
 		}
 		if (type === 'delete') {
 			this.files.delete(path);
 		}
+	}
 
-		const events: WatchEvent[] = [{ type, path }];
+	/** Fire events to all registered watch callbacks. */
+	#notifyWatchers(events: WatchEvent[]): void {
 		for (const cb of this.watchCallbacks) {
 			try {
 				cb(events);

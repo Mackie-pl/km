@@ -11,6 +11,8 @@ import { ADAPTERS } from './core/adapters/token';
 import { TauriFsAdapter } from './core/adapters/local/tauri-fs.adapter';
 import { BrowserFileSystemApiAdapter } from './core/adapters/local/browser-file-system-api.adapter';
 import { TestFsAdapter } from './core/adapters/test-fs.adapter';
+import { GitAdapterProxy } from './core/adapters/cloud/git/adapter-proxy';
+import { GDriveAdapterProxy } from './core/adapters/cloud/gdrive/adapter-proxy';
 import type { Adapter } from './core/adapters/adapter.interface';
 
 /**
@@ -45,6 +47,10 @@ export const appConfig: ApplicationConfig = {
 				} else {
 					adapters.push(new BrowserFileSystemApiAdapter());
 				}
+				// Cloud adapters — Git is fully implemented (lazy-loaded),
+				// GDrive is a placeholder stub for future implementation.
+				adapters.push(new GitAdapterProxy());
+				adapters.push(new GDriveAdapterProxy());
 				return adapters;
 			},
 		},

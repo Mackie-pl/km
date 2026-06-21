@@ -16,7 +16,6 @@
 			"@core": ["./src/app/core"],
 			"@services/*": ["./src/app/core/services/*"],
 			"@types/*": ["./src/app/core/types/*"],
-			"@journal/*": ["./src/app/core/journal/*"],
 			"@adapters/*": ["./src/app/core/adapters/*"]
 		},
 		"outDir": "./dist/out-tsc",

@@ -48,12 +48,10 @@
 					: 'Close sidebar'
 			"
 		>
-			@if (isDesktop()) {
-				@if (collapsed()) {
-					<svg lucideChevronRight class="size-4"></svg>
-				} @else {
-					<svg lucideChevronLeft class="size-4"></svg>
-				}
+			@if (isDesktop() && collapsed()) {
+				<svg lucideChevronRight class="size-4"></svg>
+			} @else if (isDesktop()) {
+				<svg lucideChevronLeft class="size-4"></svg>
 			} @else {
 				<svg lucideX class="size-5"></svg>
 			}

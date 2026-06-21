@@ -1,1 +1,4 @@
-<div #editorContainer class="h-full min-h-0"></div>
+<div class="flex flex-col h-full">
+	<app-note-toolbar [entryId]="entryId()" />
+	<div #editorContainer class="flex-1 min-h-0"></div>
+</div>
