@@ -2,6 +2,8 @@
  * Pure utility helpers for the Git adapter.
  */
 
+import type { FileEntry } from '../../adapter.interface';
+
 export function repoUrlToDir(repoUrl: string): string {
 	let hash = 0;
 	for (let i = 0; i < repoUrl.length; i++) {
@@ -28,4 +30,27 @@ export function errMsg(err: unknown, defaultMsg: string): string {
 export function assertRoot(root: string | undefined): string {
 	if (!root) throw new Error('GitAdapter: root (repo URL) is required');
 	return root;
+}
+
+/** Group a flat file list into a single directory level (non-recursive list). */
+export function groupNonRecursiveEntries(
+	files: string[],
+	prefix: string,
+): FileEntry[] {
+	const seen = new Set<string>();
+	const entries: FileEntry[] = [];
+	for (const f of files) {
+		const rel = prefix ? f.slice(prefix.length).replace(/^\//, '') : f;
+		const parts = rel.split('/');
+		const name = parts[0];
+		if (!name || seen.has(name)) continue;
+		seen.add(name);
+		entries.push({
+			name,
+			path: prefix ? `${prefix}/${name}` : name,
+			isDirectory: parts.length > 1,
+			lastModified: Date.now(),
+		});
+	}
+	return entries;
 }

@@ -64,3 +64,17 @@ export interface GitCloneError {
 	repoUrl: string;
 	timestamp: number;
 }
+
+/**
+ * In-memory record for a single managed repository clone.
+ * Keyed by repo URL inside the adapter's `repos` map.
+ */
+export interface RepoEntry {
+	cloneDir: string;
+	fs: GitFsBackend;
+	state: GitCloneState;
+	error: string | null;
+	branch: string;
+	authorName: string;
+	authorEmail: string;
+}
