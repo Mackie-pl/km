@@ -304,6 +304,14 @@
 		"/^npx ng build --clear-cache 2>&1 \\| Select-String -Pattern \"ERROR\\|error\\|Application bundle\"$/": {
 			"approve": true,
 			"matchCommandLine": true
+		},
+		"/^pnpm eslint src/app/ui/partials/note-toolbar/note-toolbar\\.component\\.html --ext \\.html$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^pnpm eslint src --ext \\.ts,\\.html 2>&1 \\| Select-String \"src\\\\\\\\\"$/": {
+			"approve": true,
+			"matchCommandLine": true
 		}
 	}
 }

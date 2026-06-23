@@ -264,18 +264,7 @@ export class TauriFsAdapter implements Adapter {
 
 		if ('access' in kind) return [];
 
-		// Filter out paths that look like temp/swap files — these are created
-		// by external editors during atomic saves and should not propagate
-		// to the sync engine (which would try to read them, fail, and potentially
-		// trigger content loss via delete+recreate sequences).
-		const originalCount = event.paths.length;
-		const cleanPaths = event.paths.filter((p) => !isTempFilePath(p));
-		if (cleanPaths.length !== originalCount) {
-			this.#log(
-				'Filtered temp paths:',
-				event.paths.filter((p) => isTempFilePath(p)),
-			);
-		}
+		const cleanPaths = this.#cleanEventPaths(event.paths);
 		if (cleanPaths.length === 0) {
 			this.#log('All paths filtered — dropping event');
 			return [];
@@ -308,6 +297,22 @@ export class TauriFsAdapter implements Adapter {
 		}
 		this.#log('Unhandled event kind:', Object.keys(kind));
 		return [];
+	}
+
+	/**
+	 * Drop temp/swap-file paths created by external editors during atomic saves.
+	 * These must not propagate to the sync engine (which would try to read them,
+	 * fail, and potentially trigger content loss via delete+recreate sequences).
+	 */
+	#cleanEventPaths(paths: string[]): string[] {
+		const cleanPaths = paths.filter((p) => !isTempFilePath(p));
+		if (cleanPaths.length !== paths.length) {
+			this.#log(
+				'Filtered temp paths:',
+				paths.filter((p) => isTempFilePath(p)),
+			);
+		}
+		return cleanPaths;
 	}
 
 	/**

@@ -52,36 +52,58 @@ function parseYamlLines(lines: string[]): NoteMetadata {
 	for (const line of lines) {
 		const keyExec = /^(\w+):\s*(.*)$/.exec(line);
 		if (keyExec) {
-			flushTags(metadata, currentKey, currentTags);
-
-			const matchedKey = keyExec[1];
-			const matchedValue = keyExec[2];
-			if (matchedKey === undefined || matchedValue === undefined) {
-				continue;
-			}
-
-			currentKey = matchedKey;
-			const value = matchedValue.trim();
-
-			if (value === '') {
-				continue;
-			}
-
-			applyKeyValue(metadata, currentKey, value);
+			currentKey = handleKeyLine(
+				metadata,
+				keyExec,
+				currentKey,
+				currentTags,
+			);
 			continue;
 		}
-
-		const itemExec = /^\s+-\s+(.+)$/.exec(line);
-		if (itemExec && currentKey === 'tags') {
-			const matched = itemExec[1];
-			if (matched === undefined) continue;
-			const tag = stripQuotes(matched.trim());
-			if (tag) currentTags.push(tag);
-		}
+		collectTagItem(line, currentKey, currentTags);
 	}
 
 	flushTags(metadata, currentKey, currentTags);
 	return metadata;
+}
+
+/**
+ * Handle a `key: value` line: flush any pending block tags, then apply the
+ * value. Returns the new "current key" for subsequent block-array items.
+ */
+function handleKeyLine(
+	metadata: NoteMetadata,
+	keyExec: RegExpExecArray,
+	currentKey: string | null,
+	currentTags: string[],
+): string | null {
+	flushTags(metadata, currentKey, currentTags);
+
+	const matchedKey = keyExec[1];
+	const matchedValue = keyExec[2];
+	if (matchedKey === undefined || matchedValue === undefined) {
+		return currentKey;
+	}
+
+	const value = matchedValue.trim();
+	if (value !== '') {
+		applyKeyValue(metadata, matchedKey, value);
+	}
+	return matchedKey;
+}
+
+/** Collect a block-array `  - item` line into the pending tags accumulator. */
+function collectTagItem(
+	line: string,
+	currentKey: string | null,
+	currentTags: string[],
+): void {
+	const itemExec = /^\s+-\s+(.+)$/.exec(line);
+	if (!itemExec || currentKey !== 'tags') return;
+	const matched = itemExec[1];
+	if (matched === undefined) return;
+	const tag = stripQuotes(matched.trim());
+	if (tag) currentTags.push(tag);
 }
 
 /**
@@ -168,27 +190,34 @@ export function serializeFrontmatter(
  */
 function buildFrontmatterLines(metadata: NoteMetadata): string[] {
 	const lines: string[] = [];
+	appendCreatedAt(lines, metadata);
+	appendIcon(lines, metadata);
+	appendTags(lines, metadata);
 
-	const hasCreatedAt = metadata.createdAt !== undefined;
-	const hasIcon = metadata.icon !== undefined && metadata.icon !== '';
-	const hasTags = metadata.tags !== undefined && metadata.tags.length > 0;
+	if (lines.length === 0) return lines;
+	return ['---', ...lines, '---'];
+}
 
-	if (!hasCreatedAt && !hasIcon && !hasTags) return lines;
-
-	lines.push('---');
-	if (hasCreatedAt) {
+/** Append the `createdAt` line when present. */
+function appendCreatedAt(lines: string[], metadata: NoteMetadata): void {
+	if (metadata.createdAt !== undefined) {
 		lines.push(`createdAt: ${String(metadata.createdAt)}`);
 	}
-	if (hasIcon && metadata.icon) {
+}
+
+/** Append the `icon` line when non-empty. */
+function appendIcon(lines: string[], metadata: NoteMetadata): void {
+	if (metadata.icon) {
 		lines.push(`icon: "${metadata.icon}"`);
 	}
-	if (hasTags && metadata.tags) {
+}
+
+/** Append the inline `tags` array line when non-empty. */
+function appendTags(lines: string[], metadata: NoteMetadata): void {
+	if (metadata.tags && metadata.tags.length > 0) {
 		const tagList = metadata.tags.map((t) => `"${t}"`).join(', ');
 		lines.push(`tags: [${tagList}]`);
 	}
-	lines.push('---');
-
-	return lines;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────

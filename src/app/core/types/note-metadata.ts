@@ -4,6 +4,9 @@
  * Only `icon`, `tags`, and `createdAt` are stored in frontmatter.
  * `updatedAt` is intentionally excluded — VaultEntry timestamps
  * are the single source of truth.
+ *
+ * Tags are stored lowercased in frontmatter for case-insensitive dedup.
+ * Forbidden characters in tag names: `[`, `]`, `,`.
  */
 export interface NoteMetadata {
 	createdAt?: number;

@@ -27,6 +27,11 @@ export function errMsg(err: unknown, defaultMsg: string): string {
 	return err instanceof Error ? err.message : defaultMsg;
 }
 
+/** Short SHA for debug logs, or an em dash when the ref is absent. */
+export function shortSha(sha: string | null): string {
+	return sha ? sha.slice(0, 8) : '—';
+}
+
 export function assertRoot(root: string | undefined): string {
 	if (!root) throw new Error('GitAdapter: root (repo URL) is required');
 	return root;

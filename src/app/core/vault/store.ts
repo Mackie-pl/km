@@ -1,12 +1,20 @@
 import { Injectable, signal, computed, inject, effect } from '@angular/core';
-import { WorkspaceService, type Workspace } from '@core/services/workspace.service';
+import {
+	WorkspaceService,
+	type Workspace,
+} from '@core/services/workspace.service';
 import { VAULT_ENTRY_TYPES, type VaultEntry } from './vault-entry';
 import { VaultDatabase } from './vault-database';
 import { VaultReconciler } from './vault-reconciler';
 import { resolveUniquePath, makeVaultEntry } from './vault-utils';
-import { repoUrlToCloneDir, destroyGitFsBackend } from '@core/adapters/cloud/git/fs';
+import {
+	repoUrlToCloneDir,
+	destroyGitFsBackend,
+} from '@core/adapters/cloud/git/fs';
 import { GitTokenStore } from '@core/adapters/cloud/git/auth';
+import { GitSettingsStore } from '@core/adapters/cloud/git/settings-store';
 import type { AdapterConfig } from '@core/adapters/adapter.interface';
+import { parseFrontmatter } from '@core/utils/frontmatter-parser';
 
 // Re-exports for backward compat with imports from @vault/store
 export { VAULT_ENTRY_TYPES, type VaultEntry } from './vault-entry';
@@ -63,6 +71,25 @@ export class VaultStore {
 		return Array.from(this.entries().values()).filter(
 			(e) => e.workspaceId === wsId && e.pendingAdapters.length > 0,
 		);
+	});
+
+	/** Frontmatter metadata for every non-deleted file — reactively derived. */
+	readonly allFrontmatters = computed(() =>
+		this.files().map((f) => {
+			const { metadata } = parseFrontmatter(f.content ?? '');
+			return metadata;
+		}),
+	);
+
+	/** All unique tags across all files, lowercased, sorted. */
+	readonly allTags = computed(() => {
+		const set = new Set<string>();
+		for (const fm of this.allFrontmatters()) {
+			for (const tag of fm.tags ?? []) {
+				set.add(tag.toLowerCase());
+			}
+		}
+		return [...set].sort();
 	});
 
 	//
@@ -142,9 +169,7 @@ export class VaultStore {
 			}
 
 			this.#workspaceRemovalWatchReady = true;
-			this.#lastSeenWorkspaces = new Map(
-				current.map((w) => [w.id, w]),
-			);
+			this.#lastSeenWorkspaces = new Map(current.map((w) => [w.id, w]));
 		});
 	}
 
@@ -194,7 +219,7 @@ export class VaultStore {
 	 * active one, the in-memory entries are also cleared.
 	 *
 	 * Also cleans up git adapter data: destroys the LightningFS IndexedDB database
-	 * for each git adapter and removes the encrypted token from the token store.
+	 * for each git adapter and removes the encrypted token and stored settings.
 	 */
 	async purgeWorkspace(
 		wsId: string,
@@ -203,7 +228,7 @@ export class VaultStore {
 		await this.ensureInitialized();
 		await this.database.deleteAllByWorkspaceId(wsId);
 
-		// Clean up git adapter data (LightningFS DB + encrypted tokens)
+		// Clean up git adapter data (LightningFS DB + token + settings)
 		if (adapterConfigs) {
 			for (const config of adapterConfigs) {
 				if (config.adapterId === 'git') {
@@ -211,6 +236,7 @@ export class VaultStore {
 					await destroyGitFsBackend(cloneDir);
 					const tokenStore = new GitTokenStore();
 					await tokenStore.deleteToken(config.repoUrl);
+					new GitSettingsStore().delete(config.repoUrl);
 				}
 			}
 		}
@@ -258,8 +284,7 @@ export class VaultStore {
 		const name = resolvedPath.split('/').pop() ?? '';
 
 		// Set pending adapters to all currently active adapters
-		const activeAdapters =
-			this.workspaceService.activeWorkspace()?.activeSyncAdapters ?? [];
+		const activeAdapters = this.getActiveSyncAdapters();
 
 		const entry = makeVaultEntry({
 			workspaceId: wsId,

@@ -73,7 +73,9 @@ export function repoUrlToCloneDir(repoUrl: string): string {
 async function deleteIndexedDb(dbName: string): Promise<void> {
 	return new Promise<void>((resolve) => {
 		const req = indexedDB.deleteDatabase(dbName);
-		req.onsuccess = () => resolve();
+		req.onsuccess = () => {
+			resolve();
+		};
 		req.onerror = () => {
 			console.warn(
 				`destroyGitFsBackend: failed to delete IndexedDB "${dbName}"`,

@@ -20,10 +20,11 @@ import type {
 	WatchEvent,
 	WorkspacePickResult,
 } from '../../adapter.interface';
-import type { RepoEntry } from './types';
 import { GitRepoManager } from './repo-manager';
+import { GitPushEngine } from './push-engine';
 import { createWatchPoller } from './watch-poller';
 import { GitTokenStore } from './auth';
+import { GitSettingsStore } from './settings-store';
 import {
 	resolvePath,
 	relativePath,
@@ -31,12 +32,7 @@ import {
 	assertRoot,
 	groupNonRecursiveEntries,
 } from './helpers';
-import {
-	fetchRemote,
-	checkoutRemoteBranch,
-	fastForwardFromRemote,
-	pushBranch,
-} from './git-ops';
+import { fetchRemote, checkoutRemoteBranch } from './git-ops';
 import { debugLog } from '@core/utils/debug-logger';
 import git from 'isomorphic-git';
 
@@ -47,7 +43,14 @@ export class GitAdapter implements Adapter {
 	readonly isLocal = false;
 
 	private readonly tokenStore = new GitTokenStore();
-	private readonly repoManager = new GitRepoManager(this.tokenStore);
+	private readonly settingsStore = new GitSettingsStore();
+	private readonly repoManager = new GitRepoManager(
+		this.tokenStore,
+		this.settingsStore,
+	);
+
+	/** Owns commit → push → divergence recovery for the write path. */
+	private readonly pushEngine = new GitPushEngine(this.tokenStore);
 
 	isAvailable(): boolean {
 		return true;
@@ -94,7 +97,7 @@ export class GitAdapter implements Adapter {
 
 			await repo.fs.promises.writeFile(fullPath, content);
 
-			await this.commitAndPush(
+			await this.pushEngine.commitAndPush(
 				repo,
 				relativePath(path),
 				`Update ${path}`,
@@ -123,7 +126,7 @@ export class GitAdapter implements Adapter {
 				throw new Error(`no such file: "${path}"`);
 			}
 
-			await this.commitAndPush(
+			await this.pushEngine.commitAndPush(
 				repo,
 				relativePath(path),
 				`Delete ${path}`,
@@ -146,31 +149,31 @@ export class GitAdapter implements Adapter {
 		const repo = await this.repoManager.ensureRepo(assertRoot(root));
 
 		try {
-			const content = await this.read(oldPath, root);
+			const oldRel = relativePath(oldPath);
 
-			const newFullPath = resolvePath(repo.cloneDir, newPath);
-			const parentDir = newFullPath.split('/').slice(0, -1).join('/');
-			await repo.fs.promises
-				.mkdir(parentDir, { recursive: true })
-				.catch((_e: unknown) => {
-					/* parent may already exist */
-				});
-			await repo.fs.promises.writeFile(newFullPath, content);
+			const tracked = await git
+				.listFiles({ fs: repo.fs, dir: repo.cloneDir, ref: 'HEAD' })
+				.catch(() => [] as string[]);
 
-			await git.add({
-				fs: repo.fs,
-				dir: repo.cloneDir,
-				filepath: relativePath(newPath),
-			});
-			await git.remove({
-				fs: repo.fs,
-				dir: repo.cloneDir,
-				filepath: relativePath(oldPath),
-			});
-			await this.commitAndPush(
+			// A rename moves either a single tracked file or — since git has no
+			// first-class directories — every file under the old path's prefix.
+			const sources = tracked.includes(oldRel)
+				? [oldRel]
+				: tracked.filter((f) => f.startsWith(oldRel + '/'));
+
+			if (sources.length === 0) {
+				// Nothing tracked at the old path on this remote. Throw so the
+				// push phase can fall back appropriately (write the file, or
+				// create the directory for an empty folder) instead of silently
+				// dropping the entry or writing a placeholder at a folder path.
+				throw new Error(`nothing tracked at "${oldPath}"`);
+			}
+
+			await this.pushEngine.renameCommitPush(
 				repo,
-				relativePath(newPath),
-				`Rename ${oldPath} → ${newPath}`,
+				sources,
+				oldPath,
+				newPath,
 				root,
 			);
 		} catch (err: unknown) {
@@ -232,12 +235,21 @@ export class GitAdapter implements Adapter {
 		callback: (events: WatchEvent[]) => void,
 		root?: string,
 	): Promise<() => void> {
-		const repo = await this.repoManager.ensureRepo(assertRoot(root));
+		const resolvedRoot = assertRoot(root);
+		const repo = await this.repoManager.ensureRepo(resolvedRoot);
 
-		const poller = createWatchPoller(repo.fs, repo.cloneDir);
+		const { pollIntervalMs } = this.settingsStore.get(resolvedRoot);
+		const poller = createWatchPoller(
+			repo,
+			() => this.tokenStore.getToken(resolvedRoot),
+			pollIntervalMs,
+		);
+		// Register so divergence recovery can emit precise remote changes here.
+		this.pushEngine.registerReconcileSink(resolvedRoot, callback);
 		poller.start(callback);
 		return () => {
 			poller.stop();
+			this.pushEngine.unregisterReconcileSink(resolvedRoot);
 		};
 	}
 
@@ -254,7 +266,7 @@ export class GitAdapter implements Adapter {
 
 			const gitkeepPath = `${fullPath}/.gitkeep`;
 			await repo.fs.promises.writeFile(gitkeepPath, '');
-			await this.commitAndPush(
+			await this.pushEngine.commitAndPush(
 				repo,
 				`${relativePath(path)}/.gitkeep`,
 				`Create directory ${path}`,
@@ -272,19 +284,22 @@ export class GitAdapter implements Adapter {
 		const gitConfig = config as GitAdapterConfig;
 		const repoUrl = gitConfig.repoUrl;
 
-		// Initialise the repo (idempotent) and try to fetch
 		try {
+			// Persist non-secret settings (branch/author/poll) and the token
+			// BEFORE building the repo, so the clone uses the configured branch
+			// and author. `forget` drops any cached entry (e.g. from a previous
+			// config) so it rebuilds from the freshly stored settings.
+			this.settingsStore.set(repoUrl, gitConfig);
+			if (gitConfig.token) {
+				await this.tokenStore.setToken(repoUrl, gitConfig.token);
+			}
+			this.repoManager.forget(repoUrl);
+
 			const repo = await this.repoManager.ensureRepo(repoUrl);
 
-			// If we already have auth, try a fetch to confirm reachability
-			const token = await this.tokenStore.getToken(repoUrl);
-			if (token || gitConfig.token) {
-				// Ensure token is stored for this fetch
-				if (gitConfig.token) {
-					await this.tokenStore.setToken(repoUrl, gitConfig.token);
-				}
-
-				const authToken = await this.tokenStore.getToken(repoUrl);
+			// If we have auth, try a fetch to confirm reachability.
+			const authToken = await this.tokenStore.getToken(repoUrl);
+			if (authToken) {
 				try {
 					await fetchRemote(repo, authToken);
 					// Check out fetched content so HEAD resolves for later reads.
@@ -311,70 +326,5 @@ export class GitAdapter implements Adapter {
 
 	async registerScope(_root: string): Promise<void> {
 		// No OS-level scope registration needed
-	}
-
-	// ── Private helpers ──────────────────────────────────────────────────
-
-	/**
-	 * Git add/remove + commit + push in one step.
-	 * @param action 'add' (default) or 'remove'
-	 */
-	private async commitAndPush(
-		repo: RepoEntry,
-		filepath: string,
-		message: string,
-		root?: string,
-		action: 'add' | 'remove' = 'add',
-	): Promise<void> {
-		if (action === 'remove') {
-			await git.remove({ fs: repo.fs, dir: repo.cloneDir, filepath });
-		} else {
-			await git.add({ fs: repo.fs, dir: repo.cloneDir, filepath });
-		}
-		const commitResult = await git.commit({
-			fs: repo.fs,
-			dir: repo.cloneDir,
-			author: { name: repo.authorName, email: repo.authorEmail },
-			message,
-			ref: `refs/heads/${repo.branch}`,
-		});
-		debugLog(
-			`[GitAdapter] commit: "${message}" → ${commitResult.slice(0, 12)}`,
-		);
-		await this.tryPush(repo, root);
-	}
-
-	/**
-	 * Attempt to push changes to the remote. Non-blocking.
-	 * Fetches first so the push is a clean fast-forward over any remote
-	 * commits (e.g. from another device or manual push).
-	 * Logs warnings on failure — the sync engine will retry on next write.
-	 */
-	private async tryPush(repo: RepoEntry, root?: string): Promise<void> {
-		if (!root) {
-			debugLog('[GitAdapter] tryPush: no root, skipping push');
-			return;
-		}
-		try {
-			const token = await this.tokenStore.getToken(root);
-			if (!token) {
-				debugLog(
-					`[GitAdapter] tryPush: no token for "${root}", skipping push`,
-				);
-				return;
-			}
-
-			// Fetch latest remote state, fast-forward if remote is ahead
-			// (no-op when local is ahead), then push as a clean fast-forward.
-			await fetchRemote(repo, token);
-			await fastForwardFromRemote(repo);
-			await pushBranch(repo, token);
-			debugLog(`[GitAdapter] push OK: "${repo.branch}" → "${root}"`);
-		} catch (err) {
-			console.warn(
-				`[GitAdapter] push FAILED for "${repo.branch}" on "${root}":`,
-				err,
-			);
-		}
 	}
 }

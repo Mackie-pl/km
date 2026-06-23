@@ -197,6 +197,12 @@ describe('SyncEngineService', () => {
 			expect(engine.syncFailed()).toBe(true);
 			expect(engine.lastSyncError()).not.toBeNull();
 
+			// A failed push must NOT mark the entry synced — it stays pending so
+			// the next cycle retries instead of silently dropping the change.
+			expect(vault.getByPath('note.md')?.pendingAdapters).toContain(
+				'test-fs',
+			);
+
 			testAdapter.write = originalWrite;
 		});
 	});

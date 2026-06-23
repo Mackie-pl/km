@@ -115,8 +115,16 @@ export interface GitAdapterConfig {
 	repoUrl: string;
 	/** Branch to sync with (defaults to 'main') */
 	branch: string;
-	/** Personal Access Token for authentication */
-	token: string;
+	/**
+	 * Personal Access Token for authentication.
+	 *
+	 * TRANSIENT — present only while the config flows through the config form
+	 * and `testConnection`. It is NEVER persisted in the workspace config
+	 * (which lives in plaintext localStorage); the durable home for the token
+	 * is the encrypted `GitTokenStore`. `WorkspaceService` strips this field
+	 * before storing, so persisted/loaded configs have it `undefined`.
+	 */
+	token?: string;
 	/** Author name for commits */
 	authorName: string;
 	/** Author email for commits */

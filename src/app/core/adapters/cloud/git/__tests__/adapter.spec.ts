@@ -153,6 +153,27 @@ describe('GitAdapter', () => {
 		).rejects.toThrow();
 	});
 
+	it('should rename a folder by moving its tracked subtree (no duplication)', async () => {
+		await adapter.createDir!('docs', TEST_ROOT);
+		await adapter.write('docs/a.md', 'A', TEST_ROOT);
+		await adapter.write('docs/b.md', 'B', TEST_ROOT);
+
+		await adapter.rename('docs', 'guides', TEST_ROOT);
+
+		const all = await adapter.list('/', TEST_ROOT, true);
+		const paths = all.map((e) => e.path);
+
+		// New paths present, old paths gone — the whole subtree moved.
+		expect(paths).toContain('guides/a.md');
+		expect(paths).toContain('guides/b.md');
+		expect(paths).not.toContain('docs/a.md');
+		expect(paths).not.toContain('docs/b.md');
+		// The .gitkeep moved too, so the old folder leaves nothing behind to be
+		// re-imported as a duplicate.
+		expect(paths.some((p) => p.startsWith('docs/'))).toBe(false);
+		expect(await adapter.read('guides/a.md', TEST_ROOT)).toBe('A');
+	});
+
 	it('should list files in root', async () => {
 		await adapter.write('a.md', 'a', TEST_ROOT);
 		await adapter.write('b.md', 'b', TEST_ROOT);

@@ -23,6 +23,8 @@ export class SyncEngineService implements OnDestroy {
 	private scheduled = false;
 	private pulling = false;
 	private pullRequested = false;
+	private pushing = false;
+	private pushRequested = false;
 
 	/** Phase executors — instantiated once, reused across cycles. */
 	private readonly pushPhase: SyncPushPhase;
@@ -237,11 +239,25 @@ export class SyncEngineService implements OnDestroy {
 	// Internal
 	// ──────────────────────────────────────────────
 
-	/** Only push — triggered by entriesNeedingSync changes. */
+	/**
+	 * Only push — triggered by entriesNeedingSync changes.
+	 *
+	 * Reentrancy-safe: only one push cycle runs at a time. If a push is
+	 * requested while one is in flight (e.g. markAdapterSynced re-fires the
+	 * auto-push effect mid-cycle), the request is coalesced and the cycle
+	 * re-runs once on completion. This prevents concurrent commits on the same
+	 * git branch, which diverge and cause non-fast-forward push failures.
+	 */
 	private async runSync(): Promise<void> {
+		if (this.pushing) {
+			this.pushRequested = true;
+			return;
+		}
+
 		const adapters = this.getActiveAdapters();
 		if (adapters.length === 0) return;
 
+		this.pushing = true;
 		this.isSyncing.set(true);
 		try {
 			await this.pushPhase.execute(adapters);
@@ -250,7 +266,14 @@ export class SyncEngineService implements OnDestroy {
 			this.syncFailed.set(true);
 			this.lastSyncError.set(this.formatError(err));
 		} finally {
+			this.pushing = false;
 			this.isSyncing.set(false);
+			// If a push was requested mid-cycle, run one more cycle to flush
+			// any entries that became pending while this one was in flight.
+			if (this.pushRequested) {
+				this.pushRequested = false;
+				void this.runSync();
+			}
 		}
 	}
 
@@ -303,6 +326,12 @@ export class SyncEngineService implements OnDestroy {
 			return 'Sync permission needed — click to re-grant access';
 		}
 		if (err instanceof AggregateError) {
+			// The push/pull phases collect per-entry failures as strings; surface
+			// the first so the message is specific (e.g. the divergence notice)
+			// rather than the generic aggregate wrapper.
+			const first = err.errors[0] as unknown;
+			if (typeof first === 'string') return first;
+			if (first instanceof Error) return first.message;
 			return err.message;
 		}
 		if (err instanceof Error) {

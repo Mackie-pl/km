@@ -4,12 +4,13 @@ import {
 	computed,
 	inject,
 	input,
+	type OnInit,
 	output,
 	signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideX, LucideCheck, LucideLoader } from '@lucide/angular';
-import { getAdapterSchema } from '@core/adapters/config-schema';
+import { getAdapterSchema, type ConfigField } from '@core/adapters/config-schema';
 import { ADAPTERS } from '@core/adapters/token';
 import { ConfigFieldComponent } from './config-field.component';
 import type { AdapterConfig } from '@core/adapters/adapter.interface';
@@ -35,12 +36,15 @@ import type { AdapterConfig } from '@core/adapters/adapter.interface';
 	styleUrl: './adapter-config-form.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AdapterConfigFormComponent {
+export class AdapterConfigFormComponent implements OnInit {
 	/** Adapter type to configure — must have an entry in config-schema.ts. */
 	readonly adapterId = input<string>();
 
 	/** Optional existing config for edit mode (pre-populates fields). */
 	readonly existingConfig = input<AdapterConfig | undefined>();
+
+	/** True when editing an already-saved adapter (vs. adding a new one). */
+	readonly isEditing = computed(() => this.existingConfig() !== undefined);
 
 	/** Emits the assembled config on successful save. */
 	readonly save = output<AdapterConfig>();
@@ -57,6 +61,26 @@ export class AdapterConfigFormComponent {
 		return getAdapterSchema(id);
 	});
 
+	/**
+	 * Fields to render. Identical to the schema in add mode. When editing, secret
+	 * (password) fields become optional with a "leave blank to keep current" hint —
+	 * the stored value is preserved unless the user types a replacement.
+	 */
+	readonly formFields = computed<ConfigField[]>(() => {
+		const schema = this.schema();
+		if (!schema) return [];
+		if (!this.isEditing()) return schema.fields;
+		return schema.fields.map((f) =>
+			f.type === 'password'
+				? {
+						...f,
+						required: false,
+						placeholder: 'Leave blank to keep current',
+					}
+				: f,
+		);
+	});
+
 	/** Current form values keyed by field key. */
 	readonly formValues = signal<Record<string, string | number>>({});
 
@@ -66,26 +90,28 @@ export class AdapterConfigFormComponent {
 	/** Whether a connection test is in progress. */
 	readonly testingConnection = signal(false);
 
-	constructor() {
-		// Pre-populate from existing config or schema defaults
+	ngOnInit(): void {
+		// Pre-populate from existing config or schema defaults. Done in ngOnInit
+		// (not the constructor) because signal `input()` values are only bound
+		// after construction — reading them earlier yields undefined.
 		const existing = this.existingConfig();
 		const schema = this.schema();
-		if (schema) {
-			const initial: Record<string, string | number> = {};
-			for (const field of schema.fields) {
-				if (existing) {
-					const val = (
-						existing as unknown as Record<string, unknown>
-					)[field.key];
-					if (val !== undefined) {
-						initial[field.key] = val as string | number;
-					}
-				} else if (field.defaultValue !== undefined) {
-					initial[field.key] = field.defaultValue;
+		if (!schema) return;
+
+		const initial: Record<string, string | number> = {};
+		for (const field of schema.fields) {
+			if (existing) {
+				const val = (existing as unknown as Record<string, unknown>)[
+					field.key
+				];
+				if (val !== undefined) {
+					initial[field.key] = val as string | number;
 				}
+			} else if (field.defaultValue !== undefined) {
+				initial[field.key] = field.defaultValue;
 			}
-			this.formValues.set(initial);
 		}
+		this.formValues.set(initial);
 	}
 
 	/** Get the current value for a field, or empty string. */
@@ -105,10 +131,7 @@ export class AdapterConfigFormComponent {
 
 	/** Validate required fields and test connection, then emit the assembled config. */
 	async onSave(): Promise<void> {
-		const schema = this.schema();
-		if (!schema) return;
-
-		const config = this.#buildConfig(schema);
+		const config = this.#buildConfig();
 		if (!config) return;
 
 		const ok = await this.#testConnection(config);
@@ -118,10 +141,11 @@ export class AdapterConfigFormComponent {
 	}
 
 	/** Validate required fields and assemble the config object. Returns null if invalid. */
-	#buildConfig(
-		schema: NonNullable<ReturnType<AdapterConfigFormComponent['schema']>>,
-	): AdapterConfig | null {
-		for (const field of schema.fields) {
+	#buildConfig(): AdapterConfig | null {
+		const fields = this.formFields();
+		if (fields.length === 0) return null;
+
+		for (const field of fields) {
 			if (!field.required) continue;
 			const val = this.formValues()[field.key];
 			if (val === undefined || val === '') {
@@ -133,11 +157,12 @@ export class AdapterConfigFormComponent {
 		const config: Record<string, unknown> = {
 			adapterId: this.adapterId(),
 		};
-		for (const field of schema.fields) {
+		for (const field of fields) {
 			const val = this.formValues()[field.key];
-			if (val !== undefined) {
-				config[field.key] = val;
-			}
+			// Omit blank fields so a secret left blank on edit doesn't overwrite
+			// the stored value with an empty string (testConnection then keeps it).
+			if (val === undefined || val === '') continue;
+			config[field.key] = val;
 		}
 
 		return config as unknown as AdapterConfig;

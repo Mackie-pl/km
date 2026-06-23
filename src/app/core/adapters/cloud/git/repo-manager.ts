@@ -8,7 +8,7 @@
 
 import { GitCloneState, type RepoEntry } from './types';
 import { createGitFsBackend } from './fs';
-import { repoUrlToDir, errMsg } from './helpers';
+import { repoUrlToDir, errMsg, shortSha } from './helpers';
 import {
 	fetchRemote,
 	checkoutRemoteBranch,
@@ -16,13 +16,26 @@ import {
 	resolveRefSafe,
 } from './git-ops';
 import type { GitTokenStore } from './auth';
+import type { GitSettingsStore } from './settings-store';
 import { debugLog } from '@core/utils/debug-logger';
 import git from 'isomorphic-git';
 
 export class GitRepoManager {
 	private readonly repos = new Map<string, RepoEntry>();
 
-	constructor(private readonly tokenStore: GitTokenStore) {}
+	constructor(
+		private readonly tokenStore: GitTokenStore,
+		private readonly settingsStore: GitSettingsStore,
+	) {}
+
+	/**
+	 * Drop the cached entry for `root` (if any) so the next `ensureRepo` rebuilds
+	 * it — picking up freshly persisted settings (e.g. a changed branch/author).
+	 * The on-disk clone is untouched.
+	 */
+	forget(root: string): void {
+		this.repos.delete(root);
+	}
 
 	/**
 	 * Get a ready-to-use repo for `root`, initialising (and fetching) it on
@@ -37,14 +50,16 @@ export class GitRepoManager {
 		if (!repo) {
 			const cloneDir = `/__git_${repoUrlToDir(root)}`;
 			const fs = await createGitFsBackend(cloneDir);
+			const settings = this.settingsStore.get(root);
 			repo = {
 				cloneDir,
 				fs,
 				state: GitCloneState.NOT_CLONED,
 				error: null,
-				branch: 'main',
-				authorName: 'Note App User',
-				authorEmail: 'user@note-app.local',
+				branch: settings.branch,
+				authorName: settings.authorName,
+				authorEmail: settings.authorEmail,
+				commitLock: Promise.resolve(),
 			};
 			this.repos.set(root, repo);
 		}
@@ -113,27 +128,40 @@ export class GitRepoManager {
 			`refs/remotes/origin/${repo.branch}`,
 		);
 		debugLog(
-			`[GitAdapter] initRepo: local=${localSha?.slice(0, 8) ?? '—'} remote=${remoteSha?.slice(0, 8) ?? '—'}`,
+			`[GitAdapter] initRepo: local=${shortSha(localSha)} remote=${shortSha(remoteSha)}`,
 		);
+
+		// No local commits — checkout from remote so HEAD resolves.
+		if (localSha === null) {
+			await this.#checkoutFreshFromRemote(repo);
+			return;
+		}
 
 		// Local branch exists — preserve local commits, fast-forward
 		// from remote if possible.
-		if (localSha !== null && remoteSha !== null && localSha !== remoteSha) {
-			const ff = await fastForwardFromRemote(repo);
-			debugLog(
-				ff
-					? '[GitAdapter] initRepo: fast-forwarded local branch to match remote'
-					: '[GitAdapter] initRepo: local branch is ahead of remote — preserving local commits',
-			);
-		} else if (localSha === null) {
-			// No local commits — checkout from remote so HEAD resolves.
-			const ok = await checkoutRemoteBranch(repo);
-			debugLog(
-				ok
-					? `[GitAdapter] initRepo: checked out origin/${repo.branch} as local branch`
-					: `[GitAdapter] initRepo: no commits on origin/${repo.branch} — empty repo`,
-			);
+		if (remoteSha !== null && localSha !== remoteSha) {
+			await this.#fastForwardLocal(repo);
 		}
+	}
+
+	/** First init: checkout origin/branch as the local branch. */
+	async #checkoutFreshFromRemote(repo: RepoEntry): Promise<void> {
+		const ok = await checkoutRemoteBranch(repo);
+		debugLog(
+			ok
+				? `[GitAdapter] initRepo: checked out origin/${repo.branch} as local branch`
+				: `[GitAdapter] initRepo: no commits on origin/${repo.branch} — empty repo`,
+		);
+	}
+
+	/** Fast-forward the existing local branch to match remote, if possible. */
+	async #fastForwardLocal(repo: RepoEntry): Promise<void> {
+		const ff = await fastForwardFromRemote(repo);
+		debugLog(
+			ff
+				? '[GitAdapter] initRepo: fast-forwarded local branch to match remote'
+				: '[GitAdapter] initRepo: local branch is ahead of remote — preserving local commits',
+		);
 	}
 
 	/** Add remote origin if not already configured. */

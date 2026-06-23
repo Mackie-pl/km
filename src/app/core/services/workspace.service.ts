@@ -1,5 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { AdaptersManager } from '@core/adapters/manager';
+import { GitTokenStore } from '@core/adapters/cloud/git/auth';
+import { GitSettingsStore } from '@core/adapters/cloud/git/settings-store';
 import type { AdapterConfig } from '../adapters/adapter.interface';
 
 /** Workspace metadata */
@@ -56,7 +58,12 @@ export class WorkspaceService {
 	private loadPersistedState(): void {
 		try {
 			const stored = localStorage.getItem(WORKSPACES_KEY);
-			if (stored) this.workspaces.set(JSON.parse(stored) as Workspace[]);
+			if (stored) {
+				const parsed = JSON.parse(stored) as Workspace[];
+				const cleaned = this.#migrateOutPlaintextTokens(parsed);
+				this.#seedGitSettings(cleaned);
+				this.workspaces.set(cleaned);
+			}
 
 			const activeId = localStorage.getItem(ACTIVE_WORKSPACE_KEY);
 			if (activeId) {
@@ -67,6 +74,85 @@ export class WorkspaceService {
 			}
 		} catch (error) {
 			console.error('Failed to load workspace state:', error);
+		}
+	}
+
+	// ========================================================================
+	// Secret hygiene — keep PATs out of plaintext localStorage
+	// ========================================================================
+
+	/**
+	 * Strip the transient git PAT from a config. The token is never persisted
+	 * in the workspace config; its durable home is the encrypted
+	 * {@link GitTokenStore}. See `GitAdapterConfig.token`.
+	 */
+	#stripGitToken(config: AdapterConfig): AdapterConfig {
+		if (config.adapterId === 'git' && config.token) {
+			const { token: _token, ...rest } = config;
+			return rest;
+		}
+		return config;
+	}
+
+	/** Strip transient secrets from every adapter config in a workspace. */
+	#sanitizeWorkspace(ws: Workspace): Workspace {
+		return {
+			...ws,
+			adapterConfigs: ws.adapterConfigs.map((c) =>
+				this.#stripGitToken(c),
+			),
+		};
+	}
+
+	/**
+	 * One-time cleanup for configs persisted by older versions that stored the
+	 * PAT in plaintext. Migrates any token found into the encrypted token store
+	 * (so existing auth keeps working), strips it from the config, and rewrites
+	 * localStorage.
+	 */
+	#migrateOutPlaintextTokens(list: Workspace[]): Workspace[] {
+		const hasPlaintextToken = list.some((ws) =>
+			ws.adapterConfigs.some(
+				(c) => c.adapterId === 'git' && !!c.token,
+			),
+		);
+		if (!hasPlaintextToken) return list;
+
+		// Best-effort migration into the encrypted store so existing auth
+		// keeps working, then strip the plaintext copies and rewrite storage.
+		const tokenStore = new GitTokenStore();
+		for (const ws of list) {
+			for (const c of ws.adapterConfigs) {
+				if (c.adapterId === 'git' && c.token) {
+					void tokenStore.setToken(c.repoUrl, c.token);
+				}
+			}
+		}
+
+		const cleaned = list.map((ws) => this.#sanitizeWorkspace(ws));
+		try {
+			localStorage.setItem(WORKSPACES_KEY, JSON.stringify(cleaned));
+		} catch {
+			/* best-effort */
+		}
+		return cleaned;
+	}
+
+	/**
+	 * Prime the git settings store from persisted (non-secret) config so the
+	 * adapter honors the configured branch/author/poll on first use — including
+	 * for adapters configured before settings were stored separately. The git
+	 * adapter is decoupled from workspace state, so this hands it the values it
+	 * can't otherwise see.
+	 */
+	#seedGitSettings(list: Workspace[]): void {
+		const store = new GitSettingsStore();
+		for (const ws of list) {
+			for (const c of ws.adapterConfigs) {
+				if (c.adapterId === 'git') {
+					store.set(c.repoUrl, c);
+				}
+			}
 		}
 	}
 
@@ -109,13 +195,14 @@ export class WorkspaceService {
 	 * Add a new workspace (or update if ID already exists).
 	 */
 	addWorkspace(workspace: Workspace): void {
-		const existing = this.workspaces().find((w) => w.id === workspace.id);
+		const sanitized = this.#sanitizeWorkspace(workspace);
+		const existing = this.workspaces().find((w) => w.id === sanitized.id);
 		if (existing) {
 			this.workspaces.update((list) =>
-				list.map((w) => (w.id === workspace.id ? workspace : w)),
+				list.map((w) => (w.id === sanitized.id ? sanitized : w)),
 			);
 		} else {
-			this.workspaces.update((list) => [...list, workspace]);
+			this.workspaces.update((list) => [...list, sanitized]);
 		}
 		this.persist();
 	}
@@ -174,22 +261,25 @@ export class WorkspaceService {
 	 * @param config - Adapter configuration to store
 	 */
 	setAdapterConfig(workspaceId: string, config: AdapterConfig): void {
+		// Drop the transient PAT before it ever reaches state/localStorage —
+		// testConnection has already stashed it in the encrypted token store.
+		const safeConfig = this.#stripGitToken(config);
 		this.workspaces.update((list) =>
 			list.map((w) => {
 				if (w.id !== workspaceId) return w;
 				const filtered = w.adapterConfigs.filter(
-					(c) => c.adapterId !== config.adapterId,
+					(c) => c.adapterId !== safeConfig.adapterId,
 				);
-				return { ...w, adapterConfigs: [...filtered, config] };
+				return { ...w, adapterConfigs: [...filtered, safeConfig] };
 			}),
 		);
 		if (this.activeWorkspace()?.id === workspaceId) {
 			this.activeWorkspace.update((w) => {
 				if (!w) return w;
 				const filtered = w.adapterConfigs.filter(
-					(c) => c.adapterId !== config.adapterId,
+					(c) => c.adapterId !== safeConfig.adapterId,
 				);
-				return { ...w, adapterConfigs: [...filtered, config] };
+				return { ...w, adapterConfigs: [...filtered, safeConfig] };
 			});
 		}
 		this.persist();

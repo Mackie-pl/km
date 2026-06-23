@@ -12,7 +12,7 @@
 	</div>
 
 	<div class="space-y-3 mt-4">
-		@for (field of s.fields; track field.key) {
+		@for (field of formFields(); track field.key) {
 			<app-config-field
 				[field]="field"
 				[value]="getFieldValue(field)"

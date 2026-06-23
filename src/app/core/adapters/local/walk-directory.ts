@@ -16,6 +16,12 @@ export function resolvePath(root: string | undefined, path: string): string {
 	return `${cleanRoot}/${cleanPath}`;
 }
 
+/** Join a child name onto a directory path, normalizing the root case. */
+function joinChildPath(dirPath: string, name: string): string {
+	if (dirPath === '/' || dirPath === '') return name;
+	return `${dirPath.replace(/\/+$/, '')}/${name}`;
+}
+
 /**
  * Recursively walk a directory and return all entries (files + folders).
  *
@@ -59,10 +65,7 @@ export async function walkDirectory(
 		// Skip temp/swap files created by external editors during atomic saves.
 		if (isTempFilePath(e.name)) continue;
 
-		const fullPath =
-			dirPath === '/' || dirPath === ''
-				? e.name
-				: `${dirPath.replace(/\/+$/, '')}/${e.name}`;
+		const fullPath = joinChildPath(dirPath, e.name);
 		result.push({
 			path: fullPath,
 			name: e.name,

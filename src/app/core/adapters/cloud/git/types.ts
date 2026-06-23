@@ -1,4 +1,20 @@
 /**
+ * Thrown by the push path when the remote branch has diverged and the adapter
+ * has reset the local clone to the remote tip (reconciling remote changes into
+ * the vault). It is a recoverable signal — not a hard failure: the affected
+ * entry stays pending and re-pushes cleanly on top of the reset branch.
+ */
+export class GitDivergenceError extends Error {
+	readonly code = 'GitDivergenceError';
+	constructor(branch: string) {
+		super(
+			`Remote branch "${branch}" diverged — reconciled remote changes locally, re-syncing`,
+		);
+		this.name = 'GitDivergenceError';
+	}
+}
+
+/**
  * Git clone state enum — tracks the lifecycle of a repository clone.
  */
 export enum GitCloneState {
@@ -77,4 +93,11 @@ export interface RepoEntry {
 	branch: string;
 	authorName: string;
 	authorEmail: string;
+	/**
+	 * Serializes commit+push for this repo. Each `commitAndPush` chains onto
+	 * this tail so two concurrent writes can't read the same HEAD as their
+	 * parent and diverge into a branch the remote rejects as non-fast-forward.
+	 * Always kept non-rejecting so one failure doesn't break the chain.
+	 */
+	commitLock: Promise<unknown>;
 }

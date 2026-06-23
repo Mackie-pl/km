@@ -109,7 +109,11 @@ export class SyncPushPhase {
 		if (entry.deleted) {
 			await adapter.delete(entry.path, root);
 		} else if (entry.pendingRenameFrom) {
-			await this.#pushRenameOrFallback(entry, adapter, root);
+			if (entry.type === VAULT_ENTRY_TYPES.FOLDER) {
+				await this.#pushFolderRename(entry, adapter, root);
+			} else {
+				await this.#pushRenameOrFallback(entry, adapter, root);
+			}
 		} else if (
 			entry.type === VAULT_ENTRY_TYPES.FOLDER &&
 			adapter.createDir
@@ -121,6 +125,38 @@ export class SyncPushPhase {
 			return;
 		} else {
 			await adapter.write(entry.path, entry.content ?? '', root);
+		}
+	}
+
+	/**
+	 * Push a folder rename. Adapters with real directories (local FS) move the
+	 * whole subtree atomically; object stores (git) move each tracked child.
+	 *
+	 * If the adapter can't rename the folder (e.g. nothing is tracked under the
+	 * old path), fall back to ensuring the NEW directory exists — never to
+	 * writing a file at the folder path, which would corrupt the tree. The
+	 * folder's child entries are pushed independently and recreate its contents.
+	 */
+	async #pushFolderRename(
+		entry: VaultEntry,
+		adapter: Adapter,
+		root?: string,
+	): Promise<void> {
+		const renameFrom = entry.pendingRenameFrom;
+		if (renameFrom) {
+			try {
+				await adapter.rename(renameFrom, entry.path, root);
+				return;
+			} catch (err) {
+				console.warn(
+					`[Sync] Folder rename failed for "${renameFrom}" → "${entry.path}" on ${adapter.id} — ensuring new directory exists`,
+					err,
+				);
+				await this.vault.clearPendingRename(entry.id);
+			}
+		}
+		if (adapter.createDir) {
+			await adapter.createDir(entry.path, root);
 		}
 	}
 
