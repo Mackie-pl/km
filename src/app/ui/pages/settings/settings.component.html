@@ -68,4 +68,37 @@
 			</button>
 		</label>
 	</section>
+
+	<!-- About Section -->
+	<section>
+		<h3
+			class="text-xs font-semibold uppercase tracking-wider mb-3 text-gray-500 dark:text-gray-400"
+		>
+			About
+		</h3>
+		<dl
+			class="py-3 px-4 rounded-xl bg-gray-100 dark:bg-gray-800 text-sm space-y-2"
+		>
+			<div class="flex items-center justify-between">
+				<dt class="text-gray-500 dark:text-gray-400">Version</dt>
+				<dd class="font-medium text-gray-900 dark:text-gray-100">
+					{{ buildInfo.version }}
+				</dd>
+			</div>
+			<div class="flex items-center justify-between">
+				<dt class="text-gray-500 dark:text-gray-400">Build</dt>
+				<dd
+					class="font-mono text-xs text-gray-700 dark:text-gray-300"
+				>
+					{{ buildInfo.gitSha }}
+				</dd>
+			</div>
+			<div class="flex items-center justify-between">
+				<dt class="text-gray-500 dark:text-gray-400">Built</dt>
+				<dd class="text-gray-700 dark:text-gray-300">
+					{{ buildTime }}
+				</dd>
+			</div>
+		</dl>
+	</section>
 </div>

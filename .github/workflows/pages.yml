@@ -1,0 +1,71 @@
+name: Deploy webapp (GitHub Pages)
+
+# Tag-driven, same as releases: pushing `v0.1.0` rebuilds and republishes the
+# webapp. Also runnable on demand from the Actions tab.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+# Least-privilege token + the permissions the Pages deploy action needs.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never cancel an in-progress deployment; queue instead.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build webapp
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # Served at the root of its own subdomain → base-href "/".
+      - name: Build
+        run: |
+          pnpm run generate:build-info
+          pnpm exec ng build --configuration production --base-href /
+
+      # SPA fallback: GitHub Pages has no server-side rewrite, so a copy of
+      # index.html served as 404.html lets deep links (/e/..., /settings) boot
+      # the Angular app instead of showing Pages' 404.
+      - name: Add SPA 404 fallback
+        run: cp dist/km-test/browser/index.html dist/km-test/browser/404.html
+
+      # Pins the custom subdomain when the APP_DOMAIN repo variable is set
+      # (e.g. app.example.com). Without it, the default *.github.io URL is used.
+      - name: Write CNAME
+        if: vars.APP_DOMAIN != ''
+        run: echo "${{ vars.APP_DOMAIN }}" > dist/km-test/browser/CNAME
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/km-test/browser
+
+  deploy:
+    name: Deploy to Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -19,6 +19,7 @@ import {
 import { PlatformService } from '@services/platform.service';
 import { WorkspaceService } from '@services/workspace.service';
 import { SidebarVaultListComponent } from './sidebar-vault-list.component';
+import { BUILD_INFO } from '@build-info';
 
 /**
  * Responsive sidebar component.
@@ -59,6 +60,9 @@ export class SidebarComponent {
 
 	readonly isDesktop = this.platformService.isDesktop;
 	readonly activeWorkspace = this.workspaceService.activeWorkspace;
+
+	/** App version, stamped at build time (see build-info.ts) */
+	readonly appVersion = BUILD_INFO.version;
 
 	/** Derive the currently-viewed entry path from the router URL, or null if not on an editor route. */
 	readonly activeEntryPath = computed(() => {

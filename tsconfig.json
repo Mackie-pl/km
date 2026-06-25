@@ -8,6 +8,7 @@
 		"allowUnreachableCode": false,
 		"allowUnusedLabels": false,
 		"paths": {
+			"@build-info": ["./src/build-info"],
 			"@ui/*": ["./src/app/ui/*"],
 			"@ui": ["./src/app/ui"],
 			"@vault/*": ["./src/app/core/vault/*"],

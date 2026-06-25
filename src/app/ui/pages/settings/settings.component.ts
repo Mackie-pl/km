@@ -4,6 +4,7 @@ import { ThemeService } from '@services/theme.service';
 import { Theme } from '@core/types/constants';
 import { SettingsService } from '@services/settings.service';
 import { ThemeButton } from '@ui/partials/settings/_theme-button';
+import { BUILD_INFO } from '@build-info';
 
 /**
  * Settings screen — shared between modal (desktop) and full-page route (mobile).
@@ -29,6 +30,14 @@ export class SettingsComponent {
 
 	/** Reactive debug toggle state from SettingsService */
 	readonly debugSync = this.settingsService.settings;
+
+	/** App version / git SHA / build time, stamped at build (see build-info.ts) */
+	readonly buildInfo = BUILD_INFO;
+
+	/** Human-friendly build timestamp, or 'dev build' when un-stamped */
+	readonly buildTime = BUILD_INFO.builtAt
+		? new Date(BUILD_INFO.builtAt).toLocaleString()
+		: 'dev build';
 
 	/** Select a theme — delegates to ThemeService which persists + applies it */
 	setTheme(mode: Theme): void {

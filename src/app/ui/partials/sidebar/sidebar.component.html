@@ -100,5 +100,14 @@
 			}
 			<svg lucideSettings class="size-4 flex-shrink-0 ml-auto"></svg>
 		</button>
+
+		<!-- Unobtrusive version label (expanded only) -->
+		@if (!isDesktop() || !collapsed()) {
+			<div
+				class="px-3 pt-1 text-right text-[10px] leading-none text-gray-400 dark:text-gray-600 select-none"
+			>
+				v{{ appVersion }}
+			</div>
+		}
 	</div>
 </aside>

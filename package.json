@@ -5,9 +5,10 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --host 0.0.0.0 --port 1420 --proxy-config proxy.conf.js",
-    "build": "ng build",
+    "build": "pnpm run generate:build-info && ng build",
     "watch": "ng build --watch --configuration development",
     "tauri": "tauri",
+    "generate:build-info": "node scripts/generate-build-info.mjs",
     "lint": "eslint src --ext .ts,.html",
     "lint:fix": "eslint src --ext .ts,.html --fix",
     "jscpd": "jscpd src --reporters console --min-tokens 50 --ignore node_modules/** --ignore src-tauri/target/**",
