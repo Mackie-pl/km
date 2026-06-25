@@ -1,0 +1,32 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Version: bump & tag",
+      "detail": "Bump package.json (the single source of truth), sync Cargo.toml + build-info, commit, and create the vX.Y.Z tag. Does NOT push.",
+      "type": "shell",
+      "command": "node",
+      "args": ["scripts/bump-version.mjs", "${input:bumpKind}"],
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true }
+    },
+    {
+      "label": "Version: push release (triggers CI build)",
+      "detail": "Push the commit and tag created above. This starts the GitHub release pipeline.",
+      "type": "shell",
+      "command": "git",
+      "args": ["push", "--follow-tags"],
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "bumpKind",
+      "type": "pickString",
+      "description": "How should the version change?",
+      "options": ["patch", "minor", "major"],
+      "default": "patch"
+    }
+  ]
+}
