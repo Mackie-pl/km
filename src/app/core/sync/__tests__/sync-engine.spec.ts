@@ -86,6 +86,23 @@ async function waitForDebounce(): Promise<void> {
 	await timeout(1100);
 }
 
+/**
+ * Poll until `predicate` holds (or the timeout elapses). The engine settles
+ * asynchronously — coalesced/auto-triggered pulls and debounced watch
+ * processing — so tests must wait for the observable result rather than a
+ * guessed fixed delay, which flakes on slower CI runners.
+ */
+async function waitFor(
+	predicate: () => boolean,
+	timeoutMs = 2000,
+): Promise<void> {
+	const start = Date.now();
+	while (!predicate()) {
+		if (Date.now() - start > timeoutMs) return;
+		await timeout(10);
+	}
+}
+
 // ── Tests ──────────────────────────────────────────────────────────────────
 
 describe('SyncEngineService', () => {
@@ -241,6 +258,13 @@ describe('SyncEngineService', () => {
 
 			await vault.init();
 
+			// Arm orphan detection with a completed first pull BEFORE the orphan
+			// exists. Orphan detection only runs from the second pull onward, and
+			// the first pull marks vault entries missing from remote as pending —
+			// so arming after the orphan exists would re-pend it and mask it.
+			await engine.forcePull();
+			await waitFor(() => !engine.isSyncing());
+
 			// A non-empty remote listing is required for orphan detection to run:
 			// an entirely empty listing is treated as transient (see the
 			// empty-listing safety test) rather than a deliberate wipe.
@@ -251,6 +275,12 @@ describe('SyncEngineService', () => {
 			await vault.markAdapterSynced(entry.id, 'test-fs');
 
 			await engine.forcePull();
+			await waitFor(
+				() =>
+					!engine.isSyncing() &&
+					!!vault.getByPath('keep.md') &&
+					!vault.getByPath('orphan.md'),
+			);
 
 			expect(vault.getByPath('keep.md')).toBeDefined();
 			expect(vault.getByPath('orphan.md')).toBeUndefined();
@@ -363,7 +393,7 @@ describe('SyncEngineService', () => {
 				'watch-test.md',
 				'watch content',
 			);
-			await timeout(350);
+			await waitFor(() => !!vault.getByPath('watch-test.md'));
 			expect(vault.getByPath('watch-test.md')).toBeDefined();
 
 			// Stop watching
@@ -384,7 +414,7 @@ describe('SyncEngineService', () => {
 				'created via watch',
 			);
 
-			await timeout(350);
+			await waitFor(() => !!v2.getByPath('watch-file.md'));
 
 			const entry = v2.getByPath('watch-file.md');
 			expect(entry).toBeDefined();
@@ -408,7 +438,7 @@ describe('SyncEngineService', () => {
 			testAdapter.files.delete('delete-me.md');
 			testAdapter.simulateExternalChange('delete', 'delete-me.md');
 
-			await timeout(350);
+			await waitFor(() => !vault.getByPath('delete-me.md'));
 
 			expect(vault.getByPath('delete-me.md')).toBeUndefined();
 
@@ -436,7 +466,11 @@ describe('SyncEngineService', () => {
 				'old-watch.md',
 			);
 
-			await timeout(350);
+			await waitFor(
+				() =>
+					!vault.getByPath('old-watch.md') &&
+					!!vault.getByPath('new-watch.md'),
+			);
 
 			expect(vault.getByPath('old-watch.md')).toBeUndefined();
 			const renamed = vault.getByPath('new-watch.md');
