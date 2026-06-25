@@ -20,22 +20,12 @@ import type {
 } from '@tauri-apps/plugin-fs';
 import { isTempFilePath } from '@core/utils/file-patterns';
 import { debugLog } from '@core/utils/debug-logger';
+import { isTauriRuntime } from '@core/utils/tauri-runtime';
 import { resolvePath, walkDirectory } from './walk-directory';
 
 interface TauriWorkspacePickResult {
 	path: string;
 }
-
-type WindowWithTauri = Window & {
-	__TAURI_INTERNALS__?: unknown;
-};
-
-const isTauriRuntimeAvailable = (): boolean => {
-	return (
-		typeof window !== 'undefined' &&
-		(window as WindowWithTauri).__TAURI_INTERNALS__ != null
-	);
-};
 
 /**
  * Resolve a relative path against a root directory.
@@ -71,7 +61,7 @@ export class TauriFsAdapter implements Adapter {
 	}
 
 	isAvailable(): boolean {
-		return isTauriRuntimeAvailable();
+		return isTauriRuntime();
 	}
 
 	async pickWorkspaceFolder(): Promise<WorkspacePickResult | null> {

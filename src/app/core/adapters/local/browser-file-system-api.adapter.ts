@@ -332,21 +332,18 @@ export class BrowserFileSystemApiAdapter implements Adapter {
 			});
 
 			if (recursive && handle.kind === 'directory') {
-				try {
-					const subHandle = await dirHandle.getDirectoryHandle(name);
-					await this.listDirEntries(
-						subHandle,
-						fullPath,
-						result,
-						recursive,
-					);
-				} catch (err) {
-					// Permission denied or other error — skip this subtree
-					console.warn(
-						`[BrowserFsAdapter] Skipping unreadable directory: "${fullPath}"`,
-						err,
-					);
-				}
+				// Fail closed — an unreadable subtree must abort the walk, not
+				// return a partial listing. A partial listing would make the
+				// sync engine's orphan detector delete the "missing" files from
+				// every adapter (silent data loss). Aborting leaves the vault
+				// untouched for that cycle.
+				const subHandle = await dirHandle.getDirectoryHandle(name);
+				await this.listDirEntries(
+					subHandle,
+					fullPath,
+					result,
+					recursive,
+				);
 			}
 		}
 	}

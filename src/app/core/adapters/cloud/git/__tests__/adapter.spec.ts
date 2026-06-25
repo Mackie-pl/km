@@ -15,8 +15,20 @@ describe('GitAdapterProxy', () => {
 		expect(proxy.isLocal).toBe(false);
 	});
 
-	it('should be available', () => {
-		expect(proxy.isAvailable()).toBe(true);
+	it('should be available only under the Tauri runtime', () => {
+		const w = window as { __TAURI_INTERNALS__?: unknown };
+		const had = '__TAURI_INTERNALS__' in w;
+		const prev = w.__TAURI_INTERNALS__;
+		try {
+			delete w.__TAURI_INTERNALS__;
+			expect(proxy.isAvailable()).toBe(false);
+
+			w.__TAURI_INTERNALS__ = {};
+			expect(proxy.isAvailable()).toBe(true);
+		} finally {
+			if (had) w.__TAURI_INTERNALS__ = prev;
+			else delete w.__TAURI_INTERNALS__;
+		}
 	});
 
 	it('should delegate read to real adapter', async () => {

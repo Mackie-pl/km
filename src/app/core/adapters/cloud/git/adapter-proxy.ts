@@ -13,6 +13,7 @@ import type {
 	WatchEvent,
 	WorkspacePickResult,
 } from '../../adapter.interface';
+import { isTauriRuntime } from '@core/utils/tauri-runtime';
 
 export class GitAdapterProxy implements Adapter {
 	readonly id = 'git';
@@ -21,8 +22,15 @@ export class GitAdapterProxy implements Adapter {
 	/** @internal exposed for testing */
 	real: Adapter | null = null;
 
+	/**
+	 * Git is only usable under Tauri: its HTTP transport (`./http`) is the
+	 * Rust-backed client that bypasses CORS, which has no browser equivalent
+	 * here. Advertising availability in a plain browser would let the UI offer
+	 * a git adapter that fails at the first fetch/push. (A browser path would
+	 * need a CORS proxy / `http/web` fallback — not implemented.)
+	 */
 	isAvailable(): boolean {
-		return true;
+		return isTauriRuntime();
 	}
 
 	pickWorkspaceFolder(): Promise<WorkspacePickResult | null> {

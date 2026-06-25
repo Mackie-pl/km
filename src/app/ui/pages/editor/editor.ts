@@ -48,6 +48,13 @@ export class Editor implements OnDestroy {
 	/** Frontmatter metadata for the current note. */
 	readonly metadata = signal<NoteMetadata>({});
 
+	/**
+	 * Verbatim frontmatter lines for keys this app doesn't manage (aliases,
+	 * custom fields, etc.). Captured on parse and re-emitted on save so editing
+	 * a note never strips frontmatter written by other tools.
+	 */
+	private preservedFrontmatter = signal<string[]>([]);
+
 	/** Snapshot of the last BODY content we saved — avoids echo-loop on external updates. */
 	private lastSavedContent = '';
 
@@ -121,8 +128,9 @@ export class Editor implements OnDestroy {
 
 		const initialContent =
 			this.vault.getByPath(this.entryId())?.content ?? '';
-		const { metadata, body } = parseFrontmatter(initialContent);
+		const { metadata, body, preserved } = parseFrontmatter(initialContent);
 		this.metadata.set(metadata);
+		this.preservedFrontmatter.set(preserved);
 		this.lastSavedContent = body;
 
 		this.crepe = new Crepe({
@@ -151,6 +159,7 @@ export class Editor implements OnDestroy {
 				const full = serializeFrontmatter(
 					{ ...this.metadata(), createdAt: entry.createdAt },
 					markdown,
+					this.preservedFrontmatter(),
 				);
 				if (entry.content !== full) {
 					this.lastSavedContent = markdown;
@@ -217,8 +226,9 @@ export class Editor implements OnDestroy {
 		this.isExternalUpdate = true;
 
 		try {
-			const { metadata, body } = parseFrontmatter(markdown);
+			const { metadata, body, preserved } = parseFrontmatter(markdown);
 			this.metadata.set(metadata);
+			this.preservedFrontmatter.set(preserved);
 
 			editor.action((ctx) => {
 				const view = ctx.get(editorViewCtx);

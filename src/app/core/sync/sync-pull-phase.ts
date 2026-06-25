@@ -97,6 +97,22 @@ export class SyncPullPhase {
 			debugLog(
 				`[Sync] ${adapter.id} pull: orphan check — ${String(allVaultEntries.length)} vault files, ${String(remotePaths.size)} remote files`,
 			);
+
+			// Safety: never treat a completely empty listing as "everything was
+			// deleted remotely" while the vault still holds files. An empty list
+			// is far more likely to be a transient failure (e.g. git HEAD
+			// momentarily unresolved → []) than a deliberate wipe, and acting on
+			// it would soft-delete the whole vault and fan the deletes out to
+			// every adapter. A genuine "delete everything remotely" is left for
+			// the user to mirror by hand. (Partial-but-nonempty under-listings
+			// are prevented upstream — the walkers fail closed and throw.)
+			if (remotePaths.size === 0 && allVaultEntries.length > 0) {
+				debugLog(
+					`[Sync] ${adapter.id} pull: skipping orphan detection — empty listing with ${String(allVaultEntries.length)} vault files (treating as transient, not a wipe)`,
+				);
+				return;
+			}
+
 			const orphans = allVaultEntries.filter(
 				(e) =>
 					!remotePaths.has(e.path) &&

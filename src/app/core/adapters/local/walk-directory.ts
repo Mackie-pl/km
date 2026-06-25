@@ -28,7 +28,11 @@ function joinChildPath(dirPath: string, name: string): string {
  * - Skips symlinks to prevent cycles.
  * - Uses a `visited` set on resolved absolute paths as an additional
  *   safety net for hard-linked directories reachable through multiple paths.
- * - Skips unreadable subtrees (permission denied, etc.) with a warning.
+ * - Fails closed: an unreadable subtree THROWS rather than returning a partial
+ *   listing. A partial listing would make the sync engine's orphan detector
+ *   treat the missing files as deleted-on-disk and propagate the deletion to
+ *   every adapter — silent data loss. Aborting the walk instead leaves the
+ *   vault untouched for that cycle.
  *
  * TODO: if profiling shows IPC overhead from per-subdirectory readDir calls,
  * replace with a single native Rust walkdir command that returns all entries at once.
@@ -52,11 +56,11 @@ export async function walkDirectory(
 	try {
 		children = await readDir(resolved);
 	} catch (err) {
-		console.warn(
-			`[walkDirectory] Skipping unreadable directory: "${dirPath}"`,
-			err,
+		// Fail closed — propagate so the pull aborts instead of under-listing.
+		throw new Error(
+			`walkDirectory: failed to read directory "${dirPath}": ${err instanceof Error ? err.message : String(err)}`,
+			{ cause: err },
 		);
-		return [];
 	}
 
 	const result: FileEntry[] = [];

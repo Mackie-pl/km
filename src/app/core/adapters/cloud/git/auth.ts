@@ -1,26 +1,39 @@
 /**
  * Encrypted token store for git authentication tokens.
  *
- * Uses Web Crypto (SubtleCrypto) to encrypt tokens before writing to IndexedDB.
- * Tokens are AES-GCM encrypted with a key derived from a device fingerprint
- * and app salt. No plaintext obfuscation fallback — encryption is mandatory.
+ * Tokens are AES-GCM encrypted before being written to IndexedDB. The key is a
+ * random 256-bit secret generated once on this device and stored alongside the
+ * tokens — NOT derived from a device fingerprint. (An earlier version derived
+ * the key from userAgent + screen size + timezone offset; those change with
+ * browser updates, monitors, travel, and DST, which silently bricked decryption
+ * and stopped git sync with no error. The fingerprint scheme is kept only as a
+ * read-time fallback so existing tokens migrate transparently.)
+ *
+ * Note on threat model: this protects tokens at rest from casual IndexedDB
+ * scraping. It does NOT defend against an attacker who can run script in this
+ * origin (e.g. XSS) — such an attacker can call `getToken()` directly.
  */
 
 const DB_NAME = 'git-token-store';
-const DB_VERSION = 1;
-const STORE_NAME = 'tokens';
+const DB_VERSION = 2;
+const TOKEN_STORE = 'tokens';
+const KEY_STORE = 'keys';
+const MASTER_KEY_ID = 'master';
 
 /**
- * Open the IndexedDB database, creating it if needed.
+ * Open the IndexedDB database, creating/upgrading the schema if needed.
+ * v2 adds the `keys` store that holds the random master secret.
  */
 function openDb(): Promise<IDBDatabase> {
 	return new Promise((resolve, reject) => {
 		const req = indexedDB.open(DB_NAME, DB_VERSION);
 		req.onupgradeneeded = () => {
-			if (!req.result.objectStoreNames.contains(STORE_NAME)) {
-				req.result.createObjectStore(STORE_NAME, {
-					keyPath: 'repoUrl',
-				});
+			const db = req.result;
+			if (!db.objectStoreNames.contains(TOKEN_STORE)) {
+				db.createObjectStore(TOKEN_STORE, { keyPath: 'repoUrl' });
+			}
+			if (!db.objectStoreNames.contains(KEY_STORE)) {
+				db.createObjectStore(KEY_STORE, { keyPath: 'id' });
 			}
 		};
 		req.onsuccess = () => {
@@ -32,13 +45,110 @@ function openDb(): Promise<IDBDatabase> {
 	});
 }
 
-// ── Encryption helpers ────────────────────────────────────────────────────
+// ── Key management ──────────────────────────────────────────────────────────
+
+/** Cached per-session so concurrent calls share one key-load (and no race). */
+let cachedKey: Promise<CryptoKey> | null = null;
+
+/** The current AES-GCM key, derived from the stored random master secret. */
+function getCryptoKey(): Promise<CryptoKey> {
+	// Clear the cache on failure so a one-time error (e.g. transient IDB issue)
+	// doesn't permanently wedge a rejected promise for the whole session.
+	cachedKey ??= loadOrCreateKey().catch((err: unknown) => {
+		cachedKey = null;
+		throw err;
+	});
+	return cachedKey;
+}
+
+async function loadOrCreateKey(): Promise<CryptoKey> {
+	const secret = await getOrCreateSecret();
+	return crypto.subtle.importKey('raw', secret, { name: 'AES-GCM' }, false, [
+		'encrypt',
+		'decrypt',
+	]);
+}
 
 /**
- * Derive an AES-GCM key from a device fingerprint + app salt.
- * The key is not persisted — it's re-derived on each access.
+ * Read the stored 256-bit master secret, generating + persisting it if absent.
+ * Stored as a base64 string (not a raw ArrayBuffer) to avoid structured-clone
+ * realm quirks where the round-tripped buffer fails `importKey`'s type check.
+ *
+ * Self-healing: a missing, malformed, or wrong-length stored secret (e.g. left
+ * by an earlier build that stored a raw ArrayBuffer) is replaced with a fresh
+ * one rather than throwing — a corrupt secret must not crash git init. Any
+ * tokens encrypted under the lost secret then fail to decrypt and surface a
+ * re-enter-token error, which is the correct degradation.
  */
-async function deriveKey(): Promise<CryptoKey> {
+async function getOrCreateSecret(): Promise<Uint8Array<ArrayBuffer>> {
+	const existing = await readSecret();
+	const decoded = existing !== null ? tryDecodeSecret(existing) : null;
+	if (decoded) return decoded;
+
+	const secret = crypto.getRandomValues(new Uint8Array(32));
+	const db = await openDb();
+	await new Promise<void>((resolve, reject) => {
+		const tx = db.transaction(KEY_STORE, 'readwrite');
+		tx.objectStore(KEY_STORE).put({
+			id: MASTER_KEY_ID,
+			secret: arrayBufferToBase64(secret.buffer),
+		});
+		tx.oncomplete = () => {
+			db.close();
+			resolve();
+		};
+		tx.onerror = () => {
+			reject(new Error(tx.error?.message ?? 'IndexedDB put (key) failed'));
+		};
+	});
+	return secret;
+}
+
+/**
+ * Decode a stored secret to a 32-byte view, or null if it is malformed.
+ * Returns a `Uint8Array` (a TypedArray) rather than a bare `ArrayBuffer` because
+ * some `SubtleCrypto.importKey` implementations only accept a TypedArray view.
+ */
+function tryDecodeSecret(encoded: string): Uint8Array<ArrayBuffer> | null {
+	try {
+		const buf = base64ToArrayBuffer(encoded);
+		return buf.byteLength === 32 ? new Uint8Array(buf) : null;
+	} catch {
+		return null;
+	}
+}
+
+function readSecret(): Promise<string | null> {
+	return openDb().then(
+		(db) =>
+			new Promise<string | null>((resolve, reject) => {
+				const tx = db.transaction(KEY_STORE, 'readonly');
+				const req = tx.objectStore(KEY_STORE).get(MASTER_KEY_ID);
+				req.onsuccess = () => {
+					const rec = req.result as
+						| { id: string; secret: string }
+						| undefined;
+					resolve(rec?.secret ?? null);
+				};
+				req.onerror = () => {
+					reject(
+						new Error(req.error?.message ?? 'IndexedDB get (key) failed'),
+					);
+				};
+				tx.oncomplete = () => {
+					db.close();
+				};
+			}),
+	);
+}
+
+// ── Legacy key (read-time migration fallback only) ──────────────────────────
+
+/**
+ * Derive the legacy AES-GCM key from the old device fingerprint. Retained ONLY
+ * so tokens written by the previous scheme can still be read once and migrated.
+ */
+async function deriveLegacyKey(): Promise<CryptoKey> {
 	const salt = 'km-test-git-token-store-v1';
 	const fingerprint = getDeviceFingerprint();
 	const keyMaterial = await crypto.subtle.importKey(
@@ -62,34 +172,24 @@ async function deriveKey(): Promise<CryptoKey> {
 	);
 }
 
-/**
- * Build a device fingerprint from available browser/JS context values.
- * Not truly unique, but sufficient to deter casual IndexedDB scraping.
- */
 function getDeviceFingerprint(): string {
 	const parts: string[] = [
 		navigator.userAgent,
 		navigator.language,
 		String(screen.width),
 		String(screen.height),
-		// Timezone offset helps distinguish devices
 		String(new Date().getTimezoneOffset()),
 	];
-
-	// Try to get a more stable identifier from the origin
 	if (typeof window !== 'undefined') {
 		parts.push(window.location.origin);
 	}
-
 	return parts.join('||');
 }
 
-/**
- * Encrypt a plaintext token using AES-GCM.
- * Returns base64-encoded ciphertext with embedded IV.
- */
-async function encryptToken(plaintext: string): Promise<string> {
-	const key = await deriveKey();
+// ── Encryption helpers ──────────────────────────────────────────────────────
+
+/** Encrypt plaintext with the given key. Returns base64(iv || ciphertext). */
+async function encryptWith(plaintext: string, key: CryptoKey): Promise<string> {
 	const iv = crypto.getRandomValues(new Uint8Array(12));
 	const encoded = new TextEncoder().encode(plaintext);
 	const encrypted = await crypto.subtle.encrypt(
@@ -97,20 +197,18 @@ async function encryptToken(plaintext: string): Promise<string> {
 		key,
 		encoded,
 	);
-	// Combine IV + ciphertext for storage
 	const combined = new Uint8Array(iv.length + encrypted.byteLength);
 	combined.set(iv);
 	combined.set(new Uint8Array(encrypted), iv.length);
 	return arrayBufferToBase64(combined.buffer);
 }
 
-/**
- * Decrypt a base64-encoded ciphertext using AES-GCM.
- * Returns the original plaintext, or null if decryption fails.
- */
-async function decryptToken(ciphertext: string): Promise<string | null> {
+/** Decrypt base64(iv || ciphertext) with the given key, or null on failure. */
+async function decryptWith(
+	ciphertext: string,
+	key: CryptoKey,
+): Promise<string | null> {
 	try {
-		const key = await deriveKey();
 		const combined = base64ToArrayBuffer(ciphertext);
 		const iv = new Uint8Array(combined, 0, 12);
 		const data = new Uint8Array(combined, 12);
@@ -145,77 +243,146 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
 	return bytes.buffer;
 }
 
-// ── Public API ────────────────────────────────────────────────────────────
+// ── Record I/O ──────────────────────────────────────────────────────────────
+
+interface TokenRecord {
+	repoUrl: string;
+	encryptedToken: string;
+}
+
+function readRecord(repoUrl: string): Promise<TokenRecord | null> {
+	return openDb().then(
+		(db) =>
+			new Promise<TokenRecord | null>((resolve, reject) => {
+				const tx = db.transaction(TOKEN_STORE, 'readonly');
+				const req = tx.objectStore(TOKEN_STORE).get(repoUrl);
+				req.onsuccess = () => {
+					resolve((req.result as TokenRecord | undefined) ?? null);
+				};
+				req.onerror = () => {
+					reject(new Error(req.error?.message ?? 'IndexedDB get failed'));
+				};
+				tx.oncomplete = () => {
+					db.close();
+				};
+			}),
+	);
+}
+
+function writeRecord(record: TokenRecord): Promise<void> {
+	return openDb().then(
+		(db) =>
+			new Promise<void>((resolve, reject) => {
+				const tx = db.transaction(TOKEN_STORE, 'readwrite');
+				tx.objectStore(TOKEN_STORE).put(record);
+				tx.oncomplete = () => {
+					db.close();
+					resolve();
+				};
+				tx.onerror = () => {
+					reject(new Error(tx.error?.message ?? 'IndexedDB put failed'));
+				};
+			}),
+	);
+}
+
+// ── Public API ──────────────────────────────────────────────────────────────
 
 export class GitTokenStore {
 	/**
-	 * Retrieve an encrypted token for the given repository URL.
-	 * @returns The plaintext token, or null if not found.
+	 * Retrieve the plaintext token for a repository URL.
+	 *
+	 * Returns null when no token has been stored (setup not complete). When a
+	 * record EXISTS but cannot be decrypted, this THROWS rather than returning
+	 * null — so callers that require auth (the push path) surface a real error
+	 * instead of silently skipping the sync. A record encrypted by the legacy
+	 * fingerprint scheme is decrypted once and transparently re-encrypted with
+	 * the current key.
 	 */
 	async getToken(repoUrl: string): Promise<string | null> {
-		const db = await openDb();
-		return new Promise<string | null>((resolve, reject) => {
-			const tx = db.transaction(STORE_NAME, 'readonly');
-			const store = tx.objectStore(STORE_NAME);
-			const req = store.get(repoUrl);
-			req.onsuccess = () => {
-				const record = req.result as
-					| { repoUrl: string; encryptedToken: string }
-					| undefined;
-				if (!record) {
-					resolve(null);
-					return;
-				}
-				void decryptToken(record.encryptedToken).then(resolve);
-			};
-			req.onerror = () => {
-				reject(new Error(req.error?.message ?? 'IndexedDB get failed'));
-			};
-			tx.oncomplete = () => {
-				db.close();
-			};
-		});
+		const record = await readRecord(repoUrl);
+		if (!record) return null;
+
+		const viaCurrent = await decryptWith(
+			record.encryptedToken,
+			await getCryptoKey(),
+		);
+		if (viaCurrent !== null) return viaCurrent;
+
+		// Migration: a record written by the old fingerprint-derived key.
+		const viaLegacy = await decryptWith(
+			record.encryptedToken,
+			await deriveLegacyKey(),
+		);
+		if (viaLegacy !== null) {
+			await this.setToken(repoUrl, viaLegacy);
+			return viaLegacy;
+		}
+
+		throw new Error(
+			`Stored git token for "${repoUrl}" could not be decrypted ` +
+				'(it may have been created on a different device or app version). ' +
+				'Re-enter the token in the workspace settings.',
+		);
 	}
 
-	/**
-	 * Encrypt and store a token for the given repository URL.
-	 */
+	/** Encrypt and store a token for the given repository URL. */
 	async setToken(repoUrl: string, token: string): Promise<void> {
-		const db = await openDb();
-		const encryptedToken = await encryptToken(token);
-		return new Promise<void>((resolve, reject) => {
-			const tx = db.transaction(STORE_NAME, 'readwrite');
-			const store = tx.objectStore(STORE_NAME);
-			store.put({ repoUrl, encryptedToken });
-			tx.oncomplete = () => {
-				db.close();
-				resolve();
-			};
-			tx.onerror = () => {
-				reject(new Error(tx.error?.message ?? 'IndexedDB put failed'));
-			};
-		});
+		const encryptedToken = await encryptWith(token, await getCryptoKey());
+		await writeRecord({ repoUrl, encryptedToken });
 	}
 
-	/**
-	 * Delete a stored token for the given repository URL.
-	 * No-op if the key does not exist.
-	 */
+	/** Delete a stored token. No-op if the key does not exist. */
 	async deleteToken(repoUrl: string): Promise<void> {
 		const db = await openDb();
 		return new Promise<void>((resolve, reject) => {
-			const tx = db.transaction(STORE_NAME, 'readwrite');
-			const store = tx.objectStore(STORE_NAME);
-			store.delete(repoUrl);
+			const tx = db.transaction(TOKEN_STORE, 'readwrite');
+			tx.objectStore(TOKEN_STORE).delete(repoUrl);
 			tx.oncomplete = () => {
 				db.close();
 				resolve();
 			};
 			tx.onerror = () => {
-				reject(
-					new Error(tx.error?.message ?? 'IndexedDB delete failed'),
-				);
+				reject(new Error(tx.error?.message ?? 'IndexedDB delete failed'));
 			};
 		});
 	}
 }
+
+/** @internal Test-only seam for exercising the legacy-migration path. */
+export const __testing = {
+	/** Write a record encrypted with the legacy fingerprint key. */
+	async writeLegacyRecord(repoUrl: string, token: string): Promise<string> {
+		const encryptedToken = await encryptWith(token, await deriveLegacyKey());
+		await writeRecord({ repoUrl, encryptedToken });
+		return encryptedToken;
+	},
+	/** Write a raw (already-encrypted or garbage) ciphertext string. */
+	async writeRawRecord(repoUrl: string, encryptedToken: string): Promise<void> {
+		await writeRecord({ repoUrl, encryptedToken });
+	},
+	/** Read the raw stored ciphertext for a repo, or null. */
+	async readRawCiphertext(repoUrl: string): Promise<string | null> {
+		const record = await readRecord(repoUrl);
+		return record?.encryptedToken ?? null;
+	},
+	/** Write a raw (possibly malformed) master-secret value to the keys store. */
+	async writeRawSecret(secret: string): Promise<void> {
+		const db = await openDb();
+		await new Promise<void>((resolve, reject) => {
+			const tx = db.transaction(KEY_STORE, 'readwrite');
+			tx.objectStore(KEY_STORE).put({ id: MASTER_KEY_ID, secret });
+			tx.oncomplete = () => {
+				db.close();
+				resolve();
+			};
+			tx.onerror = () => {
+				reject(new Error(tx.error?.message ?? 'IndexedDB put (key) failed'));
+			};
+		});
+	},
+	/** Reset the per-session key cache (so a deleted secret is re-read). */
+	resetKeyCache(): void {
+		cachedKey = null;
+	},
+};

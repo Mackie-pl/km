@@ -43,34 +43,59 @@ describe('GitTokenStore', () => {
 	});
 
 	it('should encrypt tokens — stored value should not be plaintext', async () => {
-		const { GitTokenStore } = await import('../auth');
+		const { GitTokenStore, __testing } = await import('../auth');
 		const store = new GitTokenStore();
 		await store.setToken(TEST_REPO, TEST_TOKEN);
 		const retrieved = await store.getToken(TEST_REPO);
 		expect(retrieved).toBe(TEST_TOKEN);
 
-		const req = indexedDB.open('git-token-store', 1);
-		const raw = await new Promise<unknown>((resolve) => {
-			req.onsuccess = () => {
-				const db = req.result;
-				const tx = db.transaction('tokens', 'readonly');
-				const store_ = tx.objectStore('tokens');
-				const getReq = store_.get(TEST_REPO);
-				getReq.onsuccess = () => {
-					resolve(getReq.result);
-				};
-				getReq.onerror = () => {
-					resolve(null);
-				};
-				tx.oncomplete = () => {
-					db.close();
-				};
-			};
-			req.onupgradeneeded = () => {
-				resolve(null);
-			};
-		});
+		const raw = await __testing.readRawCiphertext(TEST_REPO);
+		expect(raw).not.toBeNull();
 		expect(raw).not.toBe(TEST_TOKEN);
+	});
+
+	it('should transparently migrate a legacy-encrypted token', async () => {
+		const { GitTokenStore, __testing } = await import('../auth');
+		const store = new GitTokenStore();
+
+		// Simulate a token written by the old fingerprint-derived scheme.
+		const legacyCipher = await __testing.writeLegacyRecord(
+			TEST_REPO,
+			TEST_TOKEN,
+		);
+
+		// First read decrypts via the legacy fallback...
+		expect(await store.getToken(TEST_REPO)).toBe(TEST_TOKEN);
+
+		// ...and re-encrypts with the current key (ciphertext changed).
+		const rawAfter = await __testing.readRawCiphertext(TEST_REPO);
+		expect(rawAfter).not.toBeNull();
+		expect(rawAfter).not.toBe(legacyCipher);
+
+		// Subsequent reads still work against the migrated record.
+		expect(await store.getToken(TEST_REPO)).toBe(TEST_TOKEN);
+	});
+
+	it('should throw (not return null) when a stored record cannot be decrypted', async () => {
+		const { GitTokenStore, __testing } = await import('../auth');
+		const store = new GitTokenStore();
+
+		await __testing.writeRawRecord(TEST_REPO, 'not-valid-base64-ciphertext!!');
+
+		await expect(store.getToken(TEST_REPO)).rejects.toThrow();
+	});
+
+	it('should self-heal a corrupt master secret instead of crashing', async () => {
+		const { GitTokenStore, __testing } = await import('../auth');
+
+		// Simulate a secret left by an earlier build that stored a raw buffer:
+		// reading it back as a string yields un-decodable base64.
+		await __testing.writeRawSecret('[object ArrayBuffer]');
+		__testing.resetKeyCache();
+
+		const store = new GitTokenStore();
+		await store.setToken(TEST_REPO, TEST_TOKEN);
+		expect(await store.getToken(TEST_REPO)).toBe(TEST_TOKEN);
 	});
 
 	it('should handle multiple repos independently', async () => {

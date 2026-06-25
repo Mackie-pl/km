@@ -117,10 +117,10 @@ export class NoteToolbarComponent {
 		const entry = this.vault.getByPath(this.entryId());
 		if (!entry?.content) return;
 
-		const { metadata, body } = parseFrontmatter(entry.content);
+		const { metadata, body, preserved } = parseFrontmatter(entry.content);
 		metadata.icon = selected;
 
-		const newContent = serializeFrontmatter(metadata, body);
+		const newContent = serializeFrontmatter(metadata, body, preserved);
 		await this.vault.updateFile(entry.id, newContent);
 	}
 
@@ -130,7 +130,7 @@ export class NoteToolbarComponent {
 		const entry = this.vault.getByPath(this.entryId());
 		if (!entry?.content) return;
 
-		const { metadata, body } = parseFrontmatter(entry.content);
+		const { metadata, body, preserved } = parseFrontmatter(entry.content);
 		const current = metadata.tags ?? [];
 
 		if (current.map((t) => t.toLowerCase()).includes(lowerTag)) {
@@ -139,7 +139,7 @@ export class NoteToolbarComponent {
 			metadata.tags = [...current, lowerTag];
 		}
 
-		const newContent = serializeFrontmatter(metadata, body);
+		const newContent = serializeFrontmatter(metadata, body, preserved);
 		await this.vault.updateFile(entry.id, newContent);
 	}
 

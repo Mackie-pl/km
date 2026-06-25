@@ -15,6 +15,7 @@ import { GitTokenStore } from '@core/adapters/cloud/git/auth';
 import { GitSettingsStore } from '@core/adapters/cloud/git/settings-store';
 import type { AdapterConfig } from '@core/adapters/adapter.interface';
 import { parseFrontmatter } from '@core/utils/frontmatter-parser';
+import type { NoteMetadata } from '@core/types/note-metadata';
 
 // Re-exports for backward compat with imports from @vault/store
 export { VAULT_ENTRY_TYPES, type VaultEntry } from './vault-entry';
@@ -37,6 +38,17 @@ export class VaultStore {
 	);
 
 	private entries = signal<Map<string, VaultEntry>>(new Map());
+
+	/**
+	 * path → id index for the active workspace's non-deleted entries.
+	 * Keeps `getByPath` O(1) instead of a linear scan (which, called once per
+	 * file during a pull, made reconciliation O(N²)). Maintained in lockstep
+	 * with the `entries` signal by `put`/`putMany`/`loadAll`.
+	 */
+	readonly #pathIndex = new Map<string, string>();
+
+	/** Memoization cache for `allFrontmatters` — avoids reparsing unchanged files. */
+	readonly #fmCache = new Map<string, { content: string; metadata: NoteMetadata }>();
 
 	private readonly reconciler = new VaultReconciler(this);
 
@@ -75,11 +87,22 @@ export class VaultStore {
 
 	/** Frontmatter metadata for every non-deleted file — reactively derived. */
 	readonly allFrontmatters = computed(() =>
-		this.files().map((f) => {
-			const { metadata } = parseFrontmatter(f.content ?? '');
-			return metadata;
-		}),
+		this.files().map((f) => this.#parseFrontmatterCached(f.id, f.content ?? '')),
 	);
+
+	/** Parse a file's frontmatter, reusing the cached result when content is unchanged. */
+	#parseFrontmatterCached(id: string, content: string): NoteMetadata {
+		const cached = this.#fmCache.get(id);
+		// Explicit undefined check (not optional chaining) so TS narrows `cached`
+		// for the `cached.metadata` access below.
+		// eslint-disable-next-line @typescript-eslint/prefer-optional-chain
+		if (cached !== undefined && cached.content === content) {
+			return cached.metadata;
+		}
+		const { metadata } = parseFrontmatter(content);
+		this.#fmCache.set(id, { content, metadata });
+		return metadata;
+	}
 
 	/** All unique tags across all files, lowercased, sorted. */
 	readonly allTags = computed(() => {
@@ -176,6 +199,8 @@ export class VaultStore {
 	/** Clear in-memory entries and reload from IndexedDB for the current workspace. */
 	private async clearAndReload(): Promise<void> {
 		this.loadVersion.set(0);
+		this.#pathIndex.clear();
+		this.#fmCache.clear();
 		this.entries.set(new Map());
 		await this.init();
 	}
@@ -193,14 +218,19 @@ export class VaultStore {
 	private async loadAll() {
 		const wsId = this.activeWorkspaceId();
 		if (!wsId) {
+			this.#pathIndex.clear();
+			this.#fmCache.clear();
 			this.entries.set(new Map());
 			return;
 		}
 
 		const entries = await this.database.loadAll(wsId);
 		const map = new Map<string, VaultEntry>();
+		this.#pathIndex.clear();
+		this.#fmCache.clear();
 		for (const entry of entries) {
 			map.set(entry.id, entry);
+			if (!entry.deleted) this.#pathIndex.set(entry.path, entry.id);
 		}
 		this.entries.set(map);
 		this.loadedWsId = wsId;
@@ -243,6 +273,8 @@ export class VaultStore {
 
 		// If the purged workspace is the one currently loaded, clear memory
 		if (this.activeWorkspaceId() === wsId) {
+			this.#pathIndex.clear();
+			this.#fmCache.clear();
 			this.entries.set(new Map());
 			this.loadedWsId = null;
 			this.loadVersion.set(0);
@@ -386,19 +418,22 @@ export class VaultStore {
 		// Merge current active adapters so delete is pushed to all
 		const activeAdapters =
 			this.workspaceService.activeWorkspace()?.activeSyncAdapters ?? [];
-		const pendingAdapters = [
-			...new Set([...entry.pendingAdapters, ...activeAdapters]),
+		const mergePending = (e: VaultEntry): string[] => [
+			...new Set([...e.pendingAdapters, ...activeAdapters]),
 		];
 
-		await this.put({
-			...entry,
-			deleted: true,
-			pendingAdapters,
-			updatedAt: Date.now(),
-			revision: entry.revision + 1,
-		});
+		const now = Date.now();
+		const updates: VaultEntry[] = [
+			{
+				...entry,
+				deleted: true,
+				pendingAdapters: mergePending(entry),
+				updatedAt: now,
+				revision: entry.revision + 1,
+			},
+		];
 
-		// Cascade to children if this is a folder
+		// Cascade to children if this is a folder (one batched write)
 		if (entry.type === VAULT_ENTRY_TYPES.FOLDER) {
 			const descendants = Array.from(this.entries().values()).filter(
 				(e) =>
@@ -408,20 +443,17 @@ export class VaultStore {
 			);
 
 			for (const child of descendants) {
-				await this.put({
+				updates.push({
 					...child,
 					deleted: true,
-					pendingAdapters: [
-						...new Set([
-							...child.pendingAdapters,
-							...activeAdapters,
-						]),
-					],
-					updatedAt: Date.now(),
+					pendingAdapters: mergePending(child),
+					updatedAt: now,
 					revision: child.revision + 1,
 				});
 			}
 		}
+
+		await this.putMany(updates);
 	}
 
 	//
@@ -504,21 +536,23 @@ export class VaultStore {
 				e.path.startsWith(oldPath + '/'),
 		);
 
-		for (const child of children) {
+		const now = Date.now();
+		const updates = children.map((child) => {
 			const childNewPath = newPath + child.path.slice(oldPath.length);
 			const childNewName = childNewPath.split('/').pop() ?? child.name;
-
-			await this.put({
+			return {
 				...child,
 				name: childNewName,
 				path: childNewPath,
-				updatedAt: Date.now(),
+				updatedAt: now,
 				revision: child.revision + 1,
 				pendingAdapters: [
 					...new Set([...child.pendingAdapters, ...activeAdapters]),
 				],
-			});
-		}
+			};
+		});
+
+		await this.putMany(updates);
 	}
 
 	//
@@ -569,9 +603,17 @@ export class VaultStore {
 	getByPath(path: string): VaultEntry | undefined {
 		const wsId = this.activeWorkspaceId();
 		if (!wsId) return undefined;
-		return Array.from(this.entries().values()).find(
-			(e) => e.workspaceId === wsId && e.path === path && !e.deleted,
-		);
+		// O(1) via the path index. Reading the entries signal keeps this method
+		// reactive (computeds that call getByPath re-run when entries change);
+		// the index is updated before the signal fires, so it's always current.
+		const entries = this.entries();
+		const id = this.#pathIndex.get(path);
+		if (id === undefined) return undefined;
+		const entry = entries.get(id);
+		if (!entry || entry.deleted || entry.workspaceId !== wsId) {
+			return undefined;
+		}
+		return entry;
 	}
 
 	/** Look up an entry by its unique ID across all workspaces. */
@@ -608,16 +650,18 @@ export class VaultStore {
 		const wsId = this.activeWorkspaceId();
 		if (!wsId) return;
 
+		const updates: VaultEntry[] = [];
 		for (const [, entry] of this.entries()) {
 			if (entry.workspaceId !== wsId || entry.deleted) continue;
 			if (seenPaths.has(entry.path)) continue;
 			if (entry.pendingAdapters.includes(adapterId)) continue;
 
-			await this.put({
+			updates.push({
 				...entry,
 				pendingAdapters: [...entry.pendingAdapters, adapterId],
 			});
 		}
+		await this.putMany(updates);
 	}
 
 	/**
@@ -686,7 +730,47 @@ export class VaultStore {
 
 		// update signal state
 		const next = new Map(this.entries());
+		const prev = next.get(entry.id);
 		next.set(entry.id, entry);
+		this.#updatePathIndex(prev, entry);
 		this.entries.set(next);
+	}
+
+	/**
+	 * Persist many entries in one shot: a single IndexedDB write batch, a single
+	 * Map rebuild, and a single signal emission. Used by the cascade/bulk paths
+	 * (folder delete/rename, marking pending for a new adapter) so they don't
+	 * fan out into N signal emissions (each of which recomputes every derived
+	 * signal) — the quadratic behavior this replaces.
+	 */
+	async putMany(entries: VaultEntry[]): Promise<void> {
+		if (entries.length === 0) return;
+
+		await Promise.all(entries.map((e) => this.database.put(e)));
+
+		const next = new Map(this.entries());
+		for (const entry of entries) {
+			const prev = next.get(entry.id);
+			next.set(entry.id, entry);
+			this.#updatePathIndex(prev, entry);
+		}
+		this.entries.set(next);
+	}
+
+	/** Keep `#pathIndex` consistent when an entry is written, moved, or deleted. */
+	#updatePathIndex(prev: VaultEntry | undefined, entry: VaultEntry): void {
+		// Drop the previous path mapping if this entry moved away from it.
+		if (
+			prev &&
+			prev.path !== entry.path &&
+			this.#pathIndex.get(prev.path) === prev.id
+		) {
+			this.#pathIndex.delete(prev.path);
+		}
+		if (!entry.deleted) {
+			this.#pathIndex.set(entry.path, entry.id);
+		} else if (this.#pathIndex.get(entry.path) === entry.id) {
+			this.#pathIndex.delete(entry.path);
+		}
 	}
 }

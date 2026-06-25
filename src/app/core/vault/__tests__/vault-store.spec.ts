@@ -3,6 +3,7 @@ import {
 	createMockWorkspace,
 	setupVaultStore,
 } from '@core/__tests__/test-setup';
+import { makeVaultEntry } from '@vault/vault-utils';
 
 // ── Tests ──────────────────────────────────────────────────────────────────
 
@@ -300,6 +301,62 @@ describe('VaultStore', () => {
 			const synced = vault.getByPath('new.md');
 			expect(synced?.pendingAdapters.length).toBe(0);
 			expect(synced?.pendingRenameFrom).toBeUndefined();
+		});
+	});
+
+	describe('path index + putMany', () => {
+		it('frees a deleted path so it can be reused', async () => {
+			const { vault } = setupVaultStore(createMockWorkspace());
+			await vault.init();
+
+			await vault.createFile('note.md', 'first');
+			const first = vault.getByPath('note.md')!;
+			await vault.delete(first.id);
+			expect(vault.getByPath('note.md')).toBeUndefined();
+
+			await vault.createFile('note.md', 'second');
+			const second = vault.getByPath('note.md');
+			expect(second).toBeDefined();
+			expect(second?.content).toBe('second');
+			expect(second?.id).not.toBe(first.id);
+		});
+
+		it('keeps getByPath consistent after a folder rename cascade', async () => {
+			const { vault } = setupVaultStore(createMockWorkspace());
+			await vault.init();
+
+			await vault.createFolder('A');
+			await vault.createFile('x.md', 'X', 'A');
+			await vault.createFile('y.md', 'Y', 'A');
+
+			await vault.renameEntry(vault.getByPath('A')!.id, 'B');
+
+			expect(vault.getByPath('A/x.md')).toBeUndefined();
+			expect(vault.getByPath('A/y.md')).toBeUndefined();
+			expect(vault.getByPath('B/x.md')?.content).toBe('X');
+			expect(vault.getByPath('B/y.md')?.content).toBe('Y');
+		});
+
+		it('putMany persists every entry and exposes them via getByPath', async () => {
+			const { vault } = setupVaultStore(createMockWorkspace());
+			await vault.init();
+			const wsId = vault.activeWorkspaceId()!;
+
+			const mk = (name: string) =>
+				makeVaultEntry({
+					workspaceId: wsId,
+					name,
+					path: name,
+					content: name,
+					pendingAdapters: [],
+				});
+
+			await vault.putMany([mk('p1.md'), mk('p2.md'), mk('p3.md')]);
+
+			expect(vault.files().length).toBe(3);
+			expect(vault.getByPath('p1.md')?.content).toBe('p1.md');
+			expect(vault.getByPath('p2.md')).toBeDefined();
+			expect(vault.getByPath('p3.md')).toBeDefined();
 		});
 	});
 });

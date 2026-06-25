@@ -71,6 +71,29 @@ describe('parseFrontmatter', () => {
 		const { metadata } = parseFrontmatter('---\nicon: 🎯\n---\nBody');
 		expect(metadata).toEqual({ icon: '🎯' });
 	});
+
+	it('captures unknown keys verbatim in preserved', () => {
+		const { metadata, preserved, body } = parseFrontmatter(
+			'---\nicon: 📝\naliases:\n  - Foo\n  - Bar\ncssclass: wide\n---\nBody',
+		);
+		expect(metadata).toEqual({ icon: '📝' });
+		expect(preserved).toEqual([
+			'aliases:',
+			'  - Foo',
+			'  - Bar',
+			'cssclass: wide',
+		]);
+		expect(body).toBe('Body');
+	});
+
+	it('parses frontmatter with CRLF line endings', () => {
+		const { metadata, body, preserved } = parseFrontmatter(
+			'---\r\nicon: ⭐\r\ncustom: keep me\r\n---\r\n# Body',
+		);
+		expect(metadata).toEqual({ icon: '⭐' });
+		expect(preserved).toEqual(['custom: keep me']);
+		expect(body).toBe('# Body');
+	});
 });
 
 describe('serializeFrontmatter', () => {
@@ -148,6 +171,37 @@ describe('serializeFrontmatter', () => {
 		// Serializer always quotes values for valid YAML
 		expect(reconstructed).toBe(
 			'---\nicon: "📝"\ntags: ["work", "urgent"]\n---\n# Note\n\nSome text.',
+		);
+	});
+
+	it('preserves unknown keys through a parse → serialize round-trip', () => {
+		const original =
+			'---\nicon: 📝\naliases:\n  - Foo\n  - Bar\ncssclass: wide\n---\n# Note body';
+		const { metadata, body, preserved } = parseFrontmatter(original);
+		const reconstructed = serializeFrontmatter(metadata, body, preserved);
+		expect(reconstructed).toBe(
+			'---\nicon: "📝"\naliases:\n  - Foo\n  - Bar\ncssclass: wide\n---\n# Note body',
+		);
+	});
+
+	it('keeps unknown keys when only managed keys change', () => {
+		const original =
+			'---\ncssclass: wide\nlinks:\n  - "[[Other]]"\n---\nBody';
+		const { metadata, body, preserved } = parseFrontmatter(original);
+		metadata.tags = ['added'];
+		const reconstructed = serializeFrontmatter(metadata, body, preserved);
+		expect(reconstructed).toBe(
+			'---\ntags: ["added"]\ncssclass: wide\nlinks:\n  - "[[Other]]"\n---\nBody',
+		);
+	});
+
+	it('round-trips a file that has only unknown keys', () => {
+		const { metadata, body, preserved } = parseFrontmatter(
+			'---\nauthor: jane\n---\nHello',
+		);
+		expect(metadata).toEqual({});
+		expect(serializeFrontmatter(metadata, body, preserved)).toBe(
+			'---\nauthor: jane\n---\nHello',
 		);
 	});
 });

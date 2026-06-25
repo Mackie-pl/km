@@ -28,7 +28,7 @@ import {
 	},
 })
 export class SidebarVaultListComponent {
-	private readonly vaultDb = inject(VaultStore);
+	protected readonly vaultDb = inject(VaultStore);
 	private readonly router = inject(Router);
 	private readonly syncEngine = inject(SyncEngineService);
 
@@ -37,6 +37,32 @@ export class SidebarVaultListComponent {
 
 	/** The currently-viewed entry path (highlighted in list), or null. */
 	readonly activeEntryPath = input<string | null>(null);
+
+	// ---- Tag filter state ----
+
+	/** Set of tag names currently filtering the tree. Empty = no filter. */
+	readonly activeFilterTags = signal<Set<string>>(new Set());
+
+	/** True when at least one tag filter is active. */
+	readonly isFilterActive = computed(() => this.activeFilterTags().size > 0);
+
+	/** Toggle a tag in/out of the active filter set. */
+	toggleFilterTag(tag: string): void {
+		this.activeFilterTags.update((set) => {
+			const next = new Set(set);
+			if (next.has(tag)) {
+				next.delete(tag);
+			} else {
+				next.add(tag);
+			}
+			return next;
+		});
+	}
+
+	/** Clear all active tag filters. */
+	clearFilter(): void {
+		this.activeFilterTags.set(new Set());
+	}
 
 	// ---- Tree state ----
 
@@ -47,8 +73,20 @@ export class SidebarVaultListComponent {
 	 * Flat tree of vault entries ordered by parent adjacency.
 	 * Root entries first, then children of expanded folders recursively.
 	 * Folders are sorted before files; within each group, alphabetical.
+	 *
+	 * When `activeFilterTags` is non-empty, switches to a flat filtered list:
+	 * only files whose lowercased tags intersect with the active filter set.
 	 */
 	readonly treeNodes = computed(() => {
+		const activeFilters = this.activeFilterTags();
+		if (activeFilters.size > 0) {
+			return this.#buildFilteredTree(activeFilters);
+		}
+		return this.#buildFullTree();
+	});
+
+	/** Build the normal nested tree (folders + files, expandable). */
+	#buildFullTree(): TreeNode[] {
 		const expanded = this.expandedFolders();
 		const allFolders = this.vaultDb.folders();
 		const allFiles = this.vaultDb.files();
@@ -85,7 +123,11 @@ export class SidebarVaultListComponent {
 					const { metadata } = parseFrontmatter(entry.content);
 					icon = metadata.icon;
 				}
-				result.push({ entry, depth, ...(icon !== undefined ? { icon } : {}) });
+				result.push({
+					entry,
+					depth,
+					...(icon !== undefined ? { icon } : {}),
+				});
 				if (entry.type === 'folder' && expanded.has(entry.id)) {
 					walk(entry.id, depth + 1);
 				}
@@ -94,7 +136,33 @@ export class SidebarVaultListComponent {
 
 		walk(null, 0);
 		return result;
-	});
+	}
+
+	/** Build a flat filtered list of files matching any active filter tag. */
+	#buildFilteredTree(activeFilters: Set<string>): TreeNode[] {
+		const result: TreeNode[] = [];
+
+		for (const entry of this.vaultDb.files()) {
+			if (!entry.content) continue;
+			const { metadata } = parseFrontmatter(entry.content);
+			const entryTags = (metadata.tags ?? []).map((t) => t.toLowerCase());
+
+			// Match if ANY active filter tag is present on this entry
+			const matches = [...activeFilters].some((f) =>
+				entryTags.includes(f),
+			);
+			if (!matches) continue;
+
+			result.push({
+				entry,
+				depth: 0,
+				...(metadata.icon ? { icon: metadata.icon } : {}),
+			});
+		}
+
+		result.sort((a, b) => a.entry.name.localeCompare(b.entry.name));
+		return result;
+	}
 
 	// ---- Context menu state ----
 

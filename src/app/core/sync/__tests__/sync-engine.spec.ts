@@ -234,12 +234,17 @@ describe('SyncEngineService', () => {
 			expect(subdir?.type).toBe('folder');
 		});
 
-		it('should orphan-detect vault entries not on remote after pull', async () => {
+		it('should orphan-detect vault entries missing from a non-empty listing', async () => {
 			const ws = createMockWorkspace();
 			const ctx = setupSyncEngine(ws);
-			const { engine, vault } = ctx;
+			const { engine, vault, testAdapter } = ctx;
 
 			await vault.init();
+
+			// A non-empty remote listing is required for orphan detection to run:
+			// an entirely empty listing is treated as transient (see the
+			// empty-listing safety test) rather than a deliberate wipe.
+			await testAdapter.write('keep.md', 'still here');
 
 			await vault.createFile('orphan.md', 'not on disk');
 			const entry = vault.getByPath('orphan.md')!;
@@ -247,7 +252,29 @@ describe('SyncEngineService', () => {
 
 			await engine.forcePull();
 
+			expect(vault.getByPath('keep.md')).toBeDefined();
 			expect(vault.getByPath('orphan.md')).toBeUndefined();
+		});
+
+		it('should NOT orphan-delete the whole vault on an empty listing', async () => {
+			const ws = createMockWorkspace();
+			const ctx = setupSyncEngine(ws);
+			const { engine, vault, testAdapter } = ctx;
+
+			await vault.init();
+
+			// Seed a synced file and complete a first pull so orphan detection
+			// is armed, then make the remote list nothing (the transient-failure
+			// shape). The file must survive — an empty listing is never treated
+			// as "everything was deleted remotely".
+			await testAdapter.write('keep.md', 'still here');
+			await engine.forcePull();
+			expect(vault.getByPath('keep.md')).toBeDefined();
+
+			testAdapter.files.clear();
+			await engine.forcePull();
+
+			expect(vault.getByPath('keep.md')).toBeDefined();
 		});
 
 		it('should not orphan-remove entries with pending adapters', async () => {

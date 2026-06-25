@@ -2,94 +2,116 @@ import type { NoteMetadata } from '@core/types/note-metadata';
 
 /**
  * Regex matching a YAML frontmatter block at the very start of a file.
- * Captures everything between the opening `---\n` and closing `\n---\n`.
+ * Captures everything between the opening `---` and closing `---` fences.
+ * Tolerant of CRLF (`\r\n`) line endings, which are common on Windows / Git.
  */
-const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---\n/;
+const FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/;
+
+/** A top-level `key: value` line (keys may contain letters, digits, -, _). */
+const KEY_RE = /^([A-Za-z0-9_-]+):\s*(.*)$/;
+
+/** Keys this app owns and re-emits itself (everything else is preserved). */
+const MANAGED_KEYS = new Set(['createdAt', 'icon', 'tags']);
+/** Recognised but intentionally dropped — VaultEntry timestamps win. */
+const DROPPED_KEYS = new Set(['updatedAt']);
 
 /**
  * Parse a note's content, extracting YAML frontmatter (if present).
  *
- * Only `icon`, `tags`, and `createdAt` keys are recognised from the
- * YAML frontmatter. `updatedAt` is silently dropped — VaultEntry
- * timestamps are authoritative.
+ * `icon`, `tags`, and `createdAt` are surfaced as structured `metadata`.
+ * `updatedAt` is dropped. Every OTHER top-level key is captured verbatim in
+ * `preserved` (its raw lines, including block continuations) so a round-trip
+ * through {@link serializeFrontmatter} keeps frontmatter written by other tools
+ * (Obsidian aliases, custom fields, etc.) intact.
  *
  * @param content - Raw note content (may include frontmatter)
- * @returns Extracted metadata and the body (content without frontmatter)
+ * @returns Extracted metadata, the preserved unknown-key lines, and the body.
  */
 export function parseFrontmatter(content: string): {
 	metadata: NoteMetadata;
 	body: string;
+	preserved: string[];
 } {
 	const match = FRONTMATTER_RE.exec(content);
 	if (!match) {
-		return { metadata: {}, body: content };
+		return { metadata: {}, body: content, preserved: [] };
 	}
 
 	const yamlBlock = match[1];
 	const body = content.slice(match[0].length);
 
 	if (yamlBlock === undefined) {
-		return { metadata: {}, body };
+		return { metadata: {}, body, preserved: [] };
 	}
 
-	const lines = yamlBlock.split('\n');
-	const metadata = parseYamlLines(lines);
+	const lines = yamlBlock.split(/\r?\n/);
+	const { metadata, preserved } = parseYamlLines(lines);
 
-	return { metadata, body };
+	return { metadata, body, preserved };
 }
 
 /**
- * Parse lines of YAML key-value pairs into NoteMetadata.
- *
- * Recognises `icon` (string), `tags` (inline array or block array),
- * and `createdAt` (number). Silently drops `updatedAt`.
+ * Parse frontmatter lines into recognised metadata + verbatim-preserved lines
+ * for unknown keys.
  */
-function parseYamlLines(lines: string[]): NoteMetadata {
+function parseYamlLines(lines: string[]): {
+	metadata: NoteMetadata;
+	preserved: string[];
+} {
 	const metadata: NoteMetadata = {};
-	let currentKey: string | null = null;
+	const preserved: string[] = [];
 	const currentTags: string[] = [];
+	let currentKey: string | null = null;
+	let preservingUnknown = false;
 
 	for (const line of lines) {
-		const keyExec = /^(\w+):\s*(.*)$/.exec(line);
+		const keyExec = KEY_RE.exec(line);
 		if (keyExec) {
-			currentKey = handleKeyLine(
-				metadata,
-				keyExec,
-				currentKey,
-				currentTags,
-			);
+			flushTags(metadata, currentKey, currentTags);
+			currentKey = keyExec[1] ?? null;
+			preservingUnknown = applyTopLevelKey(metadata, keyExec, preserved);
 			continue;
 		}
-		collectTagItem(line, currentKey, currentTags);
+
+		// Continuation line (indented value, block-list item, blank, comment).
+		if (currentKey === 'tags') {
+			collectTagItem(line, currentKey, currentTags);
+		} else if (preservingUnknown) {
+			preserved.push(line);
+		}
 	}
 
 	flushTags(metadata, currentKey, currentTags);
-	return metadata;
+	return { metadata, preserved };
 }
 
 /**
- * Handle a `key: value` line: flush any pending block tags, then apply the
- * value. Returns the new "current key" for subsequent block-array items.
+ * Handle a top-level `key:` line. Managed keys feed `metadata`; dropped keys are
+ * discarded; anything else is pushed verbatim to `preserved`.
+ *
+ * @returns whether subsequent continuation lines should be preserved (i.e. the
+ *          key is an unknown one whose block must be kept).
  */
-function handleKeyLine(
+function applyTopLevelKey(
 	metadata: NoteMetadata,
 	keyExec: RegExpExecArray,
-	currentKey: string | null,
-	currentTags: string[],
-): string | null {
-	flushTags(metadata, currentKey, currentTags);
+	preserved: string[],
+): boolean {
+	const key = keyExec[1];
+	const rawValue = keyExec[2];
+	if (key === undefined || rawValue === undefined) return false;
 
-	const matchedKey = keyExec[1];
-	const matchedValue = keyExec[2];
-	if (matchedKey === undefined || matchedValue === undefined) {
-		return currentKey;
+	if (DROPPED_KEYS.has(key)) return false;
+
+	if (MANAGED_KEYS.has(key)) {
+		const value = rawValue.trim();
+		if (value !== '') applyKeyValue(metadata, key, value);
+		return false;
 	}
 
-	const value = matchedValue.trim();
-	if (value !== '') {
-		applyKeyValue(metadata, matchedKey, value);
-	}
-	return matchedKey;
+	// Unknown key — preserve its line verbatim, and keep its continuation lines.
+	preserved.push(keyExec.input);
+	return true;
 }
 
 /** Collect a block-array `  - item` line into the pending tags accumulator. */
@@ -121,9 +143,9 @@ function flushTags(
 }
 
 /**
- * Apply a single key-value pair to NoteMetadata.
+ * Apply a single managed key-value pair to NoteMetadata.
  * Supports `icon` (string), `tags` (inline `[a, b]` or single value),
- * and `createdAt` (number). Silently drops `updatedAt`.
+ * and `createdAt` (number).
  */
 function applyKeyValue(
 	metadata: NoteMetadata,
@@ -167,32 +189,39 @@ function parseTagValue(value: string): string[] {
 /**
  * Serialise metadata + body back into a full content string.
  *
- * `createdAt` is always written to the frontmatter block when present.
- * `icon` and `tags` are written only when non-empty.
- * If no metadata keys are present, the body is returned unchanged.
+ * Managed keys (`createdAt` when present, then non-empty `icon`/`tags`) are
+ * written first, followed by any `preserved` unknown-key lines captured by
+ * {@link parseFrontmatter}. If there is nothing to write, the body is returned
+ * unchanged.
  *
- * @param metadata - The metadata to embed
+ * @param metadata - The managed metadata to embed
  * @param body - The markdown body (without frontmatter)
+ * @param preserved - Verbatim unknown-key lines to keep (from parseFrontmatter)
  * @returns Full content with frontmatter prepended (if any)
  */
 export function serializeFrontmatter(
 	metadata: NoteMetadata,
 	body: string,
+	preserved: string[] = [],
 ): string {
-	const lines = buildFrontmatterLines(metadata);
+	const lines = buildFrontmatterLines(metadata, preserved);
 	if (lines.length === 0) return body;
 	return lines.join('\n') + '\n' + body;
 }
 
 /**
  * Build the frontmatter YAML lines (including `---` fences).
- * Returns empty array if no metadata keys are present.
+ * Returns empty array if there are no managed keys and nothing preserved.
  */
-function buildFrontmatterLines(metadata: NoteMetadata): string[] {
+function buildFrontmatterLines(
+	metadata: NoteMetadata,
+	preserved: string[],
+): string[] {
 	const lines: string[] = [];
 	appendCreatedAt(lines, metadata);
 	appendIcon(lines, metadata);
 	appendTags(lines, metadata);
+	lines.push(...preserved);
 
 	if (lines.length === 0) return lines;
 	return ['---', ...lines, '---'];
