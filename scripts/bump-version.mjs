@@ -8,12 +8,13 @@
 //   - src/build-info.ts           committed dev placeholder (rebuilt for real
 //                                 at build time by generate-build-info.mjs)
 // ...then commits everything and tags vX.Y.Z. The release pipeline triggers on
-// the pushed tag, so nothing is pushed automatically.
+// the pushed tag, so by default nothing is pushed automatically.
 //
 // Usage:
-//   node scripts/bump-version.mjs <patch|minor|major|x.y.z>
-// Then, when you're ready to ship:
+//   node scripts/bump-version.mjs <patch|minor|major|x.y.z> [--push]
+// Without --push it stops after tagging; ship when ready with:
 //   git push --follow-tags
+// With --push it runs that push for you, triggering the release pipeline.
 
 import { execSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -21,10 +22,12 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const arg = process.argv[2];
+const args = process.argv.slice(2);
+const push = args.includes('--push');
+const arg = args.find((a) => a !== '--push');
 
 if (!arg) {
-	console.error('Usage: node scripts/bump-version.mjs <patch|minor|major|x.y.z>');
+	console.error('Usage: node scripts/bump-version.mjs <patch|minor|major|x.y.z> [--push]');
 	process.exit(1);
 }
 
@@ -79,6 +82,15 @@ writeFileSync(biPath, bi);
 // 4) Commit + tag.
 execSync('git add package.json src-tauri/Cargo.toml src/build-info.ts', { cwd: root, stdio: 'inherit' });
 execSync(`git commit -m "chore(release): ${tag}"`, { cwd: root, stdio: 'inherit' });
-execSync(`git tag ${tag}`, { cwd: root, stdio: 'inherit' });
+// Annotated tag (-a): lightweight tags are skipped by `git push --follow-tags`,
+// so the release pipeline would never trigger. Annotated tags push correctly.
+execSync(`git tag -a ${tag} -m "${tag}"`, { cwd: root, stdio: 'inherit' });
 
-console.log(`\nTagged ${tag}. Push to trigger the release pipeline:\n  git push --follow-tags`);
+// 5) Optionally push the commit + tag to trigger the release pipeline.
+if (push) {
+	console.log(`\nPushing ${tag} (with --follow-tags)...`);
+	execSync('git push --follow-tags', { cwd: root, stdio: 'inherit' });
+	console.log(`\nPushed ${tag}. The release & Pages workflows are now running on GitHub.`);
+} else {
+	console.log(`\nTagged ${tag}. Push to trigger the release pipeline:\n  git push --follow-tags`);
+}
