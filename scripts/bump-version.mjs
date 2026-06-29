@@ -17,7 +17,7 @@
 // With --push it runs that push for you, triggering the release pipeline.
 
 import { execSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -65,11 +65,23 @@ writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
 // 2) src-tauri/Cargo.toml — first top-level `version = "..."` (the [package] one;
 //    dependency lines like `tauri = { version = "2" }` don't start a line).
 const cargoPath = join(root, 'src-tauri', 'Cargo.toml');
-const cargo = readFileSync(cargoPath, 'utf8').replace(
-	/^version\s*=\s*"[^"]*"/m,
-	`version = "${next}"`,
-);
+const cargoSrc = readFileSync(cargoPath, 'utf8');
+const cargo = cargoSrc.replace(/^version\s*=\s*"[^"]*"/m, `version = "${next}"`);
 writeFileSync(cargoPath, cargo);
+
+// 2b) src-tauri/Cargo.lock — the workspace crate's own entry pins its version,
+//     so a build after bumping rewrites the lock and dirties the tree. Sync it
+//     here (version-only edit of the [[package]] block whose name is this crate)
+//     so it rides along in the release commit. Skipped if no lockfile exists.
+const crate = /^\s*name\s*=\s*"([^"]+)"/m.exec(cargoSrc)?.[1];
+const lockPath = join(root, 'src-tauri', 'Cargo.lock');
+if (crate && existsSync(lockPath)) {
+	const lock = readFileSync(lockPath, 'utf8').replace(
+		new RegExp(`(name = "${crate}"\\r?\\nversion = ")[^"]*(")`),
+		`$1${next}$2`,
+	);
+	writeFileSync(lockPath, lock);
+}
 
 // 3) src/build-info.ts — update only the committed placeholder version string.
 const biPath = join(root, 'src', 'build-info.ts');
@@ -80,7 +92,7 @@ const bi = readFileSync(biPath, 'utf8').replace(
 writeFileSync(biPath, bi);
 
 // 4) Commit + tag.
-execSync('git add package.json src-tauri/Cargo.toml src/build-info.ts', { cwd: root, stdio: 'inherit' });
+execSync('git add package.json src-tauri/Cargo.toml src-tauri/Cargo.lock src/build-info.ts', { cwd: root, stdio: 'inherit' });
 execSync(`git commit -m "chore(release): ${tag}"`, { cwd: root, stdio: 'inherit' });
 // Annotated tag (-a): lightweight tags are skipped by `git push --follow-tags`,
 // so the release pipeline would never trigger. Annotated tags push correctly.
