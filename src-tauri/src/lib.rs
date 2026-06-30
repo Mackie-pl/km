@@ -33,20 +33,62 @@ fn get_platform() -> &'static str {
 async fn pick_workspace_folder(
     app: tauri::AppHandle,
 ) -> Result<Option<WorkspaceInfo>, String> {
-    use tauri_plugin_dialog::DialogExt;
+    // `pick_folder` / `blocking_pick_folder` are desktop-only in
+    // tauri-plugin-dialog v2 — they're gated behind `#[cfg(desktop)]`,
+    // so the method doesn't exist when compiling for Android/iOS.
+    #[cfg(desktop)]
+    {
+        use tauri_plugin_dialog::DialogExt;
 
-    let folder = app
-        .dialog()
-        .file()
-        .blocking_pick_folder();
+        let folder = app
+            .dialog()
+            .file()
+            .blocking_pick_folder();
 
-    match folder {
-        Some(path) => {
-            let path_str = path.to_string();
-            register_fs_scope_inner(&app, &path_str, true)?;
-            Ok(Some(WorkspaceInfo { path: path_str }))
+        match folder {
+            Some(path) => {
+                let path_str = path.to_string();
+                register_fs_scope_inner(&app, &path_str, true)?;
+                Ok(Some(WorkspaceInfo { path: path_str }))
+            }
+            None => Ok(None),
         }
-        None => Ok(None),
+    }
+
+    // Android: no native filesystem-path folder picker exists (scoped storage).
+    // Use the Storage Access Framework (ACTION_OPEN_DOCUMENT_TREE) via
+    // tauri-plugin-android-fs, which returns a persistable content:// tree URI.
+    // We persist the permission so the grant survives app/device restarts.
+    //
+    // NOTE: for now we return only the `uri` string as `path`. The full
+    // FileUri ({ uri, documentTopTreeUri }) is needed for directory traversal
+    // and will be threaded through in the URI-based Android adapter (step 2).
+    #[cfg(target_os = "android")]
+    {
+        use tauri_plugin_android_fs::AndroidFsExt;
+
+        let picker = app.android_fs_async().file_picker();
+        let dir = picker
+            .pick_dir(None, false)
+            .await
+            .map_err(|e| format!("Folder picker failed: {e}"))?;
+
+        match dir {
+            Some(uri) => {
+                picker
+                    .persist_uri_permission(&uri)
+                    .await
+                    .map_err(|e| format!("Failed to persist folder permission: {e}"))?;
+                Ok(Some(WorkspaceInfo { path: uri.uri }))
+            }
+            None => Ok(None),
+        }
+    }
+
+    #[cfg(not(any(desktop, target_os = "android")))]
+    {
+        let _ = &app;
+        Err("Folder picking is not supported on this platform".to_string())
     }
 }
 
@@ -84,7 +126,8 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_http::init()) 
+        .plugin(tauri_plugin_http::init())
+        .plugin(tauri_plugin_android_fs::init())
         // Register both commands so the frontend can invoke them via `invoke()`
         .invoke_handler(tauri::generate_handler![greet, get_platform, pick_workspace_folder, register_fs_scope])
         .run(tauri::generate_context!())
