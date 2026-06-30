@@ -11,7 +11,7 @@ export interface BuildInfo {
 }
 
 export const BUILD_INFO: BuildInfo = {
-	version: '0.1.3',
+	version: '0.1.4',
 	gitSha: 'dev',
 	builtAt: '',
 };
