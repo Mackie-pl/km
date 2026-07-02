@@ -81,6 +81,16 @@ export interface Adapter {
 	 * to be granted per-path (e.g. Tauri's FS scope).
 	 */
 	registerScope?(root: string): Promise<void>;
+
+	/**
+	 * Optional: verify the adapter still has permission to access `root`.
+	 * Returns false when access was lost and must be re-granted (e.g. an
+	 * Android SAF permission revoked by reinstall / system Settings).
+	 *
+	 * Adapters that don't gate access behind a revocable grant should omit
+	 * this (callers treat "not implemented" as "access assumed OK").
+	 */
+	verifyAccess?(root: string): Promise<boolean>;
 }
 
 // ============================================================================

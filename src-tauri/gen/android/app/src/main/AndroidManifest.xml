@@ -23,6 +23,38 @@
         <!-- AndroidTV support -->
         <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
       </intent-filter>
+
+      <!-- Offer this app in "Open with" for Markdown files whose source app
+           reports a proper markdown MIME type (e.g. Google Files, Solid Explorer). -->
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="content" />
+        <data android:scheme="file" />
+        <data android:mimeType="text/markdown" />
+        <data android:mimeType="text/x-markdown" />
+      </intent-filter>
+
+      <!-- Fallback for ".md" files shared with a generic MIME type: stock
+           Android has no built-in extension->MIME mapping for ".md", so most
+           file managers send "application/octet-stream" or similar instead of
+           "text/markdown". Match on the file extension directly in that case. -->
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data
+          android:scheme="content"
+          android:host="*"
+          android:mimeType="*/*"
+          android:pathPattern=".*\\.md" />
+        <data
+          android:scheme="file"
+          android:host="*"
+          android:mimeType="*/*"
+          android:pathPattern=".*\\.md" />
+      </intent-filter>
     </activity>
 
     <provider
@@ -35,4 +67,7 @@
         android:resource="@xml/file_paths" />
     </provider>
   </application>
+    <!-- ANDROID FS PLUGIN. AUTO-GENERATED. DO NOT REMOVE. -->
+    
+    <!-- ANDROID FS PLUGIN. AUTO-GENERATED. DO NOT REMOVE. -->
 </manifest>

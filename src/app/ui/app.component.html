@@ -7,6 +7,9 @@
 		<app-no-workspace (pickWorkspace)="openWorkspacePicker()" />
 	}
 
+	<!-- Out-of-band workspace notifications (Open-with mismatch, lost folder access). -->
+	<app-top-notifications />
+
 	<!--
     Shell layout: flex row so sidebar sits beside main content.
     Sidebar + header are conditionally visible; the router outlet is always present.

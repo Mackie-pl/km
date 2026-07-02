@@ -1,3 +1,5 @@
+mod saf;
+
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -49,7 +51,7 @@ async fn pick_workspace_folder(
             Some(path) => {
                 let path_str = path.to_string();
                 register_fs_scope_inner(&app, &path_str, true)?;
-                Ok(Some(WorkspaceInfo { path: path_str }))
+                Ok(Some(WorkspaceInfo { path: path_str, name: None }))
             }
             None => Ok(None),
         }
@@ -67,7 +69,8 @@ async fn pick_workspace_folder(
     {
         use tauri_plugin_android_fs::AndroidFsExt;
 
-        let picker = app.android_fs_async().file_picker();
+        let api = app.android_fs_async();
+        let picker = api.file_picker();
         let dir = picker
             .pick_dir(None, false)
             .await
@@ -79,7 +82,20 @@ async fn pick_workspace_folder(
                     .persist_uri_permission(&uri)
                     .await
                     .map_err(|e| format!("Failed to persist folder permission: {e}"))?;
-                Ok(Some(WorkspaceInfo { path: uri.uri }))
+                // Resolve the human-readable folder name from the document
+                // provider; the content:// URI itself isn't user-presentable.
+                let name = api.get_name_or_last_path_segment(&uri).await;
+                // Persist the FULL FileUri (uri + documentTopTreeUri) as the
+                // workspace root: the SAF plugin needs both fields to resolve
+                // child entries. The Android adapter parses this back via
+                // FileUri::from_json_str.
+                let root_json = uri
+                    .to_json_string()
+                    .map_err(|e| format!("failed to serialize folder URI: {e}"))?;
+                Ok(Some(WorkspaceInfo {
+                    path: root_json,
+                    name: Some(name),
+                }))
             }
             None => Ok(None),
         }
@@ -129,7 +145,19 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_android_fs::init())
         // Register both commands so the frontend can invoke them via `invoke()`
-        .invoke_handler(tauri::generate_handler![greet, get_platform, pick_workspace_folder, register_fs_scope])
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            get_platform,
+            pick_workspace_folder,
+            register_fs_scope,
+            saf::saf_read,
+            saf::saf_write,
+            saf::saf_delete,
+            saf::saf_create_dir,
+            saf::saf_rename,
+            saf::saf_list,
+            saf::saf_check_permission,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -139,5 +167,10 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 struct WorkspaceInfo {
     path: String,
+    /// Human-readable folder name. Populated on Android (where `path` is an
+    /// opaque content:// URI the frontend can't derive a name from); `None`
+    /// on desktop, where the frontend derives the name from the real path.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    name: Option<String>,
 }
 

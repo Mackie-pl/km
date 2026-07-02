@@ -104,6 +104,16 @@
 			/>
 		</button>
 
+		<!-- Folder mode: picker error (diagnostic) -->
+		@if (isFolderMode() && pickError()) {
+			<p
+				class="mt-2 break-words text-xs text-red-600 dark:text-red-400"
+				data-testid="folder-pick-error"
+			>
+				Picker error: {{ pickError() }}
+			</p>
+		}
+
 		<!-- Standalone mode: text input -->
 		<div [class.hidden]="isFolderMode()">
 			<label
