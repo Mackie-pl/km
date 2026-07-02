@@ -1,21 +1,10 @@
 import { Injectable, signal, computed, inject, effect } from '@angular/core';
-import {
-	WorkspaceService,
-	type Workspace,
-} from '@core/services/workspace.service';
+import { WorkspaceService } from '@core/services/workspace.service';
 import { VAULT_ENTRY_TYPES, type VaultEntry } from './vault-entry';
-import { VaultDatabase } from './vault-database';
 import { VaultReconciler } from './vault-reconciler';
+import { VaultLifecycle } from './vault-lifecycle';
+import { VaultFrontmatterIndex } from './vault-frontmatter-index';
 import { resolveUniquePath, makeVaultEntry } from './vault-utils';
-import {
-	repoUrlToCloneDir,
-	destroyGitFsBackend,
-} from '@core/adapters/cloud/git/fs';
-import { GitTokenStore } from '@core/adapters/cloud/git/auth';
-import { GitSettingsStore } from '@core/adapters/cloud/git/settings-store';
-import type { AdapterConfig } from '@core/adapters/adapter.interface';
-import { parseFrontmatter } from '@core/utils/frontmatter-parser';
-import type { NoteMetadata } from '@core/types/note-metadata';
 
 // Re-exports for backward compat with imports from @vault/store
 export { VAULT_ENTRY_TYPES, type VaultEntry } from './vault-entry';
@@ -43,14 +32,17 @@ export class VaultStore {
 	 * path → id index for the active workspace's non-deleted entries.
 	 * Keeps `getByPath` O(1) instead of a linear scan (which, called once per
 	 * file during a pull, made reconciliation O(N²)). Maintained in lockstep
-	 * with the `entries` signal by `put`/`putMany`/`loadAll`.
+	 * with the `entries` signal by `put`/`putMany`/`hydrate`.
 	 */
 	readonly #pathIndex = new Map<string, string>();
 
-	/** Memoization cache for `allFrontmatters` — avoids reparsing unchanged files. */
-	readonly #fmCache = new Map<string, { content: string; metadata: NoteMetadata }>();
+	/** Memoized frontmatter parser backing `allFrontmatters`/`allTags`. */
+	readonly #frontmatter = new VaultFrontmatterIndex();
 
 	private readonly reconciler = new VaultReconciler(this);
+
+	/** Owns DB access + workspace lifecycle (init/load/reload/purge). */
+	private readonly lifecycle = new VaultLifecycle(this);
 
 	/** Expose the entries signal snapshot for VaultReconciler. */
 	getEntriesSnapshot(): Map<string, VaultEntry> {
@@ -87,198 +79,79 @@ export class VaultStore {
 
 	/** Frontmatter metadata for every non-deleted file — reactively derived. */
 	readonly allFrontmatters = computed(() =>
-		this.files().map((f) => this.#parseFrontmatterCached(f.id, f.content ?? '')),
+		this.files().map((f) => this.#frontmatter.parse(f.id, f.content ?? '')),
 	);
 
-	/** Parse a file's frontmatter, reusing the cached result when content is unchanged. */
-	#parseFrontmatterCached(id: string, content: string): NoteMetadata {
-		const cached = this.#fmCache.get(id);
-		// Explicit undefined check (not optional chaining) so TS narrows `cached`
-		// for the `cached.metadata` access below.
-		// eslint-disable-next-line @typescript-eslint/prefer-optional-chain
-		if (cached !== undefined && cached.content === content) {
-			return cached.metadata;
-		}
-		const { metadata } = parseFrontmatter(content);
-		this.#fmCache.set(id, { content, metadata });
-		return metadata;
-	}
-
 	/** All unique tags across all files, lowercased, sorted. */
-	readonly allTags = computed(() => {
-		const set = new Set<string>();
-		for (const fm of this.allFrontmatters()) {
-			for (const tag of fm.tags ?? []) {
-				set.add(tag.toLowerCase());
-			}
-		}
-		return [...set].sort();
-	});
+	readonly allTags = computed(() =>
+		this.#frontmatter.collectTags(this.allFrontmatters()),
+	);
 
 	//
 	// =========================
-	// DB
+	// LIFECYCLE (DB + workspace load/switch/removal)
 	// =========================
 	//
-
-	private readonly database = new VaultDatabase();
-	private initPromise: Promise<void> | null = null;
-	/** Tracks which workspace was last loaded via init(). Guards the constructor effect. */
-	private loadedWsId: string | null = null;
 
 	/**
-	 * Incremented every time entries are loaded from IndexedDB.
-	 * SyncEngineService watches this to know when the vault is ready
-	 * after workspace activation or switch.
+	 * Incremented every time entries are loaded from IndexedDB. Consumers can
+	 * watch this to know when the vault is ready after workspace activation or
+	 * switch. Bumped by `hydrate`, reset by `resetMemory`.
 	 */
 	readonly loadVersion = signal(0);
 
-	/**
-	 * Initialize the IndexedDB connection and load entries for the active workspace.
-	 * Safe to call multiple times — only opens the DB once, but ALWAYS reloads
-	 * entries (handles workspace switch where a different set of entries is needed).
-	 */
-	async init() {
-		this.initPromise ??= this.#openDatabase();
-		await this.initPromise;
-		await this.loadAll();
-	}
-
-	async #openDatabase(): Promise<void> {
-		await this.database.open();
-	}
-
 	constructor() {
-		// Reload entries when the active workspace changes to a different workspace.
-		// Skips the initial load (handled by explicit init()) to avoid races.
+		// Reload entries when the active workspace changes to a different one.
+		// The signal read happens inside the effect so the dependency is tracked.
 		effect(() => {
-			const wsId = this.activeWorkspaceId();
-			if (!wsId || !this.loadedWsId) return;
-			if (wsId === this.loadedWsId) return;
-			void this.clearAndReload();
+			this.lifecycle.handleWorkspaceSwitch(this.activeWorkspaceId());
 		});
 
-		// When a workspace is removed from the service, purge its IndexedDB entries.
-		// This keeps VaultStore as the single authority over DB ↔ workspace linkage,
-		// avoiding a circular DI between WorkspaceService and VaultStore.
-		this.#watchWorkspaceRemovals();
+		// Purge a workspace's IndexedDB entries when it's removed from the service.
+		// Keeping this in VaultStore avoids a circular DI with WorkspaceService.
+		effect(() => {
+			this.lifecycle.syncWorkspaceRemovals(
+				this.workspaceService.workspaces(),
+			);
+		});
 	}
-
-	/** Tracks workspace IDs seen previously, so we can detect removals. */
-	#lastSeenWorkspaces = new Map<string, Workspace>();
-	// True after the first workspace list is observed — guards against
-	// firing on the initial empty→populated transition.
-	#workspaceRemovalWatchReady = false;
 
 	/**
-	 * Watch `workspaceService.workspaces()` and purge IndexedDB entries for any
-	 * workspace ID that disappears from the list.
+	 * Initialize the IndexedDB connection and load entries for the active
+	 * workspace. Safe to call multiple times. Delegates to VaultLifecycle.
 	 */
-	#watchWorkspaceRemovals(): void {
-		effect(() => {
-			// Only dependency: the workspace list signal.
-			const current = this.workspaceService.workspaces();
-			const currentIds = new Set(current.map((w) => w.id));
-
-			if (this.#workspaceRemovalWatchReady) {
-				for (const [removedId, removedWs] of this.#lastSeenWorkspaces) {
-					if (!currentIds.has(removedId)) {
-						void this.purgeWorkspace(
-							removedId,
-							removedWs.adapterConfigs,
-						);
-					}
-				}
-			}
-
-			this.#workspaceRemovalWatchReady = true;
-			this.#lastSeenWorkspaces = new Map(current.map((w) => [w.id, w]));
-		});
-	}
-
-	/** Clear in-memory entries and reload from IndexedDB for the current workspace. */
-	private async clearAndReload(): Promise<void> {
-		this.loadVersion.set(0);
-		this.#pathIndex.clear();
-		this.#fmCache.clear();
-		this.entries.set(new Map());
-		await this.init();
+	async init(): Promise<void> {
+		await this.lifecycle.init();
 	}
 
 	async ensureInitialized(): Promise<void> {
-		await this.init();
+		await this.lifecycle.ensureInitialized();
 	}
 
-	//
-	// =========================
-	// LOAD
-	// =========================
-	//
-
-	private async loadAll() {
-		const wsId = this.activeWorkspaceId();
-		if (!wsId) {
-			this.#pathIndex.clear();
-			this.#fmCache.clear();
-			this.entries.set(new Map());
-			return;
-		}
-
-		const entries = await this.database.loadAll(wsId);
+	/**
+	 * Replace in-memory state with `entries` loaded from the DB: rebuild the
+	 * path index, clear the frontmatter cache, and signal readiness. Called by
+	 * VaultLifecycle after loading a workspace.
+	 */
+	hydrate(entries: VaultEntry[]): void {
 		const map = new Map<string, VaultEntry>();
 		this.#pathIndex.clear();
-		this.#fmCache.clear();
+		this.#frontmatter.clear();
 		for (const entry of entries) {
 			map.set(entry.id, entry);
 			if (!entry.deleted) this.#pathIndex.set(entry.path, entry.id);
 		}
 		this.entries.set(map);
-		this.loadedWsId = wsId;
 		// Signal that the vault is ready for consumers (SyncEngine, etc.)
 		this.loadVersion.update((v) => v + 1);
 	}
 
-	//
-	// =========================
-	// PURGE (workspace removal)
-	// =========================
-
-	/**
-	 * Permanently delete ALL vault entries for a given workspace from IndexedDB.
-	 * Called when a workspace is removed. If the purged workspace is the currently
-	 * active one, the in-memory entries are also cleared.
-	 *
-	 * Also cleans up git adapter data: destroys the LightningFS IndexedDB database
-	 * for each git adapter and removes the encrypted token and stored settings.
-	 */
-	async purgeWorkspace(
-		wsId: string,
-		adapterConfigs?: AdapterConfig[],
-	): Promise<void> {
-		await this.ensureInitialized();
-		await this.database.deleteAllByWorkspaceId(wsId);
-
-		// Clean up git adapter data (LightningFS DB + token + settings)
-		if (adapterConfigs) {
-			for (const config of adapterConfigs) {
-				if (config.adapterId === 'git') {
-					const cloneDir = repoUrlToCloneDir(config.repoUrl);
-					await destroyGitFsBackend(cloneDir);
-					const tokenStore = new GitTokenStore();
-					await tokenStore.deleteToken(config.repoUrl);
-					new GitSettingsStore().delete(config.repoUrl);
-				}
-			}
-		}
-
-		// If the purged workspace is the one currently loaded, clear memory
-		if (this.activeWorkspaceId() === wsId) {
-			this.#pathIndex.clear();
-			this.#fmCache.clear();
-			this.entries.set(new Map());
-			this.loadedWsId = null;
-			this.loadVersion.set(0);
-		}
+	/** Clear all in-memory state (workspace switch / removal / no workspace). */
+	resetMemory(): void {
+		this.loadVersion.set(0);
+		this.#pathIndex.clear();
+		this.#frontmatter.clear();
+		this.entries.set(new Map());
 	}
 
 	//
@@ -726,7 +599,7 @@ export class VaultStore {
 	//
 
 	async put(entry: VaultEntry) {
-		await this.database.put(entry);
+		await this.lifecycle.persist(entry);
 
 		// update signal state
 		const next = new Map(this.entries());
@@ -746,7 +619,7 @@ export class VaultStore {
 	async putMany(entries: VaultEntry[]): Promise<void> {
 		if (entries.length === 0) return;
 
-		await Promise.all(entries.map((e) => this.database.put(e)));
+		await this.lifecycle.persistMany(entries);
 
 		const next = new Map(this.entries());
 		for (const entry of entries) {
