@@ -8,11 +8,14 @@ import { PlatformService } from '@services/platform.service';
 import { ThemeService } from '@services/theme.service';
 import { VaultStore } from '@vault/store';
 import { WorkspaceService } from '@services/workspace.service';
+import { AndroidOpenFileService } from '@services/android-open-file.service';
+import { WorkspaceAccessService } from '@services/workspace-access.service';
 import { SettingsComponent } from '@ui/pages/settings/settings.component';
 import { WorkspaceConfig } from '@ui/pages/workspace-config/workspace-config';
 import { SidebarComponent } from '@ui/partials/sidebar/sidebar.component';
 import { HeaderComponent } from '@ui/partials/header/header.component';
 import { NoWorkspaceComponent } from './no-workspace/no-workspace.component';
+import { TopNotificationsComponent } from '@ui/partials/top-notifications/top-notifications.component';
 import { SearchOverlayComponent } from '@ui/partials/search-overlay/search-overlay.component';
 import { SearchService } from '@core/services/search.service';
 
@@ -33,6 +36,7 @@ import { SearchService } from '@core/services/search.service';
 		SidebarComponent,
 		HeaderComponent,
 		NoWorkspaceComponent,
+		TopNotificationsComponent,
 		SearchOverlayComponent,
 	],
 	templateUrl: './app.component.html',
@@ -49,6 +53,8 @@ export class AppComponent {
 	readonly workspaceService = inject(WorkspaceService);
 	private readonly vaultDb = inject(VaultStore);
 	readonly searchService = inject(SearchService);
+	readonly androidOpenFileService = inject(AndroidOpenFileService);
+	readonly workspaceAccessService = inject(WorkspaceAccessService);
 
 	private nativeMenuInitialized = false;
 
@@ -66,6 +72,16 @@ export class AppComponent {
 			if (!ws || vaultWatchEnabled) return;
 			vaultWatchEnabled = true;
 			void this.vaultDb.init();
+		});
+
+		// Verify folder access whenever the active workspace changes. On Android
+		// a SAF grant can be lost out-of-band (reinstall, revoked in Settings,
+		// backup restore); this surfaces a re-pick prompt instead of letting
+		// file I/O fail cryptically. No-op for non-folder / desktop workspaces.
+		effect(() => {
+			const ws = this.workspaceService.activeWorkspace();
+			if (!ws) return;
+			void this.workspaceAccessService.verify(ws);
 		});
 
 		effect(() => {
@@ -90,6 +106,12 @@ export class AppComponent {
 			this.initNativeMenu().catch((error: unknown) => {
 				console.error('Failed to initialize native menu:', error);
 			});
+		});
+
+		// Handle the case where Android launched us via "Open with" on a
+		// .md file. No-op on desktop / when there's no pending intent.
+		this.androidOpenFileService.handleAppLaunch().catch((error: unknown) => {
+			console.error('Failed to handle Android open-file intent:', error);
 		});
 	}
 

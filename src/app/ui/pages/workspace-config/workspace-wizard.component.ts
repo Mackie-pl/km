@@ -74,6 +74,9 @@ export class WorkspaceWizardComponent {
 	/** Whether a folder picker operation is in progress */
 	readonly pickingFolder = signal(false);
 
+	/** Last folder-picker error message, surfaced for diagnostics. */
+	readonly pickError = signal<string | null>(null);
+
 	/** Whether a local folder adapter is available */
 	readonly hasLocalAdapter =
 		this.adapterManager.getWorkspacePickerAdapter() !== null;
@@ -113,12 +116,26 @@ export class WorkspaceWizardComponent {
 		if (!adapter) return;
 
 		this.pickingFolder.set(true);
+		this.pickError.set(null);
 		try {
 			const result = await adapter.pickWorkspaceFolder();
 			if (result) {
 				this.folderPath.set(result.path);
 				this.folderName.set(result.name);
+			} else {
+				// No exception, but no folder either: the native picker
+				// returned cancel/None. On a bare emulator this often means
+				// no app can handle ACTION_OPEN_DOCUMENT_TREE.
+				this.pickError.set(
+					'Picker returned no folder (cancelled, or no Files/DocumentsUI app to handle the request).',
+				);
 			}
+		} catch (err) {
+			// Surface the real error instead of silently reverting — the
+			// previous try/finally swallowed picker failures entirely.
+			this.pickError.set(
+				err instanceof Error ? err.message : String(err),
+			);
 		} finally {
 			this.pickingFolder.set(false);
 		}

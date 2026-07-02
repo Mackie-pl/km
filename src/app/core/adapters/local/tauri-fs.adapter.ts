@@ -25,6 +25,32 @@ import { resolvePath, walkDirectory } from './walk-directory';
 
 interface TauriWorkspacePickResult {
 	path: string;
+	/**
+	 * Optional display name resolved by the Rust side. Present on Android,
+	 * where `path` is an opaque content:// URI with no derivable folder name;
+	 * absent on desktop, where the name is derived from the real path.
+	 */
+	name?: string;
+}
+
+/**
+ * Detect a "file not found" error thrown by Tauri's `remove`, across
+ * platforms/locales — `symlink_metadata` surfaces ENOENT (os error 2) as an
+ * OS-localized message. Treated as a successful delete (the file is gone).
+ */
+function isFileNotFoundError(err: unknown): boolean {
+	const msg =
+		typeof err === 'string'
+			? err
+			: err instanceof Error
+				? err.message
+				: '';
+	return (
+		msg.includes('os error 2') ||
+		msg.includes('ENOENT') ||
+		msg.includes('cannot find the path') ||
+		msg.includes('Nie można odnaleźć')
+	);
 }
 
 /**
@@ -60,6 +86,24 @@ export class TauriFsAdapter implements Adapter {
 		debugLog('[TauriFsAdapter]', line);
 	}
 
+	/**
+	 * Cached Android check. On Android the workspace root is a SAF content://
+	 * tree URI (serialized FileUri), so file I/O must go through the `saf_*`
+	 * Rust commands rather than the path-based `@tauri-apps/plugin-fs` calls.
+	 */
+	#android: boolean | null = null;
+
+	async #isAndroid(): Promise<boolean> {
+		if (this.#android === null) {
+			try {
+				this.#android = (await invoke<string>('get_platform')) === 'android';
+			} catch {
+				this.#android = false;
+			}
+		}
+		return this.#android;
+	}
+
 	isAvailable(): boolean {
 		return isTauriRuntime();
 	}
@@ -76,8 +120,11 @@ export class TauriFsAdapter implements Adapter {
 			return null;
 		}
 
+		// Prefer the Rust-resolved display name (Android content:// URIs have
+		// no derivable name); fall back to the last path segment on desktop.
 		const pathParts = result.path.split(/[\\/]/);
-		const name = pathParts[pathParts.length - 1] ?? 'Workspace';
+		const name =
+			result.name ?? pathParts[pathParts.length - 1] ?? 'Workspace';
 
 		return {
 			// Normalize backslashes to forward slashes so path joining in
@@ -90,11 +137,18 @@ export class TauriFsAdapter implements Adapter {
 	}
 
 	async read(path: string, root?: string): Promise<string> {
+		if (await this.#isAndroid()) {
+			return invoke<string>('saf_read', { root: root ?? '', path });
+		}
 		const resolved = resolvePath(root, path);
 		return readTextFile(resolved);
 	}
 
 	async write(path: string, content: string, root?: string): Promise<void> {
+		if (await this.#isAndroid()) {
+			await invoke('saf_write', { root: root ?? '', path, content });
+			return;
+		}
 		const resolved = resolvePath(root, path);
 		// Create parent directories if they don't exist yet.
 		// `resolvePath` already cleans slashes, so we can split on '/'.
@@ -104,6 +158,10 @@ export class TauriFsAdapter implements Adapter {
 	}
 
 	async delete(path: string, root?: string): Promise<void> {
+		if (await this.#isAndroid()) {
+			await invoke('saf_delete', { root: root ?? '', path });
+			return;
+		}
 		const resolved = resolvePath(root, path);
 		try {
 			await remove(resolved, { recursive: true });
@@ -112,18 +170,7 @@ export class TauriFsAdapter implements Adapter {
 			// Tauri's `remove` calls `symlink_metadata` which throws ENOENT
 			// when the file is missing (e.g. never written, externally deleted,
 			// or already cleaned up by a previous cycle).
-			const msg =
-				typeof err === 'string'
-					? err
-					: err instanceof Error
-						? err.message
-						: '';
-			if (
-				msg.includes('os error 2') ||
-				msg.includes('ENOENT') ||
-				msg.includes('cannot find the path') ||
-				msg.includes('Nie można odnaleźć')
-			) {
+			if (isFileNotFoundError(err)) {
 				return; // File already gone → success
 			}
 			throw err;
@@ -135,6 +182,10 @@ export class TauriFsAdapter implements Adapter {
 		newPath: string,
 		root?: string,
 	): Promise<void> {
+		if (await this.#isAndroid()) {
+			await invoke('saf_rename', { root: root ?? '', oldPath, newPath });
+			return;
+		}
 		const resolvedOld = resolvePath(root, oldPath);
 		const resolvedNew = resolvePath(root, newPath);
 		await rename(resolvedOld, resolvedNew);
@@ -145,6 +196,15 @@ export class TauriFsAdapter implements Adapter {
 		root?: string,
 		recursive?: boolean,
 	): Promise<FileEntry[]> {
+		if (await this.#isAndroid()) {
+			// SafEntry is already shaped as FileEntry (camelCase, paths relative
+			// to root). The Rust command handles both recursive and flat listing.
+			return invoke<FileEntry[]>('saf_list', {
+				root: root ?? '',
+				path,
+				recursive: recursive ?? false,
+			});
+		}
 		if (!recursive) {
 			const resolved = resolvePath(root, path);
 			const entries = await readDir(resolved);
@@ -164,6 +224,10 @@ export class TauriFsAdapter implements Adapter {
 
 	/** Create a directory (and all parents) on the filesystem. */
 	async createDir(path: string, root?: string): Promise<void> {
+		if (await this.#isAndroid()) {
+			await invoke('saf_create_dir', { root: root ?? '', path });
+			return;
+		}
 		const resolved = resolvePath(root, path);
 		await mkdir(resolved, { recursive: true });
 	}
@@ -174,6 +238,11 @@ export class TauriFsAdapter implements Adapter {
 	 * (since FS scope registration doesn't survive restarts).
 	 */
 	async registerScope(root: string): Promise<void> {
+		// On Android the SAF permission was persisted at folder-pick time and
+		// survives restarts; there's no path-based FS scope to register.
+		if (await this.#isAndroid()) {
+			return;
+		}
 		await invoke('register_fs_scope', {
 			// Normalize backslashes so the scope is registered with forward
 			// slashes, matching what resolvePath() produces. Tauri's FS scope
@@ -181,6 +250,26 @@ export class TauriFsAdapter implements Adapter {
 			// "failed to get metadata" errors on Windows.
 			path: root.replace(/\\/g, '/'),
 		});
+	}
+
+	/**
+	 * Verify access to a workspace root. On Android the SAF permission grant
+	 * can be lost independently of the persisted workspace (reinstall, user
+	 * revoking access in Settings, backup restore), so check the grant is
+	 * still valid. On desktop the path-based FS scope is re-registered on
+	 * activation, so access is always assumed OK.
+	 */
+	async verifyAccess(root: string): Promise<boolean> {
+		if (!(await this.#isAndroid())) {
+			return true;
+		}
+		try {
+			return await invoke<boolean>('saf_check_permission', { root });
+		} catch {
+			// Treat a failed check as lost access — better to prompt a re-pick
+			// than to let subsequent file I/O fail cryptically.
+			return false;
+		}
 	}
 
 	// ──────────────────────────────────────────────
@@ -204,6 +293,11 @@ export class TauriFsAdapter implements Adapter {
 		callback: (events: WatchEvent[]) => void,
 		root?: string,
 	): Promise<() => void> {
+		// SAF has no inotify-style change notifications, so there's nothing to
+		// watch on Android — the sync engine falls back to manual/interval pulls.
+		if (await this.#isAndroid()) {
+			return () => undefined;
+		}
 		const resolvedPath = resolvePath(root ?? '', '');
 
 		try {
