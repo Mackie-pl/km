@@ -34,6 +34,26 @@ interface TauriWorkspacePickResult {
 }
 
 /**
+ * Detect a "file not found" error thrown by Tauri's `remove`, across
+ * platforms/locales — `symlink_metadata` surfaces ENOENT (os error 2) as an
+ * OS-localized message. Treated as a successful delete (the file is gone).
+ */
+function isFileNotFoundError(err: unknown): boolean {
+	const msg =
+		typeof err === 'string'
+			? err
+			: err instanceof Error
+				? err.message
+				: '';
+	return (
+		msg.includes('os error 2') ||
+		msg.includes('ENOENT') ||
+		msg.includes('cannot find the path') ||
+		msg.includes('Nie można odnaleźć')
+	);
+}
+
+/**
  * Resolve a relative path against a root directory.
  * Normalizes backslashes to forward slashes on Windows.
  * Handles leading/trailing slashes and returns a clean absolute path.
@@ -150,18 +170,7 @@ export class TauriFsAdapter implements Adapter {
 			// Tauri's `remove` calls `symlink_metadata` which throws ENOENT
 			// when the file is missing (e.g. never written, externally deleted,
 			// or already cleaned up by a previous cycle).
-			const msg =
-				typeof err === 'string'
-					? err
-					: err instanceof Error
-						? err.message
-						: '';
-			if (
-				msg.includes('os error 2') ||
-				msg.includes('ENOENT') ||
-				msg.includes('cannot find the path') ||
-				msg.includes('Nie można odnaleźć')
-			) {
+			if (isFileNotFoundError(err)) {
 				return; // File already gone → success
 			}
 			throw err;
