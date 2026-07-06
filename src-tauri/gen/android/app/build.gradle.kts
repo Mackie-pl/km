@@ -27,10 +27,10 @@ val hasReleaseSigning = keystorePropertiesFile.exists() &&
 
 android {
     compileSdk = 36
-    namespace = "com.km_test.app"
+    namespace = "space.dotta.app"
     defaultConfig {
         manifestPlaceholders["usesCleartextTraffic"] = "false"
-        applicationId = "com.km_test.app"
+        applicationId = "space.dotta.app"
         minSdk = 24
         targetSdk = 36
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()

@@ -1,4 +1,4 @@
-package com.km_test.app
+package space.dotta.app
 
 import android.content.Intent
 import android.os.Bundle
