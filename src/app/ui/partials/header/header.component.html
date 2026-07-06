@@ -34,7 +34,16 @@
 		>
 			<svg lucideSearch class="size-5"></svg>
 		</button>
-		@if (!platformService.isDesktopTauri() && syncEngine.syncFailed()) {
+		@if (gdriveNeedsReauth()) {
+			<button
+				class="flex items-center justify-center size-8 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-amber-500 dark:text-amber-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+				(click)="reconnectGDrive()"
+				aria-label="Reconnect Google Drive"
+				title="Google Drive sign-in expired — click to reconnect"
+			>
+				<svg lucideCloud class="size-5"></svg>
+			</button>
+		} @else if (!platformService.isDesktopTauri() && syncEngine.syncFailed()) {
 			<button
 				class="flex items-center justify-center size-8 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-red-500 dark:text-red-400 hover:bg-gray-200 dark:hover:bg-gray-800"
 				(click)="syncNow()"

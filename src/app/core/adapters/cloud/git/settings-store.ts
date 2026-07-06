@@ -10,6 +10,8 @@
  * these values are sensitive.
  */
 
+import { KvSettingsStore } from '../kv-settings';
+
 export interface GitRepoSettings {
 	branch: string;
 	authorName: string;
@@ -50,38 +52,13 @@ export function normalizeGitSettings(
 	};
 }
 
-export class GitSettingsStore {
-	/** Read settings for a repo, normalized and defaulted. Never throws. */
-	get(repoUrl: string): GitRepoSettings {
-		try {
-			const raw = localStorage.getItem(STORAGE_PREFIX + repoUrl);
-			if (!raw) return { ...DEFAULT_GIT_SETTINGS };
-			return normalizeGitSettings(
-				JSON.parse(raw) as Partial<GitRepoSettings>,
-			);
-		} catch {
-			return { ...DEFAULT_GIT_SETTINGS };
-		}
-	}
-
-	/** Persist settings for a repo (normalized first). Best-effort. */
-	set(repoUrl: string, settings: Partial<GitRepoSettings>): void {
-		try {
-			localStorage.setItem(
-				STORAGE_PREFIX + repoUrl,
-				JSON.stringify(normalizeGitSettings(settings)),
-			);
-		} catch {
-			/* best-effort — storage may be full or unavailable */
-		}
-	}
-
-	/** Remove stored settings for a repo. Best-effort. */
-	delete(repoUrl: string): void {
-		try {
-			localStorage.removeItem(STORAGE_PREFIX + repoUrl);
-		} catch {
-			/* best-effort */
-		}
+/**
+ * Per-repository git settings store. Keyed by repo URL; values normalized via
+ * {@link normalizeGitSettings}. Mechanics live in the shared
+ * {@link KvSettingsStore}.
+ */
+export class GitSettingsStore extends KvSettingsStore<GitRepoSettings> {
+	constructor() {
+		super(STORAGE_PREFIX, normalizeGitSettings);
 	}
 }

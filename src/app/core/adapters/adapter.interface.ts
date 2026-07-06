@@ -143,11 +143,21 @@ export interface GitAdapterConfig {
 	pollIntervalMs: number;
 }
 
-/** Configuration stub for the future GDrive cloud adapter */
+/** Configuration for the Google Drive cloud adapter */
 export interface GDriveAdapterConfig {
 	readonly adapterId: 'gdrive';
-	/** Google Drive folder ID or path */
+	/**
+	 * Drive folder identity for this workspace. The user may enter a folder ID,
+	 * a folder name, or a slash path; `testConnection` resolves it to a concrete
+	 * folder ID (creating the folder if absent) and writes that ID back here so
+	 * subsequent sessions use a stable root. Empty means "create a folder named
+	 * after the workspace at My Drive root".
+	 */
 	path: string;
+	/** Human-readable folder name, kept for display after `path` is resolved to an ID. */
+	folderName?: string;
+	/** Polling interval in ms for watch() (default: 30000) */
+	pollIntervalMs?: number;
 }
 
 /** Discriminated union of all adapter-specific configurations */

@@ -1,61 +1,111 @@
 /**
- * Placeholder stub for the future GDriveAdapter proxy.
+ * Lazy-loading proxy for GDriveAdapter.
  *
- * Registered but commented-out in ADAPTERS. When the GDrive adapter is
- * implemented, replace this with a lazy proxy similar to GitAdapterProxy.
+ * Eagerly registered in the ADAPTERS token but defers the Drive REST + OAuth
+ * code until the first actual I/O operation (mirrors GitAdapterProxy).
  */
 
 import type {
 	Adapter,
+	AdapterConfig,
+	ConnectionTestResult,
 	FileEntry,
 	WatchEvent,
 	WorkspacePickResult,
 } from '../../adapter.interface';
+import { isTauriRuntime } from '@core/utils/tauri-runtime';
 
 export class GDriveAdapterProxy implements Adapter {
 	readonly id = 'gdrive';
 	readonly isLocal = false;
 
+	/** @internal exposed for testing */
+	real: Adapter | null = null;
+
+	/**
+	 * Available in the browser (GIS token model) and on Tauri desktop (loopback
+	 * Auth-Code + PKCE). Tauri-on-Android is excluded until its deep-link OAuth
+	 * driver lands — detected by the Android webview's user-agent.
+	 */
 	isAvailable(): boolean {
-		return false;
+		const android =
+			typeof navigator !== 'undefined' &&
+			/android/i.test(navigator.userAgent);
+		return !(isTauriRuntime() && android);
 	}
 
 	pickWorkspaceFolder(): Promise<WorkspacePickResult | null> {
 		return Promise.resolve(null);
 	}
 
-	read(_path: string, _root?: string): Promise<string> {
-		throw new Error('GDriveAdapter not yet implemented');
+	private async ensureLoaded(): Promise<Adapter> {
+		if (!this.real) {
+			const mod: { GDriveAdapter: new () => Adapter } =
+				await import('./adapter');
+			this.real = new mod.GDriveAdapter();
+		}
+		return this.real;
 	}
 
-	write(_path: string, _content: string, _root?: string): Promise<void> {
-		throw new Error('GDriveAdapter not yet implemented');
+	async read(path: string, root?: string): Promise<string> {
+		return (await this.ensureLoaded()).read(path, root);
 	}
 
-	delete(_path: string, _root?: string): Promise<void> {
-		throw new Error('GDriveAdapter not yet implemented');
+	async write(path: string, content: string, root?: string): Promise<void> {
+		return (await this.ensureLoaded()).write(path, content, root);
 	}
 
-	rename(_oldPath: string, _newPath: string, _root?: string): Promise<void> {
-		throw new Error('GDriveAdapter not yet implemented');
+	async delete(path: string, root?: string): Promise<void> {
+		return (await this.ensureLoaded()).delete(path, root);
 	}
 
-	list(
-		_path: string,
-		_root?: string,
-		_recursive?: boolean,
+	async rename(
+		oldPath: string,
+		newPath: string,
+		root?: string,
+	): Promise<void> {
+		return (await this.ensureLoaded()).rename(oldPath, newPath, root);
+	}
+
+	async list(
+		path: string,
+		root?: string,
+		recursive?: boolean,
 	): Promise<FileEntry[]> {
-		throw new Error('GDriveAdapter not yet implemented');
+		return (await this.ensureLoaded()).list(path, root, recursive);
 	}
 
-	watch(
-		_callback: (events: WatchEvent[]) => void,
-		_root?: string,
+	async watch(
+		callback: (events: WatchEvent[]) => void,
+		root?: string,
 	): Promise<() => void> {
-		throw new Error('GDriveAdapter not yet implemented');
+		const adapter = await this.ensureLoaded();
+		if (adapter.watch) {
+			return adapter.watch(callback, root);
+		}
+		throw new Error('GDriveAdapter: watch not supported');
 	}
 
-	createDir(_path: string, _root?: string): Promise<void> {
-		throw new Error('GDriveAdapter not yet implemented');
+	async createDir(path: string, root?: string): Promise<void> {
+		const adapter = await this.ensureLoaded();
+		if (adapter.createDir) {
+			return adapter.createDir(path, root);
+		}
+		throw new Error('GDriveAdapter: createDir not supported');
+	}
+
+	async testConnection(config: AdapterConfig): Promise<ConnectionTestResult> {
+		const adapter = await this.ensureLoaded();
+		if (adapter.testConnection) {
+			return adapter.testConnection(config);
+		}
+		return { ok: true };
+	}
+
+	async registerScope(root: string): Promise<void> {
+		const adapter = await this.ensureLoaded();
+		if (adapter.registerScope) {
+			return adapter.registerScope(root);
+		}
 	}
 }

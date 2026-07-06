@@ -13,6 +13,7 @@ import { LucideX, LucideCheck, LucideLoader } from '@lucide/angular';
 import { getAdapterSchema, type ConfigField } from '@core/adapters/config-schema';
 import { ADAPTERS } from '@core/adapters/token';
 import { ConfigFieldComponent } from './config-field.component';
+import { GDriveFolderPickerService } from '@ui/partials/gdrive-folder-picker/gdrive-folder-picker.service';
 import type { AdapterConfig } from '@core/adapters/adapter.interface';
 
 /**
@@ -53,6 +54,10 @@ export class AdapterConfigFormComponent implements OnInit {
 	readonly cancel = output();
 
 	private readonly adapters = inject(ADAPTERS);
+	private readonly folderPicker = inject(GDriveFolderPickerService);
+
+	/** Display label for a chosen folder-picker value (the folder name). */
+	readonly folderDisplayName = signal<string>('');
 
 	/** Resolved schema for the current adapter. */
 	readonly schema = computed(() => {
@@ -62,23 +67,26 @@ export class AdapterConfigFormComponent implements OnInit {
 	});
 
 	/**
-	 * Fields to render. Identical to the schema in add mode. When editing, secret
-	 * (password) fields become optional with a "leave blank to keep current" hint —
-	 * the stored value is preserved unless the user types a replacement.
+	 * Fields to render. `editOnly` fields are hidden while adding and shown only
+	 * when editing. When editing, secret (password) fields become optional with a
+	 * "leave blank to keep current" hint — the stored value is preserved unless
+	 * the user types a replacement.
 	 */
 	readonly formFields = computed<ConfigField[]>(() => {
 		const schema = this.schema();
 		if (!schema) return [];
-		if (!this.isEditing()) return schema.fields;
-		return schema.fields.map((f) =>
-			f.type === 'password'
-				? {
-						...f,
-						required: false,
-						placeholder: 'Leave blank to keep current',
-					}
-				: f,
-		);
+		const editing = this.isEditing();
+		return schema.fields
+			.filter((f) => editing || !f.editOnly)
+			.map((f) =>
+				editing && f.type === 'password'
+					? {
+							...f,
+							required: false,
+							placeholder: 'Leave blank to keep current',
+						}
+					: f,
+			);
 	});
 
 	/** Current form values keyed by field key. */
@@ -112,6 +120,16 @@ export class AdapterConfigFormComponent implements OnInit {
 			}
 		}
 		this.formValues.set(initial);
+
+		// Seed the folder-picker display label from a saved config (edit mode).
+		if (existing) {
+			const folderName = (existing as unknown as Record<string, unknown>)[
+				'folderName'
+			];
+			if (typeof folderName === 'string') {
+				this.folderDisplayName.set(folderName);
+			}
+		}
 	}
 
 	/** Get the current value for a field, or empty string. */
@@ -120,12 +138,26 @@ export class AdapterConfigFormComponent implements OnInit {
 		return val ?? '';
 	}
 
+	/** Display label for a folder-picker field (the chosen folder's name). */
+	getDisplayValue(field: ConfigField): string {
+		return field.type === 'folder-picker' ? this.folderDisplayName() : '';
+	}
+
 	/** Update a field value on input change. */
 	onFieldChange(change: { key: string; value: string | number }): void {
 		this.formValues.update((vals) => ({
 			...vals,
 			[change.key]: change.value,
 		}));
+		this.validationError.set(null);
+	}
+
+	/** Open the Drive folder browser; store the chosen folder id + name. */
+	async onPick(key: string): Promise<void> {
+		const result = await this.folderPicker.choose();
+		if (!result) return;
+		this.formValues.update((vals) => ({ ...vals, [key]: result.id }));
+		this.folderDisplayName.set(result.name);
 		this.validationError.set(null);
 	}
 

@@ -13,14 +13,23 @@ export interface ConfigField {
 	key: string;
 	/** Human-readable label shown above the input. */
 	label: string;
-	/** Input type — determines the rendered control. */
-	type: 'text' | 'password' | 'number';
+	/**
+	 * Input type — determines the rendered control. `folder-picker` renders a
+	 * button that opens an adapter-specific folder browser instead of a text box.
+	 */
+	type: 'text' | 'password' | 'number' | 'folder-picker';
 	/** Placeholder text inside the input. */
 	placeholder: string;
 	/** Whether this field must be filled before saving. */
 	required: boolean;
 	/** Optional default value when creating a new config. */
 	defaultValue?: string | number;
+	/**
+	 * When true, the field is hidden while ADDING an adapter and only shown when
+	 * editing an existing one — for tuning knobs that should default on creation
+	 * (e.g. the Drive poll interval).
+	 */
+	editOnly?: boolean;
 }
 
 /** Schema definition for a single adapter type. */
@@ -89,15 +98,26 @@ const GIT_SCHEMA: AdapterConfigSchema = {
 const GDRIVE_SCHEMA: AdapterConfigSchema = {
 	adapterId: 'gdrive',
 	label: 'Google Drive',
-	description: 'Sync notes across devices via Google Drive',
+	description:
+		'Sync notes to a Google Drive folder. Saving opens Google sign-in; ' +
+		'an existing folder is reused, otherwise one is created.',
 	icon: 'cloud',
 	fields: [
 		{
 			key: 'path',
-			label: 'Folder ID or Path',
-			type: 'text',
-			placeholder: 'folder-id-or-path',
+			label: 'Folder',
+			type: 'folder-picker',
+			placeholder: 'Choose folder…',
 			required: true,
+		},
+		{
+			key: 'pollIntervalMs',
+			label: 'Poll Interval (ms)',
+			type: 'number',
+			placeholder: '30000',
+			required: false,
+			defaultValue: 30000,
+			editOnly: true,
 		},
 	],
 };

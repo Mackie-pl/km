@@ -10,6 +10,7 @@ import {
 	resolveRefSafe,
 	diffCommitFiles,
 } from './git-ops';
+import { createBackoffPoller } from '../backoff-poller';
 import { debugLog } from '@core/utils/debug-logger';
 
 export interface WatchPoller {
@@ -39,16 +40,8 @@ export function createWatchPoller(
 	getToken: () => Promise<string | null>,
 	baseIntervalMs = 30_000,
 ): WatchPoller {
-	const BASE_INTERVAL =
-		Number.isFinite(baseIntervalMs) && baseIntervalMs > 0
-			? baseIntervalMs
-			: 30_000;
-	const MAX_INTERVAL = 15 * 60 * 1000;
 	const remoteRef = `refs/remotes/origin/${repo.branch}`;
-	let intervalMs = BASE_INTERVAL;
 	let lastKnownSha: string | null = null;
-	let active = false;
-	let timerId: ReturnType<typeof setInterval> | null = null;
 	let callback: ((events: WatchEvent[]) => void) | null = null;
 
 	/**
@@ -73,43 +66,24 @@ export function createWatchPoller(
 	};
 
 	const poll = async (): Promise<void> => {
-		if (!active || document.hidden) return;
+		await fetchRemote(repo, await getToken());
 
-		try {
-			await fetchRemote(repo, await getToken());
-			intervalMs = BASE_INTERVAL;
-
-			// Compare the REMOTE-tracking ref (origin/<branch>). A fetch never
-			// moves local HEAD, so a HEAD-based comparison can never detect
-			// inbound changes — only origin/<branch> advances when the remote
-			// does.
-			const remoteSha = await resolveRefSafe(repo, remoteRef);
-			if (remoteSha === null) return;
-			if (lastKnownSha !== null && remoteSha !== lastKnownSha) {
-				await applyRemoteAdvance(lastKnownSha, remoteSha);
-			}
-			lastKnownSha = remoteSha;
-		} catch {
-			intervalMs = Math.min(intervalMs * 2, MAX_INTERVAL);
+		// Compare the REMOTE-tracking ref (origin/<branch>). A fetch never
+		// moves local HEAD, so a HEAD-based comparison can never detect
+		// inbound changes — only origin/<branch> advances when the remote does.
+		const remoteSha = await resolveRefSafe(repo, remoteRef);
+		if (remoteSha === null) return;
+		if (lastKnownSha !== null && remoteSha !== lastKnownSha) {
+			await applyRemoteAdvance(lastKnownSha, remoteSha);
 		}
+		lastKnownSha = remoteSha;
 	};
 
-	const handleVisibility = (): void => {
-		if (!document.hidden && timerId === null && active) {
-			timerId = setInterval(() => {
-				void poll();
-			}, intervalMs);
-			void poll();
-		} else if (document.hidden && timerId !== null) {
-			clearInterval(timerId);
-			timerId = null;
-		}
-	};
+	const poller = createBackoffPoller({ poll, baseIntervalMs });
 
 	return {
 		start: (cb: (events: WatchEvent[]) => void) => {
 			callback = cb;
-			active = true;
 
 			// Seed the baseline from the current remote-tracking ref so we only
 			// react to changes from now on (the initial sync is handled by the
@@ -118,19 +92,11 @@ export function createWatchPoller(
 				lastKnownSha = sha;
 			});
 
-			timerId = setInterval(() => {
-				void poll();
-			}, intervalMs);
-			document.addEventListener('visibilitychange', handleVisibility);
+			poller.start();
 		},
 
 		stop: () => {
-			active = false;
-			if (timerId !== null) {
-				clearInterval(timerId);
-				timerId = null;
-			}
-			document.removeEventListener('visibilitychange', handleVisibility);
+			poller.stop();
 			callback = null;
 		},
 	};

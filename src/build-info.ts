@@ -10,6 +10,6 @@ export interface BuildInfo {
 
 export const BUILD_INFO: BuildInfo = {
 	version: '0.1.5',
-	gitSha: '110417e',
-	builtAt: '2026-06-30T20:28:43.943Z',
+	gitSha: '4b047d0',
+	builtAt: '2026-07-02T12:43:17.539Z',
 };

@@ -16,7 +16,9 @@
 			<app-config-field
 				[field]="field"
 				[value]="getFieldValue(field)"
+				[displayValue]="getDisplayValue(field)"
 				(change)="onFieldChange($event)"
+				(pick)="onPick($event)"
 			></app-config-field>
 		}
 	</div>

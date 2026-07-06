@@ -1,12 +1,21 @@
 /**
- * Temp/swap file patterns — files that should never be treated as note entries.
+ * Non-note file patterns — files that should never be treated as note entries.
  *
- * These are created by external editors (VS Code, Cursor, Vim, etc.) during
- * atomic saves and should be filtered out of:
+ * Two kinds:
+ *   1. Temp/swap files from external editors (VS Code, Cursor, Vim, etc.).
+ *   2. VCS placeholder files — git's `.gitkeep` empty-folder marker.
+ *
+ * Both are filtered out of:
  *   - filesystem watch events (tauri-fs.adapter.ts)
  *   - directory walks (walk-directory.ts)
  *   - external file reconciliation (vault-reconciler.ts)
  *   - push phase (sync-push-phase.ts)
+ *
+ * `.gitkeep` deserves special mention: the Git adapter creates it on its own
+ * remote (inside `createDir`) because git can't track empty folders. It must
+ * NOT become a vault entry — otherwise it fans out to adapters that have real
+ * folders and don't need it (e.g. Google Drive), and a folder-aware adapter
+ * under-reporting it would trip orphan detection into deleting it everywhere.
  */
 
 const TEMP_EXTENSIONS = [
@@ -19,14 +28,21 @@ const TEMP_EXTENSIONS = [
 
 const TEMP_SUFFIXES = ['~'] as const;
 
+/** Exact file names (any directory) that are placeholders, never notes. */
+const IGNORED_FILENAMES = ['.gitkeep'] as const;
+
 /**
- * Check whether a file name or path matches known temp/swap file patterns.
+ * Check whether a file name or path matches a known non-note pattern (temp/swap
+ * file or VCS placeholder) and should be ignored.
  *
- * @param name - A file name (e.g. "notes.md.crswap") or full path.
- * @returns true if the file looks like a temp/swap file that should be ignored.
+ * @param name - A file name (e.g. "notes.md.crswap") or full path
+ *               (e.g. "docs/.gitkeep").
+ * @returns true if the file should never be treated as a note entry.
  */
 export function isTempFilePath(name: string): boolean {
 	const lower = name.toLowerCase();
+	const base = lower.slice(lower.lastIndexOf('/') + 1);
+	if ((IGNORED_FILENAMES as readonly string[]).includes(base)) return true;
 	for (const ext of TEMP_EXTENSIONS) {
 		if (lower.endsWith(ext)) return true;
 	}

@@ -8,8 +8,9 @@ import {
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideFolder, LucideStickyNote, LucideCloud } from '@lucide/angular';
+import { LucideFolder, LucideStickyNote } from '@lucide/angular';
 import { FolderBrowseContent } from './_folder-browse-button';
+import { WizardCloudAdapters } from './wizard-cloud-adapters';
 import { AdaptersManager } from '@core/adapters/manager';
 import { WorkspaceService } from '@services/workspace.service';
 import type { AdapterConfig } from '@core/adapters/adapter.interface';
@@ -38,8 +39,8 @@ type CreationMode = 'folder' | 'standalone';
 		FormsModule,
 		LucideFolder,
 		LucideStickyNote,
-		LucideCloud,
 		FolderBrowseContent,
+		WizardCloudAdapters,
 	],
 	templateUrl: './workspace-wizard.component.html',
 	styleUrl: './workspace-wizard.component.scss',
@@ -73,6 +74,9 @@ export class WorkspaceWizardComponent {
 
 	/** Whether a folder picker operation is in progress */
 	readonly pickingFolder = signal(false);
+
+	/** Cloud adapter configs collected in step 3 (e.g. Google Drive). */
+	readonly cloudConfigs = signal<AdapterConfig[]>([]);
 
 	/** Last folder-picker error message, surfaced for diagnostics. */
 	readonly pickError = signal<string | null>(null);
@@ -148,6 +152,11 @@ export class WorkspaceWizardComponent {
 		this.step.set(3);
 	}
 
+	/** Receive configured cloud adapters from the step-3 sub-component. */
+	onCloudConfigured(configs: AdapterConfig[]): void {
+		this.cloudConfigs.set(configs);
+	}
+
 	// ── Step 3: Completion ─────────────────────────────────────
 
 	/** Finalise workspace creation and close the wizard */
@@ -178,17 +187,23 @@ export class WorkspaceWizardComponent {
 		adapterConfigs: AdapterConfig[];
 	} {
 		const pickerAdapter = this.adapterManager.getWorkspacePickerAdapter();
-		const activeSyncAdapters =
-			this.isFolderMode() && this.folderPath() && pickerAdapter
-				? [pickerAdapter.id]
-				: [];
+		const activeSyncAdapters: string[] = [];
 		const adapterConfigs: AdapterConfig[] = [];
+
 		if (this.isFolderMode() && this.folderPath() && pickerAdapter) {
+			activeSyncAdapters.push(pickerAdapter.id);
 			adapterConfigs.push({
 				adapterId: pickerAdapter.id,
 				path: this.folderPath() ?? '',
 			} as AdapterConfig);
 		}
+
+		// Cloud adapters configured in step 3 (already validated + signed in).
+		for (const config of this.cloudConfigs()) {
+			activeSyncAdapters.push(config.adapterId);
+			adapterConfigs.push(config);
+		}
+
 		return { activeSyncAdapters, adapterConfigs };
 	}
 }

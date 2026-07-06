@@ -25,7 +25,19 @@ import type { ConfigField } from '@core/adapters/config-schema';
 				}
 			</label>
 
-			@if (field().type === 'password') {
+			@if (field().type === 'folder-picker') {
+				<button
+					type="button"
+					[id]="field().key"
+					(click)="pick.emit(field().key)"
+					class="flex w-full items-center justify-between rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-left text-sm outline-none transition-colors hover:border-indigo-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+					[class.text-gray-900]="displayValue()"
+					[class.dark:text-gray-100]="displayValue()"
+					[class.text-gray-400]="!displayValue()"
+				>
+					{{ displayValue() || field().placeholder }}
+				</button>
+			} @else if (field().type === 'password') {
 				<div class="relative">
 					<input
 						[id]="field().key"
@@ -67,7 +79,11 @@ import type { ConfigField } from '@core/adapters/config-schema';
 export class ConfigFieldComponent {
 	readonly field = input.required<ConfigField>();
 	readonly value = input<string | number>('');
+	/** Human-readable label for a folder-picker field (e.g. the folder name). */
+	readonly displayValue = input<string>('');
 	readonly change = output<{ key: string; value: string | number }>();
+	/** Emitted (with the field key) when a folder-picker button is clicked. */
+	readonly pick = output<string>();
 
 	readonly showPassword = signal(false);
 

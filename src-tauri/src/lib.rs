@@ -136,6 +136,126 @@ fn register_fs_scope_inner(
 }
 
 
+// --- OAuth loopback (desktop Google sign-in) ---
+// The webview can't host Google's consent page, so the frontend opens the
+// SYSTEM browser to the PKCE auth URL with `redirect_uri=http://127.0.0.1:<port>`.
+// This tiny one-shot server catches that redirect and hands the `code` back.
+use std::io::{Read, Write};
+use std::net::TcpListener;
+use std::sync::{mpsc, Mutex};
+use std::time::Duration;
+
+/// Receiver for the captured authorization code, parked between
+/// `oauth_loopback_start` and `oauth_loopback_wait`.
+#[derive(Default)]
+struct OAuthLoopback {
+    rx: Mutex<Option<mpsc::Receiver<Result<String, String>>>>,
+}
+
+/// Pull the `code` (or surface an `error`) out of a request line such as
+/// `GET /?code=abc&scope=... HTTP/1.1`.
+fn parse_oauth_redirect(request_line: &str) -> Result<String, String> {
+    let path = request_line.split_whitespace().nth(1).unwrap_or("");
+    let query = path.split('?').nth(1).unwrap_or("");
+    let mut code: Option<String> = None;
+    let mut error: Option<String> = None;
+    for pair in query.split('&') {
+        let mut kv = pair.splitn(2, '=');
+        let key = kv.next().unwrap_or("");
+        let val = kv.next().unwrap_or("");
+        match key {
+            "code" => code = Some(url_decode(val)),
+            "error" => error = Some(url_decode(val)),
+            _ => {}
+        }
+    }
+    if let Some(e) = error {
+        return Err(format!("Google sign-in failed: {e}"));
+    }
+    code.ok_or_else(|| "No authorization code in redirect".to_string())
+}
+
+/// Minimal percent-decoding for the redirect query.
+fn url_decode(s: &str) -> String {
+    let bytes = s.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        match bytes[i] {
+            b'%' if i + 2 < bytes.len() => match u8::from_str_radix(&s[i + 1..i + 3], 16) {
+                Ok(b) => {
+                    out.push(b);
+                    i += 3;
+                }
+                Err(_) => {
+                    out.push(bytes[i]);
+                    i += 1;
+                }
+            },
+            b'+' => {
+                out.push(b' ');
+                i += 1;
+            }
+            b => {
+                out.push(b);
+                i += 1;
+            }
+        }
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
+/// Bind a loopback server on a random port and return it. A background thread
+/// accepts exactly one request (the OAuth redirect), replies with a small page,
+/// and forwards the parsed code to `oauth_loopback_wait`.
+#[tauri::command]
+fn oauth_loopback_start(state: tauri::State<'_, OAuthLoopback>) -> Result<u16, String> {
+    let listener =
+        TcpListener::bind("127.0.0.1:0").map_err(|e| format!("Failed to bind loopback: {e}"))?;
+    let port = listener.local_addr().map_err(|e| e.to_string())?.port();
+
+    let (tx, rx) = mpsc::channel::<Result<String, String>>();
+    *state.rx.lock().unwrap() = Some(rx);
+
+    std::thread::spawn(move || {
+        let result = (|| -> Result<String, String> {
+            let (mut stream, _) = listener.accept().map_err(|e| e.to_string())?;
+            let mut buf = [0u8; 4096];
+            let n = stream.read(&mut buf).map_err(|e| e.to_string())?;
+            let request = String::from_utf8_lossy(&buf[..n]);
+            let parsed = parse_oauth_redirect(request.lines().next().unwrap_or(""));
+
+            let body = "<html><body style=\"font-family:sans-serif;text-align:center;padding-top:3rem\">\
+                <h2>Sign-in complete</h2><p>You can close this window and return to the app.</p></body></html>";
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            let _ = stream.write_all(response.as_bytes());
+            let _ = stream.flush();
+            parsed
+        })();
+        let _ = tx.send(result);
+    });
+
+    Ok(port)
+}
+
+/// Block (on a worker, like `pick_workspace_folder`) until the loopback captures
+/// the redirect, then return the authorization code.
+#[tauri::command]
+async fn oauth_loopback_wait(state: tauri::State<'_, OAuthLoopback>) -> Result<String, String> {
+    let rx = state
+        .rx
+        .lock()
+        .unwrap()
+        .take()
+        .ok_or_else(|| "OAuth loopback not started".to_string())?;
+    rx.recv_timeout(Duration::from_secs(300))
+        .map_err(|_| "Timed out waiting for Google sign-in".to_string())?
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -144,7 +264,8 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_android_fs::init())
-        // Register both commands so the frontend can invoke them via `invoke()`
+        .manage(OAuthLoopback::default())
+        // Register commands so the frontend can invoke them via `invoke()`
         .invoke_handler(tauri::generate_handler![
             greet,
             get_platform,
@@ -157,6 +278,8 @@ pub fn run() {
             saf::saf_rename,
             saf::saf_list,
             saf::saf_check_permission,
+            oauth_loopback_start,
+            oauth_loopback_wait
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

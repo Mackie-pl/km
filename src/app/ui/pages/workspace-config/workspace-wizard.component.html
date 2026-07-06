@@ -181,27 +181,10 @@
 			</p>
 		</div>
 
-		<!-- Available adapters list -->
-		<div class="space-y-3">
-			<div
-				class="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 opacity-60"
-			>
-				<svg lucideCloud class="size-5 text-gray-400"></svg>
-				<span
-					class="text-sm font-medium text-gray-900 dark:text-gray-100"
-				>
-					Google Drive
-				</span>
-				<span class="text-xs text-gray-500">
-					Sync notes across devices
-				</span>
-				<span
-					class="ml-auto inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:text-gray-400"
-				>
-					Coming soon
-				</span>
-			</div>
-		</div>
+		<!-- Available cloud adapters (Google Drive in browser, Git on desktop) -->
+		<app-wizard-cloud-adapters
+			(configured)="onCloudConfigured($event)"
+		></app-wizard-cloud-adapters>
 
 		<!-- Footer: back + cancel + create (uses nav element, different ordering) -->
 		<nav

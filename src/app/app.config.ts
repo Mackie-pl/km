@@ -47,8 +47,9 @@ export const appConfig: ApplicationConfig = {
 				} else {
 					adapters.push(new BrowserFileSystemApiAdapter());
 				}
-				// Cloud adapters — Git is fully implemented (lazy-loaded),
-				// GDrive is a placeholder stub for future implementation.
+				// Cloud adapters (lazy-loaded). Git is Tauri-only; GDrive is
+				// browser-only for now (OAuth popup + CORS fetch) — each proxy
+				// gates its own availability via isAvailable().
 				adapters.push(new GitAdapterProxy());
 				adapters.push(new GDriveAdapterProxy());
 				return adapters;
