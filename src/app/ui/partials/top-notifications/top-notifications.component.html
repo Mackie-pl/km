@@ -2,21 +2,21 @@
 <div class="fixed top-0 inset-x-0 z-50 flex flex-col pointer-events-none">
 	@if (androidOpenFileService.unsupportedFile()) {
 		<div
-			class="pointer-events-auto flex items-center gap-4 px-4 py-3 bg-amber-100 dark:bg-amber-900 text-amber-900 dark:text-amber-100 shadow-md"
+			class="pointer-events-auto flex items-center gap-4 px-4 py-3 bg-warn-page border-b border-warn-border text-warn-text shadow-hairline"
 		>
-			<p class="flex-1 text-sm">
+			<p class="flex-1 text-[13px]">
 				This file isn't inside a workspace you've opened yet. Open its
 				folder as a workspace to edit it here.
 			</p>
 			<button
 				(click)="openWorkspaceWizard()"
-				class="px-3 py-1.5 text-sm font-semibold rounded-md bg-amber-600 hover:bg-amber-700 text-white transition-colors"
+				class="px-3 py-1.5 text-[12.5px] font-semibold rounded-lg bg-warn-icon hover:opacity-90 text-white transition-opacity"
 			>
 				Open Workspace
 			</button>
 			<button
 				(click)="androidOpenFileService.dismissUnsupported()"
-				class="px-2 py-1.5 text-sm hover:opacity-70"
+				class="px-2 py-1.5 text-[12.5px] font-semibold hover:opacity-70"
 				aria-label="Dismiss"
 			>
 				✕
@@ -26,9 +26,9 @@
 
 	@if (workspaceAccessService.accessLost(); as lostWs) {
 		<div
-			class="pointer-events-auto flex items-center gap-4 px-4 py-3 bg-rose-100 dark:bg-rose-900 text-rose-900 dark:text-rose-100 shadow-md"
+			class="pointer-events-auto flex items-center gap-4 px-4 py-3 bg-rose-50 dark:bg-rose-950 border-b border-rose-200 dark:border-rose-900 text-rose-900 dark:text-rose-200 shadow-hairline"
 		>
-			<p class="flex-1 text-sm">
+			<p class="flex-1 text-[13px]">
 				Lost access to the folder for “{{ lostWs.name }}”. Re-pick it to
 				restore access.
 				<span class="block text-xs opacity-80">{{
@@ -38,13 +38,13 @@
 			<button
 				(click)="workspaceAccessService.repick()"
 				[disabled]="workspaceAccessService.repicking()"
-				class="px-3 py-1.5 text-sm font-semibold rounded-md bg-rose-600 hover:bg-rose-700 text-white transition-colors disabled:opacity-60"
+				class="px-3 py-1.5 text-[12.5px] font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white transition-colors disabled:opacity-60"
 			>
 				{{ workspaceAccessService.repicking() ? 'Opening…' : 'Re-pick Folder' }}
 			</button>
 			<button
 				(click)="workspaceAccessService.dismiss()"
-				class="px-2 py-1.5 text-sm hover:opacity-70"
+				class="px-2 py-1.5 text-[12.5px] font-semibold hover:opacity-70"
 				aria-label="Dismiss"
 			>
 				✕

@@ -55,6 +55,18 @@
           android:mimeType="*/*"
           android:pathPattern=".*\\.md" />
       </intent-filter>
+
+      <!-- Google Drive OAuth redirect. Google returns the authorization code to
+           this reversed-domain custom scheme (the Android client's reversed
+           client_id); the OS routes it back here as a deep link, captured by
+           tauri-plugin-deep-link. MUST equal GOOGLE_OAUTH_ANDROID_SCHEME in
+           src/app/core/adapters/cloud/gdrive/config.ts. -->
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="com.googleusercontent.apps.311145204704-q253fucp3v6fnintq3c285kkvhrqqg5c" />
+      </intent-filter>
     </activity>
 
     <provider

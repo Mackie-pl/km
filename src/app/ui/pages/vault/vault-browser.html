@@ -1,0 +1,110 @@
+<!--
+  Mobile vault home screen (Agents Vault v2, frame 6) — the full-screen tree,
+  card-grouped, replacing the sidebar drawer. Its own header (safe-area aware),
+  a scrollable card list, and a footer with Activity + workspace settings.
+  The component host is the flex column (no wrapper) to keep nesting shallow.
+-->
+
+<!-- Header -->
+<header
+	class="flex items-center gap-2 px-4 pt-[calc(env(safe-area-inset-top,0px)_+_0.75rem)] pb-3 flex-shrink-0 border-b border-line bg-hairline"
+>
+	<span
+		class="flex-1 min-w-0 text-[19px] font-bold tracking-[-0.01em] text-ink-1 truncate"
+	>
+		{{ workspaceService.activeWorkspace()?.name ?? 'Vault' }}
+	</span>
+	<button
+		type="button"
+		(click)="newFolder()"
+		class="flex items-center justify-center size-9 rounded-btn border border-line bg-surface text-ink-3 cursor-pointer transition-colors hover:text-ink-1"
+		aria-label="New folder"
+	>
+		<svg lucideFolderPlus class="size-4.5"></svg>
+	</button>
+	<button
+		type="button"
+		(click)="newNote()"
+		class="flex items-center justify-center size-9 rounded-btn border border-line bg-surface text-ink-3 cursor-pointer transition-colors hover:text-ink-1"
+		aria-label="New note"
+	>
+		<svg lucideFilePlus class="size-4.5"></svg>
+	</button>
+	<button
+		type="button"
+		(click)="openSearch()"
+		class="flex items-center justify-center size-9 rounded-btn border border-line bg-surface text-ink-3 cursor-pointer transition-colors hover:text-ink-1"
+		aria-label="Search"
+	>
+		<svg lucideSearch class="size-4.5"></svg>
+	</button>
+	<app-ask-button />
+</header>
+
+<!-- Card list -->
+<div class="flex-1 min-h-0 overflow-y-auto px-3.5 py-3.5 space-y-3">
+	@for (card of cards(); track card.id) {
+		<div class="rounded-2xl border border-line bg-surface overflow-hidden">
+			@for (row of card.rows; track trackRow(row)) {
+				<app-vault-row
+					[row]="row"
+					[contextEntry]="contextEntry()"
+					(toggleFolder)="toggleFolder($event)"
+					(openNote)="openNote($event)"
+					(contextMenu)="onContextMenu($event)"
+					(renameEntry)="renameEntry($event)"
+					(deleteEntry)="deleteEntry($event)"
+					(newFileInFolder)="newNote($event)"
+				/>
+			}
+		</div>
+	} @empty {
+		<div class="flex flex-col items-center gap-4 px-6 pt-20 text-center">
+			<p class="text-sm text-ink-3">No notes yet</p>
+			<button
+				type="button"
+				(click)="newNote()"
+				class="inline-flex items-center gap-2 rounded-btn bg-accent hover:bg-accent-2 px-5 py-2.5 text-[13px] font-semibold text-white transition-colors"
+			>
+				<svg lucideFilePlus class="size-4"></svg>
+				New Note
+			</button>
+		</div>
+	}
+</div>
+
+<!-- Footer: Activity (agents only) + workspace settings -->
+<div
+	class="flex-shrink-0 flex items-center gap-1 px-3 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)_+_0.5rem)] border-t border-line bg-hairline"
+>
+	@if (agentsService.hasAgents()) {
+		<a
+			routerLink="/activity"
+			class="flex items-center gap-2.5 flex-1 px-3 py-2.5 rounded-lg no-underline text-ink-2 hover:bg-surface transition-colors"
+			aria-label="Activity"
+		>
+			<svg lucideActivity class="size-4.5 flex-shrink-0"></svg>
+			<span class="text-[13px] font-medium flex-1">Activity</span>
+			<span
+				[class.hidden]="agentsService.runningCount() === 0"
+				class="text-[11px] font-semibold text-white bg-accent-2 rounded-full px-1.75 py-px"
+				>{{ agentsService.runningCount() }}</span
+			>
+		</a>
+	} @else {
+		<span class="flex-1"></span>
+	}
+	<button
+		type="button"
+		(click)="openWorkspaceConfig()"
+		class="flex items-center gap-2 px-3 py-2.5 rounded-lg border-none bg-transparent text-ink-3 cursor-pointer hover:bg-surface hover:text-ink-1 transition-colors"
+		[attr.aria-label]="
+			'Workspace: ' + (workspaceService.activeWorkspace()?.name ?? '')
+		"
+	>
+		<span class="text-[12px] font-medium truncate max-w-32">{{
+			workspaceService.activeWorkspace()?.name
+		}}</span>
+		<svg lucideSettings class="size-4 flex-shrink-0"></svg>
+	</button>
+</div>

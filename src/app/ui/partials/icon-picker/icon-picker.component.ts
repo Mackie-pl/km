@@ -26,18 +26,15 @@ import { LUCIDE_COMPONENT_MAP } from '@core/utils/lucide-map';
 		<div class="flex flex-col max-h-[80vh]">
 			<!-- Search input -->
 			<div
-				class="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700"
+				class="flex items-center gap-3 px-4 py-3 border-b border-line"
 			>
-				<svg
-					lucideSearch
-					class="size-5 shrink-0 text-gray-400 dark:text-gray-500"
-				></svg>
+				<svg lucideSearch class="size-5 shrink-0 text-ink-4"></svg>
 				<input
 					#searchInput
 					[value]="query()"
 					(input)="onInput($event)"
 					placeholder="Search icons…"
-					class="flex-1 bg-transparent text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+					class="flex-1 bg-transparent text-sm text-ink-1 placeholder-ink-4 outline-none"
 					autocomplete="off"
 					spellcheck="false"
 				/>
@@ -45,7 +42,7 @@ import { LUCIDE_COMPONENT_MAP } from '@core/utils/lucide-map';
 					<button
 						type="button"
 						(click)="clearQuery()"
-						class="flex items-center justify-center size-5 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors border-none bg-transparent cursor-pointer"
+						class="flex items-center justify-center size-5 rounded-full text-ink-4 hover:text-ink-2 hover:bg-hairline transition-colors border-none bg-transparent cursor-pointer"
 						[attr.aria-label]="'Clear search'"
 					>
 						×
@@ -56,9 +53,7 @@ import { LUCIDE_COMPONENT_MAP } from '@core/utils/lucide-map';
 			<!-- Results grid -->
 			<div class="overflow-y-auto flex-1 p-3">
 				@if (filteredIcons().length === 0) {
-					<div
-						class="py-12 text-center text-sm text-gray-400 dark:text-gray-500"
-					>
+					<div class="py-12 text-center text-sm text-ink-4">
 						No icons found
 					</div>
 				} @else {
@@ -72,17 +67,17 @@ import { LUCIDE_COMPONENT_MAP } from '@core/utils/lucide-map';
 								type="button"
 								[attr.data-icon-index]="i"
 								(click)="selectIcon(icon)"
-								class="flex items-center justify-center size-9 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 cursor-pointer transition-all duration-100"
-								[class.border-indigo-500]="focusedIndex() === i"
+								class="flex items-center justify-center size-9 rounded-lg border border-line bg-surface cursor-pointer transition-all duration-100"
+								[class.border-accent]="focusedIndex() === i"
 								[class.ring-2]="focusedIndex() === i"
-								[class.ring-indigo-500/30]="
-									focusedIndex() === i
-								"
+								[class.ring-accent/30]="focusedIndex() === i"
 								[class.scale-110]="focusedIndex() === i"
-								[class.hover:border-indigo-400]="
+								[class.hover:border-accent-border]="
 									focusedIndex() !== i
 								"
-								[class.hover:shadow-sm]="focusedIndex() !== i"
+								[class.hover:shadow-hairline]="
+									focusedIndex() !== i
+								"
 								[attr.aria-label]="icon.label"
 								[title]="icon.label"
 							>
@@ -105,12 +100,12 @@ import { LUCIDE_COMPONENT_MAP } from '@core/utils/lucide-map';
 
 			<!-- Footer hint -->
 			<div
-				class="flex items-center gap-3 px-4 py-2 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500"
+				class="flex items-center gap-3 px-4 py-2 border-t border-line text-xs text-ink-4"
 			>
 				<span>↑↓ Navigate</span>
-				<span class="text-gray-300 dark:text-gray-600">·</span>
+				<span class="text-ink-5">·</span>
 				<span>⏎ Select</span>
-				<span class="text-gray-300 dark:text-gray-600">·</span>
+				<span class="text-ink-5">·</span>
 				<span>Esc Close</span>
 			</div>
 		</div>

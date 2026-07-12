@@ -1,0 +1,30 @@
+<!-- Activity — every background run across the vault (Agents Vault v2, frame 3/4) -->
+@if (!agentsService.hasAgents()) {
+	<!-- No agents in this vault yet — the feature has no chrome until then -->
+	<div class="flex-1 flex items-center justify-center p-8">
+		<div class="max-w-sm text-center">
+			<span
+				class="mx-auto mb-4 flex size-11 items-center justify-center rounded-card bg-accent-bg text-accent"
+			>
+				<svg lucideZap class="size-5.5"></svg>
+			</span>
+			<h1 class="text-[20px] font-bold tracking-[-0.01em] text-ink-1 mb-2">
+				No agents yet
+			</h1>
+			<p class="text-[13px] leading-relaxed text-ink-3 m-0">
+				Background agents will live in your vault as files and their
+				runs will show up here.
+			</p>
+		</div>
+	</div>
+} @else {
+	<div class="flex-1 flex flex-col min-h-0 pb-6">
+		<app-activity-header [(filter)]="filter" />
+		<app-run-feed
+			[runningNow]="runningNow()"
+			[earlierToday]="earlierToday()"
+			[yesterday]="yesterday()"
+			(review)="openRun($event)"
+		/>
+	</div>
+}

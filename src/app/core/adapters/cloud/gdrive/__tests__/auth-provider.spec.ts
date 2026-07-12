@@ -73,6 +73,22 @@ describe('GDriveAuthProvider', () => {
 		expect(auth.needsReauth()).toBe(false);
 	});
 
+	it('signOut() forgets the token and clears the reauth flag', async () => {
+		signIn.mockResolvedValue({ accessToken: 'tok', expiresAt: future() });
+		const auth = new GDriveAuthProvider();
+		await auth.ensureSignedIn();
+		expect(await auth.getToken()).toBe('tok');
+
+		await auth.signOut();
+		expect(auth.needsReauth()).toBe(false);
+
+		// Token forgotten → a background caller now cannot get one silently.
+		renew.mockResolvedValue(null);
+		await expect(auth.getToken()).rejects.toBeInstanceOf(
+			ReauthRequiredError,
+		);
+	});
+
 	it('de-dupes concurrent silent renewals into one call', async () => {
 		signIn.mockResolvedValue({
 			accessToken: 'old',

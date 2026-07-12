@@ -19,27 +19,27 @@ import { LucideFileText } from '@lucide/angular';
 			type="button"
 			[attr.data-search-index]="index()"
 			class="flex items-center gap-3 w-full px-4 py-2.5 text-left border-none bg-transparent cursor-pointer transition-colors duration-100"
-			[class.bg-indigo-50]="selected()"
-			[class.dark:bg-indigo-900/50]="selected()"
-			[class.hover:bg-gray-100]="!selected()"
-			[class.dark:hover:bg-gray-800]="!selected()"
+			[class.bg-accent-bg2]="selected()"
+			[class.hover:bg-hairline]="!selected()"
 			(click)="open.emit()"
 			(mouseenter)="hovered.emit()"
 		>
 			<svg
 				lucideFileText
-				class="size-4 shrink-0 text-gray-400 dark:text-gray-500"
+				class="size-4 shrink-0"
+				[class.text-accent-deep]="selected()"
+				[class.text-ink-4]="!selected()"
 			></svg>
 			<div class="flex flex-col min-w-0">
 				<span
-					class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate"
+					class="text-[13px] font-medium truncate"
+					[class.text-accent-deep]="selected()"
+					[class.text-ink-1]="!selected()"
 				>
 					{{ name() }}
 				</span>
 				@if (parentPath(); as path) {
-					<span
-						class="text-xs text-gray-400 dark:text-gray-500 truncate"
-					>
+					<span class="text-xs font-mono text-ink-4 truncate">
 						{{ path }}
 					</span>
 				}

@@ -22,7 +22,7 @@ import type { Workspace } from '@services/workspace.service';
 	imports: [CommonModule, AdapterConfigFormComponent, AddAdapterButton],
 	template: `
 		<span
-			class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+			class="text-[10.5px] font-bold uppercase tracking-[0.08em] text-ink-4"
 		>
 			Add Adapter
 		</span>
@@ -32,7 +32,7 @@ import type { Workspace } from '@services/workspace.service';
 				@if (configuringId() === adapter.id) {
 					<app-adapter-config-form
 						[adapterId]="adapter.id"
-						class="block w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3"
+						class="block w-full rounded-xl border border-line bg-surface p-3"
 						(save)="onSave(adapter.id, $event)"
 						(cancel)="onCancel()"
 					></app-adapter-config-form>

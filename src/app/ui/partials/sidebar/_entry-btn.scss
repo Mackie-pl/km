@@ -4,19 +4,24 @@
  * Entry button base + active state via [attr.data-active].
  * Shared between sidebar-vault-list and sidebar-tree-row.
  * Uses @reference so @apply works without emitting Tailwind base styles.
+ *
+ * Design system "list rows": 13px labels, hairline hover, selected row is
+ * indigo-bg2 with indigo-deep text (no border). Token vars come from
+ * styles.scss (:root / .dark), so no dark: variants are needed.
  */
 
 .entry-btn {
-	@apply flex items-center w-full gap-2 px-3 py-2.5 rounded-lg border-none
-		bg-transparent cursor-pointer transition-colors duration-150 text-left
-		text-gray-500 dark:text-gray-400;
+	@apply flex items-center w-full gap-2 px-3 py-2 rounded-lg border-none
+		bg-transparent cursor-pointer transition-colors duration-150 text-left;
+	color: var(--t2);
 
 	&:hover {
-		@apply bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100;
+		background: var(--hairline);
+		color: var(--t1);
 	}
 
 	&[data-active] {
-		@apply border-l-2 border-indigo-500 bg-indigo-50 text-indigo-600
-			dark:border-indigo-400 dark:bg-indigo-900/50 dark:text-indigo-400;
+		background: var(--indigo-bg2);
+		color: var(--indigo-deep);
 	}
 }

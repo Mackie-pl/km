@@ -1,0 +1,118 @@
+<!-- One mobile vault card row: folder / note / agent (Agents Vault v2, frame 6) -->
+@if (row().kind === 'folder') {
+	<div
+		class="flex items-center gap-2.5 py-3 pr-3.5 border-b border-hairline cursor-pointer select-none"
+		[style.padding-left.px]="indent()"
+		[tuiDropdownManual]="menuOpen()"
+		[tuiDropdown]="contextMenuTpl"
+		(click)="toggleFolder.emit($any(row()).entry)"
+		(contextmenu)="emitContextMenu($event)"
+		(touchstart)="onTouchStart()"
+		(touchend)="onTouchEnd()"
+		[attr.aria-label]="$any(row()).entry.name"
+		[attr.aria-expanded]="$any(row()).expanded"
+	>
+		<svg
+			lucideChevronRight
+			class="size-4.5 text-ink-4 flex-shrink-0 transition-transform"
+			[class.rotate-90]="$any(row()).expanded"
+		></svg>
+		<svg lucideFolder class="size-4.5 text-ink-4 flex-shrink-0"></svg>
+		<span class="flex-1 text-[14.5px] font-semibold text-ink-2 truncate">{{
+			$any(row()).entry.name
+		}}</span>
+		<span class="text-[11px] text-ink-4 flex-shrink-0">{{
+			$any(row()).meta
+		}}</span>
+	</div>
+} @else if (row().kind === 'note') {
+	<button
+		type="button"
+		class="flex w-full items-center gap-2.5 py-3 pr-3.5 border-b border-hairline border-none bg-transparent cursor-pointer text-left"
+		[style.padding-left.px]="indent()"
+		[tuiDropdownManual]="menuOpen()"
+		[tuiDropdown]="contextMenuTpl"
+		(click)="openNote.emit($any(row()).entry)"
+		(contextmenu)="emitContextMenu($event)"
+		(touchstart)="onTouchStart()"
+		(touchend)="onTouchEnd()"
+		[attr.aria-label]="$any(row()).entry.name"
+	>
+		@if (isLucideIcon()) {
+			<ng-container [ngComponentOutlet]="lucideComponent()" />
+		} @else {
+			<span
+				class="w-4.5 text-[15px] leading-none flex items-center justify-center flex-shrink-0"
+				>{{ noteIcon() ?? DEFAULT_NOTE_ICON }}</span
+			>
+		}
+		<span class="flex-1 text-sm text-ink-2 truncate">{{
+			$any(row()).entry.name
+		}}</span>
+	</button>
+} @else {
+	<!-- Agent row — indigo wash + inset left bar, chip, sub-line, status -->
+	<a
+		[routerLink]="['/agent', $any(row()).agent.id]"
+		class="flex items-center gap-2.5 py-3 pr-3.5 border-b border-hairline no-underline cursor-pointer bg-accent-bg/40 shadow-[inset_3px_0_0_var(--indigo-3)]"
+		[style.padding-left.px]="indent()"
+		[attr.aria-label]="$any(row()).agent.name + ' (agent)'"
+	>
+		<span
+			class="flex size-6 items-center justify-center rounded-[7px] bg-accent-bg text-accent flex-shrink-0"
+		>
+			<svg lucideZap class="size-3.5"></svg>
+		</span>
+		<span class="flex-1 min-w-0">
+			<span class="block text-sm font-semibold text-accent-deep truncate">{{
+				$any(row()).agent.name
+			}}</span>
+			<span class="block text-[11px] text-ink-4 truncate"
+				>agent · {{ agentSubline() }}</span
+			>
+		</span>
+		@if ($any(row()).running) {
+			<span
+				class="inline-flex items-center gap-1 text-[10.5px] font-semibold text-accent-text bg-accent-bg rounded-full px-2 py-0.5 flex-shrink-0"
+				>running</span
+			>
+		} @else if ($any(row()).agent.enabled) {
+			<span class="size-1.75 rounded-full bg-ok-dot flex-shrink-0"></span>
+		}
+	</a>
+}
+
+<!-- Long-press / right-click context menu (folders & notes) -->
+<ng-template #contextMenuTpl>
+	@if (entry(); as e) {
+		<div
+			class="flex flex-col min-w-40 py-1 rounded-xl border border-line bg-surface shadow-popover"
+		>
+			<button
+				type="button"
+				[class.hidden]="e.type !== 'folder'"
+				class="flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] font-medium text-ink-1 hover:bg-hairline transition-colors border-none bg-transparent cursor-pointer text-left"
+				(click)="newFileInFolder.emit(e)"
+			>
+				<svg lucideFilePlus class="size-4 flex-shrink-0"></svg>
+				New Note
+			</button>
+			<button
+				type="button"
+				class="flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] font-medium text-ink-1 hover:bg-hairline transition-colors border-none bg-transparent cursor-pointer text-left"
+				(click)="renameEntry.emit(e)"
+			>
+				<svg lucidePencil class="size-4 flex-shrink-0"></svg>
+				Rename
+			</button>
+			<button
+				type="button"
+				class="flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] font-medium text-red-600 dark:text-red-400 hover:bg-hairline transition-colors border-none bg-transparent cursor-pointer text-left"
+				(click)="deleteEntry.emit(e)"
+			>
+				<svg lucideTrash2 class="size-4 flex-shrink-0"></svg>
+				Delete
+			</button>
+		</div>
+	}
+</ng-template>

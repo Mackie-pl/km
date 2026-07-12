@@ -111,6 +111,124 @@ describe('VaultReconciler (via VaultStore public API)', () => {
 			expect(conflict).toBeUndefined();
 		});
 
+		it('should NOT create conflict copy when remote matches last-synced base (stale remote)', async () => {
+			const ws = createMockWorkspace({
+				activeSyncAdapters: ['test-fs', 'remote-1'],
+			});
+			const { vault } = setupVaultStore(ws);
+			await vault.init();
+
+			// v1 synced with remote-1 (equal-content pull records the base)
+			await vault.createFile('note.md', 'v1');
+			await vault.applyExternalFile('note.md', 'v1', 'remote-1');
+
+			// Local edit → v2 pending; remote still serves stale v1
+			const entry = vault.getByPath('note.md');
+			await vault.updateFile(entry!.id, 'v2');
+			await vault.applyExternalFile('note.md', 'v1', 'remote-1');
+
+			// No conflict copy; local edit and its pending flag survive
+			expect(vault.getByPath('note.conflict-remote-1.md')).toBeUndefined();
+			const after = vault.getByPath('note.md');
+			expect(after?.content).toBe('v2');
+			expect(after?.pendingAdapters).toContain('remote-1');
+		});
+
+		it('should fast-forward (no conflict) when local matches base and remote moved forward, even while pending for another adapter', async () => {
+			const ws = createMockWorkspace({
+				activeSyncAdapters: ['test-fs', 'remote-1'],
+			});
+			const { vault } = setupVaultStore(ws);
+			await vault.init();
+
+			// v1 created and synced with remote-1; still pending for test-fs
+			// (mirrors a note pending only for a broken gdrive adapter).
+			await vault.createFile('note.md', 'v1');
+			await vault.applyExternalFile('note.md', 'v1', 'remote-1');
+			const entry = vault.getByPath('note.md');
+			expect(entry?.pendingAdapters).toEqual(['test-fs']);
+
+			// remote-1 (the disk) moved forward to v2 via an external editor.
+			// Local is still exactly the base → nothing local to lose.
+			await vault.applyExternalFile('note.md', 'v2', 'remote-1');
+
+			// No conflict copy; main note adopts the newer content
+			expect(vault.getByPath('note.conflict-remote-1.md')).toBeUndefined();
+			const after = vault.getByPath('note.md');
+			expect(after?.content).toBe('v2');
+			// Still pending for the other adapter so v2 propagates onward
+			expect(after?.pendingAdapters).toContain('test-fs');
+		});
+
+		it('should create conflict copy when remote diverged from base, once per remote version', async () => {
+			const ws = createMockWorkspace({
+				activeSyncAdapters: ['test-fs', 'remote-1'],
+			});
+			const { vault } = setupVaultStore(ws);
+			await vault.init();
+
+			await vault.createFile('note.md', 'v1');
+			await vault.applyExternalFile('note.md', 'v1', 'remote-1');
+			const entry = vault.getByPath('note.md');
+			await vault.updateFile(entry!.id, 'v2');
+
+			// Remote diverged to v3 → real conflict
+			await vault.applyExternalFile('note.md', 'v3', 'remote-1');
+			const conflict = vault.getByPath('note.conflict-remote-1.md');
+			expect(conflict?.content).toBe('v3');
+			expect(vault.getByPath('note.md')?.content).toBe('v2');
+
+			// Same remote content pulled again (e.g. next poll) → no second copy
+			await vault.applyExternalFile('note.md', 'v3', 'remote-1');
+			expect(
+				vault.getByPath('note.conflict-remote-1 (2).md'),
+			).toBeUndefined();
+		});
+
+		it('should not nest conflict suffixes when a conflict copy itself conflicts', async () => {
+			const ws = createMockWorkspace({
+				activeSyncAdapters: ['test-fs', 'remote-1'],
+			});
+			const { vault } = setupVaultStore(ws);
+			await vault.init();
+
+			// A conflict copy with local pending changes and unknown base
+			await vault.createFile('fizjo.conflict-remote-1.md', 'local');
+			await vault.applyExternalFile(
+				'fizjo.conflict-remote-1.md',
+				'remote',
+				'remote-1',
+			);
+
+			expect(
+				vault.getByPath('fizjo.conflict-remote-1.conflict-remote-1.md'),
+			).toBeUndefined();
+			// Reduced to the original stem, deduped against the existing copy
+			const deduped = vault.getByPath('fizjo.conflict-remote-1 (2).md');
+			expect(deduped?.content).toBe('remote');
+		});
+
+		it('should dedupe conflict paths instead of duplicating them', async () => {
+			const ws = createMockWorkspace({
+				activeSyncAdapters: ['test-fs', 'remote-1'],
+			});
+			const { vault } = setupVaultStore(ws);
+			await vault.init();
+
+			await vault.createFile('note.md', 'local');
+			await vault.createFile('note.conflict-remote-1.md', 'occupied');
+
+			await vault.applyExternalFile('note.md', 'remote', 'remote-1');
+
+			// Existing copy untouched; new copy got a unique deduped path
+			expect(vault.getByPath('note.conflict-remote-1.md')?.content).toBe(
+				'occupied',
+			);
+			expect(
+				vault.getByPath('note.conflict-remote-1 (2).md')?.content,
+			).toBe('remote');
+		});
+
 		it('should restore a soft-deleted entry when external file appears', async () => {
 			const { vault } = setupVaultStore(createMockWorkspace());
 			await vault.init();

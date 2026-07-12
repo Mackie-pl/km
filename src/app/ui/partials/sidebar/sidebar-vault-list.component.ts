@@ -5,22 +5,30 @@ import { navigateToEntry } from '@core/utils/router-utils';
 import { parseFrontmatter } from '@core/utils/frontmatter-parser';
 import { VaultStore, VaultEntry } from '@vault/store';
 import { SyncEngineService } from '@core/sync/sync-engine';
+import { AgentsService } from '@core/agents/agents.service';
 import {
 	SidebarTreeRowComponent,
 	TreeNode,
 } from './sidebar-tree-row.component';
+import { SidebarAgentRow } from './_agent-row';
 
 /**
  * Self-contained vault file & folder tree for the sidebar.
  *
  * Renders a nested tree view with expand/collapse for folders.
+ * Agents live in the same tree, beside notes (Agents Vault v2).
  * Delegates individual tree rows to `SidebarTreeRowComponent`
  * to keep nesting depth under the lint limit.
  */
 @Component({
 	selector: 'app-sidebar-vault-list',
 	standalone: true,
-	imports: [LucideFilePlus, LucideFolderPlus, SidebarTreeRowComponent],
+	imports: [
+		LucideFilePlus,
+		LucideFolderPlus,
+		SidebarAgentRow,
+		SidebarTreeRowComponent,
+	],
 	templateUrl: './sidebar-vault-list.component.html',
 	styleUrl: './sidebar-vault-list.component.scss',
 	host: {
@@ -29,8 +37,15 @@ import {
 })
 export class SidebarVaultListComponent {
 	protected readonly vaultDb = inject(VaultStore);
+	protected readonly agentsService = inject(AgentsService);
 	private readonly router = inject(Router);
 	private readonly syncEngine = inject(SyncEngineService);
+
+	/** Agent ids with a run currently in flight — shown with a pulsing dot. */
+	readonly runningAgentIds = computed(
+		() =>
+			new Set(this.agentsService.runningRuns().map((run) => run.agentId)),
+	);
 
 	/** Whether the parent sidebar is collapsed (desktop only — hides labels). */
 	readonly collapsed = input(false);

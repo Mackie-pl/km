@@ -2,12 +2,10 @@
 @if (step() === 1) {
 	<div class="space-y-6">
 		<div class="space-y-2">
-			<h2
-				class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100"
-			>
+			<h2 class="text-[23px] font-bold tracking-[-0.01em] text-ink-1">
 				New Workspace
 			</h2>
-			<p class="text-sm text-gray-500 dark:text-gray-400">
+			<p class="text-[13px] text-ink-3">
 				Choose how to create your workspace.
 			</p>
 		</div>
@@ -19,17 +17,17 @@
 				(click)="selectFolderMode()"
 				[class.opacity-50]="!hasLocalAdapter"
 				[class.cursor-not-allowed]="!hasLocalAdapter"
-				class="group flex flex-col items-center justify-center gap-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-8 text-center transition-colors hover:bg-gray-50"
+				class="group flex flex-col items-center justify-center gap-3 rounded-card border border-line bg-surface p-8 text-center transition-all hover:border-accent-border hover:shadow-hairline"
 			>
-				<svg lucideFolder class="size-10 text-gray-400"></svg>
-				<span class="font-medium text-gray-900 dark:text-gray-100">
+				<svg lucideFolder class="size-10 text-ink-4"></svg>
+				<span class="text-[13.5px] font-semibold text-ink-1">
 					From Folder
 				</span>
-				<span class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+				<span class="mt-1 text-xs text-ink-3">
 					Pick an existing folder of notes
 				</span>
 				<span
-					class="mt-2 text-xs leading-tight text-gray-400"
+					class="mt-2 text-xs leading-tight text-ink-4"
 					[class.hidden]="hasLocalAdapter"
 				>
 					Folder picker not available on this device.
@@ -39,16 +37,13 @@
 			<!-- Standalone card -->
 			<div
 				(click)="selectStandaloneMode()"
-				class="flex cursor-pointer select-none flex-col items-center justify-center gap-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-8 text-center transition-colors hover:bg-gray-50"
+				class="flex cursor-pointer select-none flex-col items-center justify-center gap-3 rounded-card border border-line bg-surface p-8 text-center transition-all hover:border-accent-border hover:shadow-hairline"
 			>
-				<svg
-					lucideStickyNote
-					class="size-10 shrink-0 text-gray-400"
-				></svg>
-				<span class="font-medium text-gray-900 dark:text-gray-100">
+				<svg lucideStickyNote class="size-10 shrink-0 text-ink-4"></svg>
+				<span class="text-[13.5px] font-semibold text-ink-1">
 					Standalone
 				</span>
-				<span class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+				<span class="mt-1 text-xs text-ink-3">
 					Keep everything inside the app, no external files
 				</span>
 			</div>
@@ -59,7 +54,7 @@
 			<button
 				type="button"
 				(click)="cancel()"
-				class="rounded-lg bg-transparent px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-200 dark:hover:bg-gray-800"
+				class="rounded-btn bg-transparent px-4 py-2 text-[12.5px] font-semibold text-ink-3 transition-colors hover:bg-hairline hover:text-ink-1"
 			>
 				Cancel
 			</button>
@@ -71,16 +66,14 @@
 @if (step() === 2) {
 	<div class="space-y-6">
 		<div class="space-y-2">
-			<h2
-				class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100"
-			>
+			<h2 class="text-[23px] font-bold tracking-[-0.01em] text-ink-1">
 				{{
 					mode() === 'folder'
 						? 'Choose Folder'
 						: 'Name Your Workspace'
 				}}
 			</h2>
-			<p class="text-sm text-gray-500 dark:text-gray-400">
+			<p class="text-[13px] text-ink-3">
 				{{
 					mode() === 'folder'
 						? 'Select the folder containing your notes.'
@@ -95,7 +88,7 @@
 			[class.hidden]="!isFolderMode()"
 			(click)="pickFolder()"
 			[disabled]="pickingFolder()"
-			class="w-full rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 px-6 py-8 text-center transition-colors hover:border-indigo-400 disabled:opacity-50"
+			class="w-full rounded-card border-2 border-dashed border-line px-6 py-8 text-center transition-colors hover:border-accent-border disabled:opacity-50"
 		>
 			<app-folder-browse-content
 				[pickingFolder]="pickingFolder()"
@@ -118,7 +111,7 @@
 		<div [class.hidden]="isFolderMode()">
 			<label
 				for="workspace-name"
-				class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
+				class="mb-1.5 block text-[13px] font-medium text-ink-2"
 			>
 				Workspace Name
 			</label>
@@ -127,18 +120,18 @@
 				type="text"
 				[(ngModel)]="workspaceName"
 				placeholder="My Notes"
-				class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 outline-none transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+				class="w-full rounded-lg border border-line bg-surface px-4 py-2.5 text-sm text-ink-1 placeholder-ink-4 outline-none transition-colors focus:border-accent focus:ring-1 focus:ring-accent"
 			/>
 		</div>
 
 		<!-- Footer: back + cancel + continue -->
 		<footer
-			class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700"
+			class="flex items-center justify-between pt-4 border-t border-line"
 		>
 			<button
 				type="button"
 				(click)="goBack()"
-				class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-200 dark:hover:bg-gray-800"
+				class="rounded-btn px-4 py-2 text-[12.5px] font-semibold text-ink-3 transition-colors hover:bg-hairline hover:text-ink-1"
 			>
 				← Back
 			</button>
@@ -146,7 +139,7 @@
 				<button
 					type="button"
 					(click)="cancel()"
-					class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-200 dark:hover:bg-gray-800"
+					class="rounded-btn px-4 py-2 text-[12.5px] font-semibold text-ink-3 transition-colors hover:bg-hairline hover:text-ink-1"
 				>
 					Cancel
 				</button>
@@ -157,7 +150,7 @@
 						(mode() === 'folder' && !folderPath()) ||
 						(mode() === 'standalone' && !workspaceName().trim())
 					"
-					class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:bg-indigo-400"
+					class="rounded-btn bg-accent px-4 py-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-accent-2 disabled:bg-accent-3 disabled:opacity-70"
 				>
 					Continue →
 				</button>
@@ -170,12 +163,10 @@
 @if (step() === 3) {
 	<div class="space-y-6">
 		<div class="space-y-2">
-			<h2
-				class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100"
-			>
+			<h2 class="text-[23px] font-bold tracking-[-0.01em] text-ink-1">
 				Sync Adapters
 			</h2>
-			<p class="text-sm text-gray-500 dark:text-gray-400">
+			<p class="text-[13px] text-ink-3">
 				Sync adapters let you keep your notes in sync across devices.
 				You can configure these later in workspace settings.
 			</p>
@@ -188,12 +179,12 @@
 
 		<!-- Footer: back + cancel + create (uses nav element, different ordering) -->
 		<nav
-			class="flex flex-row items-center justify-between pt-4 border-gray-200 dark:border-gray-700 border-t"
+			class="flex flex-row items-center justify-between pt-4 border-line border-t"
 		>
 			<button
 				type="button"
 				(click)="goBack()"
-				class="rounded-lg px-4 py-2 text-sm text-gray-600 dark:text-gray-400 font-medium transition-colors hover:bg-gray-200 dark:hover:bg-gray-800"
+				class="rounded-btn px-4 py-2 text-[12.5px] font-semibold text-ink-3 transition-colors hover:bg-hairline hover:text-ink-1"
 			>
 				← Back
 			</button>
@@ -201,14 +192,14 @@
 				<button
 					type="button"
 					(click)="cancel()"
-					class="rounded-lg px-4 py-2 text-sm text-gray-600 dark:text-gray-400 font-medium transition-colors hover:bg-gray-200 dark:hover:bg-gray-800"
+					class="rounded-btn px-4 py-2 text-[12.5px] font-semibold text-ink-3 transition-colors hover:bg-hairline hover:text-ink-1"
 				>
 					Cancel
 				</button>
 				<button
 					type="button"
 					(click)="completeWizard()"
-					class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
+					class="rounded-btn bg-accent px-4 py-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-accent-2"
 				>
 					Create Workspace
 				</button>

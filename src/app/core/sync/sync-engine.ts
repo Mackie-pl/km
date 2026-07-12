@@ -21,10 +21,26 @@ import type { ActiveAdapterEntry } from './sync-types';
 })
 export class SyncEngineService implements OnDestroy {
 	private scheduled = false;
+	/** Identity+adapters of the workspace currently being watched (null = none). */
+	private watchSignature: string | null = null;
 	private pulling = false;
 	private pullRequested = false;
 	private pushing = false;
 	private pushRequested = false;
+
+	/**
+	 * Serializes push and pull phase executions. The two cycles have separate
+	 * reentrancy flags, so without this a pull could read remote content while
+	 * a push is mid-write and reconcile against a half-updated remote.
+	 */
+	private phaseChain: Promise<unknown> = Promise.resolve();
+
+	/** Run `fn` after any in-flight phase execution completes. */
+	private runExclusive<T>(fn: () => Promise<T>): Promise<T> {
+		const run = this.phaseChain.then(fn, fn);
+		this.phaseChain = run.catch(() => undefined);
+		return run;
+	}
 
 	/** Phase executors — instantiated once, reused across cycles. */
 	private readonly pushPhase: SyncPushPhase;
@@ -74,14 +90,25 @@ export class SyncEngineService implements OnDestroy {
 			if (needingSync.length > 0) void this.scheduleSync();
 		});
 
-		// Pull + watch on workspace activation; unwind on deactivation
+		// Pull + watch on workspace activation; unwind on deactivation.
+		// Restart the watch lifecycle whenever the active workspace identity or
+		// its adapter set changes: `activateWorkspace` swaps one workspace for
+		// another directly (never through null), and `startWatching` early-returns
+		// while already watching — so without an explicit stop here, switching
+		// workspaces would leak the previous one's watchers (e.g. a Drive poller
+		// that keeps re-arming the reconnect prompt) and never watch the new one.
 		effect(() => {
 			const ws = this.workspaceService.activeWorkspace();
+			const signature = ws
+				? `${ws.id}::${[...ws.activeSyncAdapters].sort().join(',')}`
+				: null;
+			if (signature === this.watchSignature) return;
+			this.watchSignature = signature;
+
+			this.stopWatching();
 			if (ws) {
 				void this.forcePull();
 				void this.startWatching();
-			} else {
-				this.stopWatching();
 			}
 		});
 	}
@@ -121,7 +148,7 @@ export class SyncEngineService implements OnDestroy {
 		try {
 			const adapters = this.getActiveAdapters();
 			await this.registerScopes(adapters);
-			await this.pullPhase.execute(adapters);
+			await this.runExclusive(() => this.pullPhase.execute(adapters));
 			this.clearSyncError();
 		} catch (err) {
 			this.syncFailed.set(true);
@@ -146,8 +173,8 @@ export class SyncEngineService implements OnDestroy {
 		try {
 			const adapters = this.getActiveAdapters();
 			await this.registerScopes(adapters);
-			await this.pullPhase.execute(adapters);
-			await this.pushPhase.execute(adapters);
+			await this.runExclusive(() => this.pullPhase.execute(adapters));
+			await this.runExclusive(() => this.pushPhase.execute(adapters));
 			this.clearSyncError();
 		} catch (err) {
 			this.syncFailed.set(true);
@@ -260,7 +287,7 @@ export class SyncEngineService implements OnDestroy {
 		this.pushing = true;
 		this.isSyncing.set(true);
 		try {
-			await this.pushPhase.execute(adapters);
+			await this.runExclusive(() => this.pushPhase.execute(adapters));
 			this.clearSyncError();
 		} catch (err) {
 			this.syncFailed.set(true);

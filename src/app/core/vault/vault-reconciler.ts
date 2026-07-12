@@ -1,6 +1,11 @@
 import { isTempFilePath } from '@core/utils/file-patterns';
 import { VAULT_ENTRY_TYPES, type VaultEntry } from './vault-entry';
-import { makeVaultEntry } from './vault-utils';
+import {
+	hashContent,
+	makeConflictName,
+	makeVaultEntry,
+	resolveUniquePath,
+} from './vault-utils';
 import type { VaultStore } from './store';
 import { debugLog } from '@core/utils/debug-logger';
 
@@ -46,6 +51,18 @@ export class VaultReconciler {
 				entry.pendingAdapters,
 				sourceAdapterId,
 			),
+		};
+	}
+
+	/** Merge the just-seen remote content hash into an entry's sync bases. */
+	private withSyncedHash(
+		entry: Pick<VaultEntry, 'syncedHashes'>,
+		sourceAdapterId: string,
+		content: string,
+	): Record<string, string> {
+		return {
+			...entry.syncedHashes,
+			[sourceAdapterId]: hashContent(content),
 		};
 	}
 
@@ -118,6 +135,7 @@ export class VaultReconciler {
 		await this.store.put({
 			...existing,
 			content,
+			syncedHashes: this.withSyncedHash(existing, sourceAdapterId, content),
 			...this.revisionSpread(existing, sourceAdapterId),
 		});
 	}
@@ -148,6 +166,7 @@ export class VaultReconciler {
 			pendingAdapters: adapters,
 			parentId: parentEntry?.id ?? null,
 		});
+		entry.syncedHashes = { [sourceAdapterId]: hashContent(content) };
 		debugLog(
 			`[Vault] created entry ${entry.id} "${path}"${parentPath ? ` parent=${parentPath}` : ''} pending=${JSON.stringify(adapters)}`,
 		);
@@ -164,6 +183,7 @@ export class VaultReconciler {
 			...existing,
 			content,
 			deleted: false,
+			syncedHashes: this.withSyncedHash(existing, sourceAdapterId, content),
 			...this.revisionSpread(existing, sourceAdapterId),
 		});
 		debugLog(
@@ -188,6 +208,11 @@ export class VaultReconciler {
 			);
 			await this.store.put({
 				...existing,
+				syncedHashes: this.withSyncedHash(
+					existing,
+					sourceAdapterId,
+					content,
+				),
 				pendingAdapters: this.adaptersExcept(
 					existing.pendingAdapters,
 					sourceAdapterId,
@@ -195,6 +220,42 @@ export class VaultReconciler {
 			});
 			return;
 		}
+
+		// Remote content is identical to what we last synced with this adapter:
+		// the remote is merely BEHIND the pending local edit, not diverged.
+		// Keep the local content pending — the push phase will update remote.
+		// Without this check every pull that lands before a push completes
+		// would spawn a bogus `.conflict-*` copy of the stale remote content.
+		const base = existing.syncedHashes?.[sourceAdapterId];
+		if (base !== undefined && base === hashContent(content)) {
+			debugLog(
+				`[Vault] stale remote "${path}" from ${sourceAdapterId} — matches last-synced base, keeping pending local edit (no conflict)`,
+			);
+			return;
+		}
+
+		// Local content is exactly what we last synced with this adapter, but the
+		// remote moved forward: there is NO unsynced local edit for THIS adapter to
+		// lose, so fast-forward to the remote instead of forking a conflict copy.
+		// The entry may still be pending for OTHER adapters (e.g. a broken gdrive);
+		// `revisionSpread` keeps those pending so the newer content propagates on.
+		if (base !== undefined && base === hashContent(existing.content ?? '')) {
+			debugLog(
+				`[Vault] fast-forward "${path}" from ${sourceAdapterId} — local matches last-synced base, adopting newer remote content`,
+			);
+			await this.store.put({
+				...existing,
+				content,
+				syncedHashes: this.withSyncedHash(
+					existing,
+					sourceAdapterId,
+					content,
+				),
+				...this.revisionSpread(existing, sourceAdapterId),
+			});
+			return;
+		}
+
 		await this.handleExternalConflict(
 			existing,
 			path,
@@ -211,15 +272,17 @@ export class VaultReconciler {
 		sourceAdapterId: string,
 		wsId: string,
 	): Promise<void> {
-		const ext = existing.name.includes('.')
-			? '.' + (existing.name.split('.').pop() ?? '')
-			: '';
-		const conflictName = `${existing.name.replace(/\.[^.]+$/, '')}.conflict-${sourceAdapterId}${ext}`;
-		const conflictPath = existing.path.replace(existing.name, conflictName);
+		// Never nest suffixes (`x.conflict-a.conflict-a.md`) and never reuse a
+		// taken path — a second conflict on the same file dedupes to `… (2)`.
+		const conflictName = makeConflictName(existing.name, sourceAdapterId);
+		const conflictPath = resolveUniquePath(
+			existing.path.replace(existing.name, conflictName),
+			(p) => this.store.getByPath(p),
+		);
 		const entry: VaultEntry = {
 			id: crypto.randomUUID(),
 			workspaceId: wsId,
-			name: conflictName,
+			name: conflictPath.split('/').pop() ?? conflictName,
 			path: conflictPath,
 			type: VAULT_ENTRY_TYPES.FILE,
 			parentId: existing.parentId,
@@ -231,8 +294,15 @@ export class VaultReconciler {
 			revision: 1,
 		};
 		await this.store.put(entry);
+		// The conflicting remote version is now preserved in the copy; treat it
+		// as the new base so the same remote content can't re-conflict, and so
+		// the pending local edit wins the next push cleanly.
+		await this.store.put({
+			...existing,
+			syncedHashes: this.withSyncedHash(existing, sourceAdapterId, content),
+		});
 		console.warn(
-			`[Vault] Conflict "${path}": local vs ${sourceAdapterId} — created "${conflictName}" (${String(content.length)}B)`,
+			`[Vault] Conflict "${path}": local vs ${sourceAdapterId} — created "${entry.name}" (${String(content.length)}B)`,
 		);
 	}
 

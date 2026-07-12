@@ -9,6 +9,17 @@
     "beforeBuildCommand": "pnpm build",
     "frontendDist": "../dist/km-test/browser"
   },
+  "plugins": {
+    "deep-link": {
+      "mobile": [
+        {
+          "scheme": [
+            "com.googleusercontent.apps.311145204704-q253fucp3v6fnintq3c285kkvhrqqg5c"
+          ]
+        }
+      ]
+    }
+  },
   "app": {
     "windows": [
       {

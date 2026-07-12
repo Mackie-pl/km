@@ -538,44 +538,35 @@ export class VaultStore {
 	}
 
 	/**
-	 * Mark a single adapter as synced for this entry.
-	 * Removes the adapter from `pendingAdapters`.
-	 * Also clears `pendingRenameFrom` when the last adapter is synced.
+	 * Mark a single adapter as synced: removes it from `pendingAdapters` and
+	 * clears `pendingRenameFrom` once fully synced. `contentHash` (the pushed
+	 * content's hash) is recorded as the adapter's sync base so the reconciler
+	 * can tell a stale remote from a diverged one.
 	 */
-	async markAdapterSynced(id: string, adapterId: string): Promise<void> {
+	async markAdapterSynced(
+		id: string,
+		adapterId: string,
+		contentHash?: string,
+	): Promise<void> {
 		const entry = this.entries().get(id);
 		if (!entry) return;
 
+		const { pendingRenameFrom, ...rest } = entry;
 		const pendingAdapters = entry.pendingAdapters.filter(
 			(a) => a !== adapterId,
 		);
-
-		// Clear pendingRenameFrom when fully synced (no adapters left to push to)
-		const pendingRenameFrom: string | undefined =
-			pendingAdapters.length === 0 ? undefined : entry.pendingRenameFrom;
-
-		const { pendingRenameFrom: _oldRename, ...rest } = entry;
+		const syncedHashes = contentHash
+			? { ...entry.syncedHashes, [adapterId]: contentHash }
+			: entry.syncedHashes;
 
 		await this.put({
 			...rest,
 			pendingAdapters,
-			...(pendingRenameFrom !== undefined ? { pendingRenameFrom } : {}),
-		});
-	}
-
-	/**
-	 * Ensure certain adapter IDs are in the pending set.
-	 * Used by pull to spread newly imported files to other adapters.
-	 */
-	async markAllPending(id: string, adapterIds: string[]): Promise<void> {
-		const entry = this.entries().get(id);
-		if (!entry) return;
-
-		await this.put({
-			...entry,
-			pendingAdapters: [
-				...new Set([...entry.pendingAdapters, ...adapterIds]),
-			],
+			...(syncedHashes ? { syncedHashes } : {}),
+			// Keep pendingRenameFrom only while adapters remain to push to
+			...(pendingAdapters.length > 0 && pendingRenameFrom !== undefined
+				? { pendingRenameFrom }
+				: {}),
 		});
 	}
 

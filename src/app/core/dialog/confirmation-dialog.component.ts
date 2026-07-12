@@ -15,7 +15,7 @@ import { type DialogData } from './dialog.service';
 	standalone: true,
 	template: `
 		<div class="p-4 space-y-4">
-			<p class="text-sm text-gray-600 dark:text-gray-400">
+			<p class="text-[13px] leading-relaxed text-ink-2">
 				{{ context.data.message }}
 			</p>
 
@@ -24,7 +24,7 @@ import { type DialogData } from './dialog.service';
 					type="text"
 					[value]="inputValue"
 					(input)="inputValue = $any($event.target).value"
-					class="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 outline-none focus:border-indigo-500 dark:focus:border-indigo-400 transition-colors"
+					class="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink-1 outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
 					autofocus
 				/>
 			}
@@ -34,7 +34,7 @@ import { type DialogData } from './dialog.service';
 					<button
 						type="button"
 						(click)="cancel()"
-						class="px-4 py-2 text-sm font-medium rounded-md border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+						class="px-4 py-2 text-[12.5px] font-semibold rounded-btn border border-line bg-surface text-ink-2 hover:bg-hairline transition-colors"
 					>
 						Cancel
 					</button>
@@ -42,7 +42,7 @@ import { type DialogData } from './dialog.service';
 				<button
 					type="button"
 					(click)="confirm()"
-					class="px-4 py-2 text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition-colors"
+					class="px-4 py-2 text-[12.5px] font-semibold rounded-btn text-white bg-accent hover:bg-accent-2 transition-colors"
 				>
 					{{ confirmLabel }}
 				</button>

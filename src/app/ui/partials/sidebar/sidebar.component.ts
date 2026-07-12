@@ -19,6 +19,7 @@ import {
 import { PlatformService } from '@services/platform.service';
 import { WorkspaceService } from '@services/workspace.service';
 import { SidebarVaultListComponent } from './sidebar-vault-list.component';
+import { SidebarActivityLink } from './_activity-link';
 import { BUILD_INFO } from '@build-info';
 
 /**
@@ -39,6 +40,7 @@ import { BUILD_INFO } from '@build-info';
 		LucideChevronRight,
 		LucideX,
 		LucideSettings,
+		SidebarActivityLink,
 		SidebarVaultListComponent,
 	],
 	templateUrl: './sidebar.component.html',

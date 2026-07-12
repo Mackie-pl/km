@@ -13,7 +13,6 @@ import type {
 	WatchEvent,
 	WorkspacePickResult,
 } from '../../adapter.interface';
-import { isTauriRuntime } from '@core/utils/tauri-runtime';
 
 export class GDriveAdapterProxy implements Adapter {
 	readonly id = 'gdrive';
@@ -23,15 +22,12 @@ export class GDriveAdapterProxy implements Adapter {
 	real: Adapter | null = null;
 
 	/**
-	 * Available in the browser (GIS token model) and on Tauri desktop (loopback
-	 * Auth-Code + PKCE). Tauri-on-Android is excluded until its deep-link OAuth
-	 * driver lands — detected by the Android webview's user-agent.
+	 * Available on every runtime the OAuth driver seam covers: the browser (GIS
+	 * token model), Tauri desktop (loopback Auth-Code + PKCE), and Tauri Android
+	 * (custom-scheme deep-link Auth-Code + PKCE).
 	 */
 	isAvailable(): boolean {
-		const android =
-			typeof navigator !== 'undefined' &&
-			/android/i.test(navigator.userAgent);
-		return !(isTauriRuntime() && android);
+		return true;
 	}
 
 	pickWorkspaceFolder(): Promise<WorkspacePickResult | null> {

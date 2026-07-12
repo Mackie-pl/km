@@ -1,4 +1,12 @@
-<div class="flex flex-col h-full">
-	<app-note-toolbar [entryId]="entryId()" />
-	<div #editorContainer class="flex-1 min-h-0"></div>
+<!-- Note view: editor column + activity rail (desktop, Agents Vault v2 frame 1) -->
+<div class="flex flex-row h-full min-h-0">
+	<div class="flex flex-col flex-1 min-w-0">
+		<app-note-toolbar [entryId]="entryId()" />
+		<app-review-bar />
+		<app-conflict-banner [entryPath]="entryId()" />
+		<div #editorContainer class="flex-1 min-h-0"></div>
+	</div>
+	<div class="hidden xl:flex flex-shrink-0 h-full">
+		<app-activity-rail />
+	</div>
 </div>

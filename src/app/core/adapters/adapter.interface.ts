@@ -91,6 +91,15 @@ export interface Adapter {
 	 * this (callers treat "not implemented" as "access assumed OK").
 	 */
 	verifyAccess?(root: string): Promise<boolean>;
+
+	/**
+	 * Optional: release any global, non-workspace-scoped state the adapter holds
+	 * (cached auth tokens, in-memory clients, reconnect prompts) because it is no
+	 * longer referenced by ANY workspace. Called by {@link WorkspaceService} after
+	 * a removal/reconfiguration orphans the adapter. Must be idempotent — it may
+	 * be invoked when the adapter was never connected.
+	 */
+	disconnect?(): Promise<void>;
 }
 
 // ============================================================================

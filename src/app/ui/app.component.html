@@ -15,23 +15,19 @@
     Sidebar + header are conditionally visible; the router outlet is always present.
   -->
 	<div class="flex flex-row h-screen overflow-hidden">
-		<!-- Sidebar — only when workspace is active and NOT on wizard -->
-		@if (workspaceService.activeWorkspace() && !isOnWizardRoute()) {
+		<!-- Sidebar — desktop only; mobile uses the full-screen vault browser -->
+		@if (showSidebar()) {
 			<app-sidebar
 				[(collapsed)]="sidebarCollapsed"
-				[(mobileOpen)]="mobileSidebarOpen"
 				(openWorkspaceConfig)="openWorkspaceConfig()"
 			/>
 		}
 
 		<!-- Right side: header + main content (vertical stack) -->
 		<div class="flex flex-col flex-1 min-w-0 overflow-hidden">
-			<!-- Header — only when workspace is active and NOT on wizard -->
-			@if (workspaceService.activeWorkspace() && !isOnWizardRoute()) {
-				<app-header
-					(toggleSidebar)="toggleMobileSidebar()"
-					(openSettings)="openSettings()"
-				/>
+			<!-- Header — hidden on the mobile vault screen (it has its own) -->
+			@if (showHeader()) {
+				<app-header (openSettings)="openSettings()" />
 			}
 
 			<!--

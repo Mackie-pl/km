@@ -1,8 +1,10 @@
 import { TuiRoot } from '@taiga-ui/core/components/root';
 import { TuiDialogService } from '@taiga-ui/core/portals/dialog';
 import { PolymorpheusComponent } from '@taiga-ui/polymorpheus';
-import { Component, effect, inject, signal } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
+import { Component, computed, effect, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
 import { Menu, MenuItem, Submenu } from '@tauri-apps/api/menu';
 import { PlatformService } from '@services/platform.service';
 import { ThemeService } from '@services/theme.service';
@@ -62,7 +64,58 @@ export class AppComponent {
 	 *  persisted/system theme to <html> immediately on startup. */
 	private readonly _theme = inject(ThemeService);
 
+	/** Keeps in sync with the current router URL (for reactive shell layout). */
+	private readonly currentUrl = signal(this.router.url);
+
+	/** Chrome (sidebar/header) shows once a workspace is active, outside the wizard. */
+	private readonly showChrome = computed(
+		() =>
+			!!this.workspaceService.activeWorkspace() && !this.isOnWizardRoute(),
+	);
+
+	/** True on the mobile vault home screen, which renders its own header. */
+	private readonly isOnVaultRoute = computed(() =>
+		this.currentUrl().startsWith('/vault'),
+	);
+
+	/** Sidebar is desktop-only now; mobile uses the full-screen vault browser. */
+	readonly showSidebar = computed(
+		() => this.showChrome() && !this.platformService.isMobile(),
+	);
+
+	/** Header hides on the mobile vault screen (it has its own header). */
+	readonly showHeader = computed(
+		() =>
+			this.showChrome() &&
+			!(this.platformService.isMobile() && this.isOnVaultRoute()),
+	);
+
 	constructor() {
+		// Keep the URL signal current so the shell layout reacts to navigation.
+		this.router.events
+			.pipe(
+				filter(
+					(e): e is NavigationEnd => e instanceof NavigationEnd,
+				),
+				takeUntilDestroyed(),
+			)
+			.subscribe((e) => {
+				this.currentUrl.set(e.urlAfterRedirects);
+			});
+
+		// Mobile: the vault browser is the home screen, so send the empty root
+		// (the `**` fallback) there instead of the desktop "Add a note" page.
+		effect(() => {
+			const url = this.currentUrl();
+			if (
+				this.platformService.isMobile() &&
+				this.workspaceService.activeWorkspace() &&
+				(url === '/' || url === '')
+			) {
+				void this.router.navigate(['/vault']);
+			}
+		});
+
 		// Defer vault (IndexedDB) initialization until a workspace is active.
 		// This prevents loading entries for no workspace, and ensures the vault
 		// always scopes data to the current workspace.
@@ -124,17 +177,9 @@ export class AppComponent {
 	/** Whether the sidebar is collapsed on desktop (visible by default) */
 	readonly sidebarCollapsed = signal(false);
 
-	/** Whether the mobile sidebar overlay is open */
-	readonly mobileSidebarOpen = signal(false);
-
-	/** Toggle the mobile sidebar overlay (hamburger menu) */
-	toggleMobileSidebar(): void {
-		this.mobileSidebarOpen.update((v) => !v);
-	}
-
 	/** Whether the current route is the workspace creation wizard */
 	isOnWizardRoute(): boolean {
-		return this.router.url.startsWith('/workspace/new');
+		return this.currentUrl().startsWith('/workspace/new');
 	}
 
 	/**

@@ -14,7 +14,7 @@
 
 <!-- Sidebar panel -->
 <aside
-	class="flex flex-col h-full flex-shrink-0 border-r transition-all duration-300 overflow-hidden bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+	class="flex flex-col h-full flex-shrink-0 border-r transition-all duration-300 overflow-hidden bg-surface-2 border-line"
 	[class.w-64]="!isDesktop() || !collapsed()"
 	[class.w-16]="isDesktop() && collapsed()"
 	[class.fixed]="!isDesktop()"
@@ -29,16 +29,16 @@
 	(touchstart)="onTouchStart($event)"
 	(touchend)="onTouchEnd($event)"
 >
-	<!-- Header -->
+	<!-- Header — the vault (workspace) name -->
 	<div class="flex items-center h-12 px-3 flex-shrink-0">
 		@if ((isDesktop() && !collapsed()) || !isDesktop()) {
 			<span
-				class="text-sm font-semibold truncate text-gray-900 dark:text-gray-100"
-				>Notes</span
+				class="text-[13px] font-bold tracking-[-0.01em] truncate text-ink-1"
+				>{{ activeWorkspace()?.name ?? 'Notes' }}</span
 			>
 		}
 		<button
-			class="ml-auto flex items-center justify-center size-7 rounded-md border-none bg-transparent cursor-pointer transition-colors duration-150 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
+			class="ml-auto flex items-center justify-center size-7 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-ink-3 hover:bg-hairline hover:text-ink-1"
 			(click)="isDesktop() ? toggleCollapsed() : closeMobile()"
 			[attr.aria-label]="
 				isDesktop()
@@ -66,35 +66,34 @@
 		/>
 	</nav>
 
-	<!-- Archive link -->
-	<div class="flex-shrink-0 px-2 pb-1">
-		<hr class="mx-3 mb-1 border-gray-200 dark:border-gray-700" />
+	<!-- Activity + Archive -->
+	<div class="flex-shrink-0 px-2 pb-1 pt-1 border-t border-line">
+		<app-sidebar-activity-link
+			[showLabel]="!isDesktop() || !collapsed()"
+			(pressed)="closeMobile()"
+		/>
 		<button
-			class="flex items-center w-full gap-3 px-3 py-2.5 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
+			class="flex items-center w-full gap-3 px-3 py-2 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-ink-3 hover:bg-hairline hover:text-ink-1"
 			aria-label="Archive"
 		>
-			<svg lucideArchive class="size-5 flex-shrink-0"></svg>
+			<svg lucideArchive class="size-4.5 flex-shrink-0"></svg>
 			@if (!isDesktop() || !collapsed()) {
-				<span class="text-sm">Archive</span>
+				<span class="text-[13px] font-medium">Archive</span>
 			}
 		</button>
 	</div>
 
 	<!-- Workspace footer -->
-	<div
-		class="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2"
-	>
+	<div class="flex-shrink-0 border-t border-line bg-surface-2 p-2">
 		<button
 			(click)="openWorkspaceConfigDialog()"
-			class="flex items-center w-full gap-3 px-3 py-2.5 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
+			class="flex items-center w-full gap-3 px-3 py-2 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-ink-3 hover:bg-hairline hover:text-ink-1"
 			[attr.aria-label]="
 				'Workspace: ' + (activeWorkspace()?.name ?? 'None')
 			"
 		>
 			@if (!isDesktop() || !collapsed()) {
-				<span
-					class="text-xs font-medium text-gray-600 dark:text-gray-300"
-				>
+				<span class="text-xs font-medium text-ink-2">
 					{{ activeWorkspace()?.name }}
 				</span>
 			}
@@ -104,7 +103,7 @@
 		<!-- Unobtrusive version label (expanded only) -->
 		@if (!isDesktop() || !collapsed()) {
 			<div
-				class="px-3 pt-1 text-right text-[10px] leading-none text-gray-400 dark:text-gray-600 select-none"
+				class="px-3 pt-1 text-right text-[10px] leading-none font-mono text-ink-5 select-none"
 			>
 				v{{ appVersion }}
 			</div>

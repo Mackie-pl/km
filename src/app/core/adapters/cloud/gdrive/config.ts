@@ -8,6 +8,9 @@
  *   desktop path. Its ID + (non-confidential installed-app) secret are injected
  *   at build time from env vars — this repo is public, so they are NOT committed.
  *   See ./desktop-secrets.ts and scripts/generate-gdrive-secrets.mjs.
+ * - **Android** client (Auth Code + PKCE with a custom-scheme deep-link redirect)
+ *   for the Tauri Android path — public by design (no secret; secured by package
+ *   name + signing SHA-1), so the ID is committed here like the Web client.
  */
 
 import { DESKTOP_OAUTH } from './desktop-secrets';
@@ -23,6 +26,30 @@ export const GOOGLE_OAUTH_CLIENT_ID =
  */
 export const GOOGLE_OAUTH_DESKTOP_CLIENT_ID = DESKTOP_OAUTH.clientId;
 export const GOOGLE_OAUTH_DESKTOP_CLIENT_SECRET = DESKTOP_OAUTH.clientSecret;
+
+/**
+ * Android ("Android app") OAuth client, used by the Tauri Android custom-scheme
+ * deep-link flow. Public by design (no secret — secured by the app's package name
+ * `space.dotta.app` + signing SHA-1), so committing it here is safe, just like the
+ * Web client above.
+ */
+export const GOOGLE_OAUTH_ANDROID_CLIENT_ID =
+	'311145204704-q253fucp3v6fnintq3c285kkvhrqqg5c.apps.googleusercontent.com';
+
+/**
+ * Reversed-domain custom scheme for the Android redirect, derived from the client
+ * ID's prefix (everything before `.apps.googleusercontent.com`). This MUST match
+ * the `<data android:scheme="…">` in AndroidManifest.xml exactly.
+ */
+export const GOOGLE_OAUTH_ANDROID_SCHEME = `com.googleusercontent.apps.${GOOGLE_OAUTH_ANDROID_CLIENT_ID.replace(
+	/\.apps\.googleusercontent\.com$/,
+	'',
+)}`;
+
+/** Full custom-scheme redirect URI captured by the deep-link intent-filter. */
+export function androidRedirectUri(): string {
+	return `${GOOGLE_OAUTH_ANDROID_SCHEME}:/oauth2redirect`;
+}
 
 /**
  * Full Drive scope — chosen so the adapter can attach to pre-existing folders

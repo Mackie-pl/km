@@ -213,6 +213,7 @@ export class WorkspaceService {
 	 * workspace, or set activeWorkspace to null if none are left.
 	 */
 	removeWorkspace(id: string): void {
+		const removed = this.workspaces().find((w) => w.id === id);
 		this.workspaces.update((list) => list.filter((w) => w.id !== id));
 
 		// If the removed workspace was the active one, activate a fallback
@@ -226,6 +227,7 @@ export class WorkspaceService {
 		}
 
 		this.persist();
+		if (removed) this.#disconnectOrphanedAdapters(removed.activeSyncAdapters);
 	}
 
 	// ========================================================================
@@ -238,6 +240,9 @@ export class WorkspaceService {
 	 * @param adapterIds - Array of adapter IDs to enable
 	 */
 	setWorkspaceAdapters(workspaceId: string, adapterIds: string[]): void {
+		const previous =
+			this.workspaces().find((w) => w.id === workspaceId)
+				?.activeSyncAdapters ?? [];
 		this.workspaces.update((list) =>
 			list.map((w) =>
 				w.id === workspaceId
@@ -252,6 +257,9 @@ export class WorkspaceService {
 			);
 		}
 		this.persist();
+		// Adapters dropped from this workspace may now be unused everywhere.
+		const removed = previous.filter((id) => !adapterIds.includes(id));
+		this.#disconnectOrphanedAdapters(removed);
 	}
 
 	/**
@@ -325,5 +333,22 @@ export class WorkspaceService {
 			});
 		}
 		this.persist();
+	}
+
+	/**
+	 * Disconnect each candidate adapter that is no longer referenced by ANY
+	 * workspace, releasing its global state (e.g. a shared Drive OAuth token and
+	 * its reconnect prompt). Adapters still used by another workspace are left
+	 * untouched — the Drive token is intentionally shared across workspaces.
+	 */
+	#disconnectOrphanedAdapters(candidateIds: string[]): void {
+		if (candidateIds.length === 0) return;
+		const stillUsed = new Set(
+			this.workspaces().flatMap((w) => w.activeSyncAdapters),
+		);
+		const orphaned = candidateIds.filter((id) => !stillUsed.has(id));
+		for (const adapter of this.adapterManager.getAdaptersByIds(orphaned)) {
+			void adapter.disconnect?.();
+		}
 	}
 }

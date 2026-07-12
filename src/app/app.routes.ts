@@ -20,6 +20,25 @@ export const routes: Routes = [
 		component: WorkspaceWizardComponent,
 	},
 	{
+		path: 'vault',
+		loadComponent: () =>
+			import('@ui/pages/vault/vault-browser').then(
+				(m) => m.VaultBrowserComponent,
+			),
+	},
+	{
+		path: 'activity',
+		loadComponent: () =>
+			import('@ui/pages/activity/activity').then((m) => m.Activity),
+	},
+	{
+		path: 'agent/:agentId',
+		loadComponent: () =>
+			import('@ui/pages/agent-detail/agent-detail').then(
+				(m) => m.AgentDetail,
+			),
+	},
+	{
 		matcher: filePathMatcher,
 		canMatch: [entryExistsGuard],
 		loadComponent: () =>

@@ -18,11 +18,11 @@ import { LucideSun, LucideMoon, LucideMonitor } from '@lucide/angular';
 	template: `
 		<button
 			type="button"
-			class="flex flex-col items-center gap-2 py-4 px-2 rounded-xl border-2 cursor-pointer transition-all duration-200"
+			class="flex flex-col items-center gap-2 py-4 px-2 rounded-card border cursor-pointer transition-all duration-200"
 			[ngClass]="
 				selected()
-					? 'border-indigo-500 dark:border-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 text-gray-900 dark:text-gray-100'
-					: 'border-transparent hover:border-gray-300 dark:hover:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+					? 'border-accent-border bg-accent-bg text-accent-text shadow-hairline'
+					: 'border-line bg-surface text-ink-3 hover:bg-surface-2 hover:text-ink-1'
 			"
 			(click)="select.emit()"
 		>
@@ -33,7 +33,7 @@ import { LucideSun, LucideMoon, LucideMonitor } from '@lucide/angular';
 			} @else {
 				<svg lucideMonitor class="size-6"></svg>
 			}
-			<span class="text-sm font-medium">{{ label() }}</span>
+			<span class="text-[12.5px] font-semibold">{{ label() }}</span>
 		</button>
 	`,
 	changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,8 +1,8 @@
 <!-- Expanded adapter management panel for a single workspace -->
-<div class="border-t border-gray-200 dark:border-gray-700 px-3 py-3">
+<div class="border-t border-line px-3 py-3">
 	@if (workspace().activeSyncAdapters.length > 0) {
 	<span
-		class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+		class="text-[10.5px] font-bold uppercase tracking-[0.08em] text-ink-4"
 	>
 		Sync Adapters
 	</span>
@@ -27,7 +27,7 @@
 	></app-add-adapter-section>
 
 	@if (workspace().activeSyncAdapters.length === 0) {
-	<div class="text-xs text-gray-400 dark:text-gray-500 text-center py-2">
+	<div class="text-xs text-ink-4 text-center py-2">
 		No sync adapters configured.
 	</div>
 	}

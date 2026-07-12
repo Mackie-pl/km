@@ -15,24 +15,19 @@
 
 	<!-- Panel -->
 	<div
-		class="relative flex flex-col w-full max-w-lg mx-4 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
-		[class.ring-2]="true"
-		[class.ring-indigo-500/30]="true"
+		class="relative flex flex-col w-full max-w-lg mx-4 bg-surface rounded-card shadow-window border border-line overflow-hidden"
 	>
 		<!-- Search input row -->
 		<div
-			class="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700"
+			class="flex items-center gap-3 px-4 py-3 border-b border-line"
 		>
-			<svg
-				lucideSearch
-				class="size-5 shrink-0 text-gray-400 dark:text-gray-500"
-			></svg>
+			<svg lucideSearch class="size-5 shrink-0 text-ink-4"></svg>
 			<input
 				#searchInput
 				[value]="search.query()"
 				(input)="onQueryChange($event.target.value)"
 				placeholder="Search files..."
-				class="flex-1 bg-transparent text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+				class="flex-1 bg-transparent text-sm text-ink-1 placeholder-ink-4 outline-none"
 				autocomplete="off"
 				spellcheck="false"
 			/>
@@ -41,9 +36,7 @@
 		<!-- Results list -->
 		<div class="overflow-y-auto max-h-[60vh]">
 			@if (search.results().length === 0 && search.query().length > 0) {
-				<div
-					class="px-4 py-8 text-center text-sm text-gray-400 dark:text-gray-500"
-				>
+				<div class="px-4 py-8 text-center text-sm text-ink-4">
 					No results found
 				</div>
 			}
@@ -69,12 +62,12 @@
 
 		<!-- Footer hint -->
 		<div
-			class="flex items-center gap-3 px-4 py-2 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500"
+			class="flex items-center gap-3 px-4 py-2 border-t border-line text-xs text-ink-4"
 		>
 			<span>↑↓ Navigate</span>
-			<span class="text-gray-300 dark:text-gray-600">·</span>
+			<span class="text-ink-5">·</span>
 			<span>⏎ Open</span>
-			<span class="text-gray-300 dark:text-gray-600">·</span>
+			<span class="text-ink-5">·</span>
 			<span>Esc Close</span>
 		</div>
 	</div>

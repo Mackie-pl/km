@@ -36,7 +36,9 @@ interface Crumb {
 	template: `
 		<div class="p-4 space-y-3">
 			<!-- Breadcrumbs -->
-			<div class="flex flex-wrap items-center gap-1 text-xs text-gray-500">
+			<div
+				class="flex flex-wrap items-center gap-1 text-xs font-mono text-ink-3"
+			>
 				@for (
 					crumb of breadcrumbs();
 					track crumb.id;
@@ -47,12 +49,12 @@ interface Crumb {
 						type="button"
 						(click)="crumbTo(i)"
 						[disabled]="last"
-						class="rounded px-1 py-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:font-medium disabled:text-gray-900 dark:disabled:text-gray-100"
+						class="rounded px-1 py-0.5 hover:bg-hairline disabled:font-medium disabled:text-ink-1"
 					>
 						{{ crumb.name }}
 					</button>
 					@if (!last) {
-						<span class="text-gray-400">/</span>
+						<span class="text-ink-4">/</span>
 					}
 				}
 			</div>
@@ -60,41 +62,44 @@ interface Crumb {
 			<!-- Body -->
 			@if (needsAuth()) {
 				<div class="py-8 text-center space-y-3">
-					<p class="text-sm text-gray-500">
+					<p class="text-sm text-ink-3">
 						Connect your Google account to browse folders.
 					</p>
 					<button
 						type="button"
 						(click)="connect()"
-						class="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
+						class="rounded-btn bg-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-accent-2"
 					>
 						Connect Google Drive
 					</button>
 				</div>
 			} @else if (loading()) {
 				<div
-					class="flex items-center justify-center gap-2 py-8 text-sm text-gray-500"
+					class="flex items-center justify-center gap-2 py-8 text-sm text-ink-3"
 				>
-					<svg lucideLoader class="size-4 animate-spin"></svg>
+					<svg
+						lucideLoader
+						class="size-4 animate-spin text-accent-2"
+					></svg>
 					Loading…
 				</div>
 			} @else if (error(); as e) {
 				<div class="py-6 text-center text-sm text-red-500">{{ e }}</div>
 			} @else {
 				<div
-					class="max-h-64 overflow-auto rounded-lg border border-gray-200 dark:border-gray-700"
+					class="max-h-64 overflow-auto rounded-lg border border-line bg-surface-2"
 				>
 					@for (folder of subfolders(); track folder.id) {
 						<button
 							type="button"
 							(click)="open(folder)"
-							class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+							class="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] font-medium text-ink-2 hover:bg-hairline"
 						>
-							<svg lucideFolder class="size-4 text-gray-400"></svg>
+							<svg lucideFolder class="size-4 text-ink-4"></svg>
 							{{ folder.name }}
 						</button>
 					} @empty {
-						<div class="px-3 py-6 text-center text-xs text-gray-500">
+						<div class="px-3 py-6 text-center text-xs text-ink-4">
 							No sub-folders here.
 						</div>
 					}
@@ -107,13 +112,13 @@ interface Crumb {
 						[value]="newFolderName()"
 						(input)="newFolderName.set($any($event.target).value)"
 						placeholder="New folder name"
-						class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm outline-none focus:border-indigo-500"
+						class="flex-1 rounded-lg border border-line bg-surface px-3 py-1.5 text-sm text-ink-1 placeholder-ink-4 outline-none focus:border-accent"
 					/>
 					<button
 						type="button"
 						(click)="createFolder()"
 						[disabled]="creating() || newFolderName().trim() === ''"
-						class="inline-flex items-center gap-1 rounded-lg border border-gray-300 dark:border-gray-600 px-2.5 py-1.5 text-xs font-medium hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
+						class="inline-flex items-center gap-1 rounded-btn border border-line px-2.5 py-1.5 text-xs font-semibold text-ink-2 hover:bg-hairline disabled:opacity-50"
 					>
 						<svg lucideFolderPlus class="size-3.5"></svg>
 						Create
@@ -126,7 +131,7 @@ interface Crumb {
 				<button
 					type="button"
 					(click)="cancel()"
-					class="rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
+					class="rounded-btn px-3 py-1.5 text-xs font-semibold text-ink-3 hover:bg-hairline hover:text-ink-1"
 				>
 					Cancel
 				</button>
@@ -134,7 +139,7 @@ interface Crumb {
 					type="button"
 					(click)="select()"
 					[disabled]="atRoot()"
-					class="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+					class="rounded-btn bg-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-accent-2 disabled:opacity-50 disabled:cursor-not-allowed"
 				>
 					Select this folder
 				</button>

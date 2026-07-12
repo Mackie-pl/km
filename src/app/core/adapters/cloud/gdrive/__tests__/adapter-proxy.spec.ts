@@ -14,7 +14,7 @@ describe('GDriveAdapterProxy', () => {
 		expect(proxy.isLocal).toBe(false);
 	});
 
-	it('is available in browser + desktop Tauri, but not Tauri-on-Android', () => {
+	it('is available on browser, desktop Tauri, and Tauri-on-Android', () => {
 		const w = window as { __TAURI_INTERNALS__?: unknown };
 		const had = '__TAURI_INTERNALS__' in w;
 		const prev = w.__TAURI_INTERNALS__;
@@ -33,7 +33,7 @@ describe('GDriveAdapterProxy', () => {
 			expect(proxy.isAvailable()).toBe(true); // desktop Tauri (non-Android UA)
 
 			setUa('Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36');
-			expect(proxy.isAvailable()).toBe(false); // Tauri-on-Android
+			expect(proxy.isAvailable()).toBe(true); // Tauri-on-Android (deep-link driver)
 		} finally {
 			if (had) w.__TAURI_INTERNALS__ = prev;
 			else delete w.__TAURI_INTERNALS__;

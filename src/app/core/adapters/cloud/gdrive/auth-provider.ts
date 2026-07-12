@@ -68,6 +68,17 @@ export class GDriveAuthProvider implements DriveAuth {
 	}
 
 	/**
+	 * Forget the stored token and clear the reconnect flag. Called when no
+	 * workspace uses Drive any more, so the app stops holding an orphaned token
+	 * and stops prompting to reconnect. Idempotent — safe when never signed in.
+	 */
+	async signOut(): Promise<void> {
+		this.#reauth.set(false);
+		this.#refreshing = null;
+		await this.tokenStore.clear();
+	}
+
+	/**
 	 * Return a valid access token. Uses the cached one when fresh (unless
 	 * `force`); otherwise acquires. `interactive` gates whether a sign-in UI may
 	 * be shown — background callers pass false and get a {@link ReauthRequiredError}

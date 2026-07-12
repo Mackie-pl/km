@@ -15,6 +15,9 @@ import { Slice } from '@milkdown/kit/prose/model';
 import { VaultStore } from '@vault/store';
 import { SyncEngineService } from '@core/sync/sync-engine';
 import { NoteToolbarComponent } from '@ui/partials/note-toolbar/note-toolbar.component';
+import { ConflictBannerComponent } from '@ui/partials/conflict-banner/conflict-banner.component';
+import { ReviewBarComponent } from '@ui/partials/review-bar/review-bar.component';
+import { ActivityRailComponent } from '@ui/partials/activity-rail/activity-rail.component';
 import {
 	parseFrontmatter,
 	serializeFrontmatter,
@@ -24,7 +27,12 @@ import type { NoteMetadata } from '@core/types/note-metadata';
 @Component({
 	selector: 'app-editor',
 	standalone: true,
-	imports: [NoteToolbarComponent],
+	imports: [
+		NoteToolbarComponent,
+		ConflictBannerComponent,
+		ReviewBarComponent,
+		ActivityRailComponent,
+	],
 	templateUrl: './editor.html',
 	styles: `
 		:host::ng-deep .milkdown {

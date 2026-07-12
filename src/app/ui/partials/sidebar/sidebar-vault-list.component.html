@@ -10,7 +10,7 @@
 	<!-- Header row: label + action buttons (only when items exist) -->
 	<div class="flex items-center justify-between px-3 py-2">
 		<span
-			class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+			class="text-[10.5px] font-bold uppercase tracking-[0.08em] text-ink-4"
 		>
 			Vault
 		</span>
@@ -19,18 +19,18 @@
 			class="flex items-center gap-1"
 		>
 			<button
-				class="flex items-center gap-3 rounded-lg border-none bg-transparent px-3 py-2 text-left text-sm text-gray-500 transition-colors duration-150 hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+				class="flex items-center justify-center size-7 rounded-lg border-none bg-transparent cursor-pointer text-ink-3 transition-colors duration-150 hover:bg-hairline hover:text-ink-1"
 				(click)="createNewFolder()"
 				[attr.aria-label]="'New Folder'"
 			>
-				<svg lucideFolderPlus class="size-5 flex-shrink-0"></svg>
+				<svg lucideFolderPlus class="size-4.5 flex-shrink-0"></svg>
 			</button>
 			<button
-				class="flex items-center gap-3 rounded-lg border-none bg-transparent px-3 py-2 text-left text-sm text-gray-500 transition-colors duration-150 hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+				class="flex items-center justify-center size-7 rounded-lg border-none bg-transparent cursor-pointer text-ink-3 transition-colors duration-150 hover:bg-hairline hover:text-ink-1"
 				(click)="createNewFile()"
 				[attr.aria-label]="'New File'"
 			>
-				<svg lucideFilePlus class="size-5 flex-shrink-0"></svg>
+				<svg lucideFilePlus class="size-4.5 flex-shrink-0"></svg>
 			</button>
 		</span>
 	</div>
@@ -45,14 +45,10 @@
 				type="button"
 				(click)="toggleFilterTag(tag)"
 				class="inline-flex cursor-pointer items-center rounded-full border-none px-2 py-0.5 text-xs font-medium transition-colors"
-				[class.bg-indigo-50]="activeFilterTags().has(tag)"
-				[class.dark:bg-indigo-900\/40]="activeFilterTags().has(tag)"
-				[class.text-indigo-600]="activeFilterTags().has(tag)"
-				[class.dark:text-indigo-400]="activeFilterTags().has(tag)"
-				[class.bg-gray-100]="!activeFilterTags().has(tag)"
-				[class.dark:bg-gray-800]="!activeFilterTags().has(tag)"
-				[class.text-gray-500]="!activeFilterTags().has(tag)"
-				[class.dark:text-gray-400]="!activeFilterTags().has(tag)"
+				[class.bg-accent-bg]="activeFilterTags().has(tag)"
+				[class.text-accent-text]="activeFilterTags().has(tag)"
+				[class.bg-hairline]="!activeFilterTags().has(tag)"
+				[class.text-ink-3]="!activeFilterTags().has(tag)"
 			>
 				{{ tag }}
 			</button>
@@ -61,7 +57,7 @@
 			<button
 				type="button"
 				(click)="clearFilter()"
-				class="inline-flex cursor-pointer items-center rounded-full border-none px-2 py-0.5 text-xs font-medium text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
+				class="inline-flex cursor-pointer items-center rounded-full border-none px-2 py-0.5 text-xs font-medium text-ink-4 transition-colors hover:text-ink-2"
 			>
 				Clear
 			</button>
@@ -72,7 +68,7 @@
 	<div class="flex-1 space-y-1 overflow-y-auto">
 		@if (treeNodes().length) {
 			<hr
-				class="mx-3 mb-1 border-gray-200 dark:border-gray-700"
+				class="mx-3 mb-1 border-hairline"
 				[class.hidden]="isFilterActive()"
 			/>
 
@@ -96,9 +92,21 @@
 			}
 		}
 
+		<!-- Agents live in the tree beside notes — indigo chip, hairline ring, status dot -->
+		@if (!isFilterActive()) {
+			@for (agent of agentsService.agents(); track agent.id) {
+				<app-sidebar-agent-row
+					class="block mx-1"
+					[agent]="agent"
+					[running]="runningAgentIds().has(agent.id)"
+					[collapsed]="collapsed()"
+				/>
+			}
+		}
+
 		@if (!treeNodes().length && isFilterActive()) {
 			<div
-				class="rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+				class="rounded-lg bg-hairline px-3 py-2 text-[13px] text-ink-3"
 			>
 				No notes match the selected tags.
 			</div>
@@ -107,27 +115,27 @@
 		@if (!treeNodes().length && !isFilterActive()) {
 			<!-- Empty state: New Folder / New File buttons -->
 			<button
-				class="flex w-full items-center gap-3 rounded-lg border-none bg-transparent px-3 py-2 text-left text-sm text-gray-500 transition-colors duration-150 hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+				class="flex w-full items-center gap-3 rounded-lg border-none bg-transparent px-3 py-2 text-left text-[13px] text-ink-3 transition-colors duration-150 hover:bg-hairline hover:text-ink-1"
 				(click)="createNewFolder()"
 				[attr.aria-label]="'New Folder'"
 			>
 				<svg lucideFolderPlus class="size-5 flex-shrink-0"></svg>
-				<span class="text-sm font-medium" [class.sr-only]="collapsed()"
+				<span class="text-[13px] font-medium" [class.sr-only]="collapsed()"
 					>New Folder</span
 				>
 			</button>
 			<button
-				class="flex w-full items-center gap-3 rounded-lg border-none bg-transparent px-3 py-2 text-left text-sm text-gray-500 transition-colors duration-150 hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+				class="flex w-full items-center gap-3 rounded-lg border-none bg-transparent px-3 py-2 text-left text-[13px] text-ink-3 transition-colors duration-150 hover:bg-hairline hover:text-ink-1"
 				(click)="createNewFile()"
 				[attr.aria-label]="'New File'"
 			>
 				<svg lucideFilePlus class="size-5 flex-shrink-0"></svg>
-				<span class="text-sm font-medium" [class.sr-only]="collapsed()"
+				<span class="text-[13px] font-medium" [class.sr-only]="collapsed()"
 					>New File</span
 				>
 			</button>
 			<div
-				class="rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+				class="rounded-lg bg-hairline px-3 py-2 text-[13px] text-ink-3"
 			>
 				No notes yet
 			</div>
@@ -144,17 +152,17 @@
 		(contextmenu)="$event.preventDefault()"
 	>
 		<div
-			class="flex min-w-36 flex-col rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+			class="flex min-w-36 flex-col rounded-xl border border-line bg-surface py-1 shadow-popover"
 		>
 			<button
-				class="flex cursor-pointer items-center gap-3 border-none bg-transparent px-3 py-2.5 text-left text-sm text-gray-900 transition-colors duration-150 hover:bg-gray-200 dark:text-gray-100 dark:hover:bg-gray-800"
+				class="flex cursor-pointer items-center gap-3 border-none bg-transparent px-3 py-2 text-left text-[13px] font-medium text-ink-1 transition-colors duration-150 hover:bg-hairline"
 				(click)="createNewFile()"
 			>
 				<svg lucideFilePlus class="size-4 flex-shrink-0"></svg>
 				New File
 			</button>
 			<button
-				class="flex cursor-pointer items-center gap-3 border-none bg-transparent px-3 py-2.5 text-left text-sm text-gray-900 transition-colors duration-150 hover:bg-gray-200 dark:text-gray-100 dark:hover:bg-gray-800"
+				class="flex cursor-pointer items-center gap-3 border-none bg-transparent px-3 py-2 text-left text-[13px] font-medium text-ink-1 transition-colors duration-150 hover:bg-hairline"
 				(click)="createNewFolder()"
 			>
 				<svg lucideFolderPlus class="size-4 flex-shrink-0"></svg>

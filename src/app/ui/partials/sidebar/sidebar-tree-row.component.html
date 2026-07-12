@@ -6,7 +6,7 @@
 	<!-- Renaming state -->
 	@if (node().entry.type === 'folder') {
 		<footer
-			class="flex items-center w-full gap-3 px-3 py-2.5"
+			class="flex items-center w-full gap-3 px-3 py-2"
 			[style.padding-left.px]="12 + node().depth * 16"
 		>
 			<svg lucideFolder class="size-5 flex-shrink-0"></svg>
@@ -27,12 +27,12 @@
 					})
 				"
 				(keydown.escape)="cancelRename.emit()"
-				class="flex-1 bg-transparent border-b border-indigo-500 dark:border-indigo-400 text-sm text-gray-900 dark:text-gray-100 outline-none"
+				class="flex-1 bg-transparent border-b border-accent text-[13px] text-ink-1 outline-none"
 			/>
 		</footer>
 	} @else {
 		<nav
-			class="flex items-center w-full gap-3 px-3 py-2.5"
+			class="flex items-center w-full gap-3 px-3 py-2"
 			[style.padding-left.px]="36 + node().depth * 16"
 		>
 			<span class="size-5 flex items-center justify-center text-sm flex-shrink-0">{{ node().icon ?? DEFAULT_NOTE_ICON }}</span>
@@ -53,7 +53,7 @@
 						name: $any($event.target).value,
 					})
 				"
-				class="flex-1 bg-transparent border-b border-indigo-500 dark:border-indigo-400 text-sm text-gray-900 dark:text-gray-100 outline-none"
+				class="flex-1 bg-transparent border-b border-accent text-[13px] text-ink-1 outline-none"
 			/>
 		</nav>
 	}
@@ -70,25 +70,24 @@
 		[attr.aria-label]="node().entry.name"
 	>
 		<button
-			class="flex items-center justify-center size-5 flex-shrink-0 border-none bg-transparent cursor-pointer transition-transform duration-150 text-gray-500 dark:text-gray-400"
+			class="flex items-center justify-center size-5 flex-shrink-0 border-none bg-transparent cursor-pointer transition-transform duration-150 text-ink-4"
 			[class.rotate-90]="expandedFolders().has(node().entry.id)"
 			(click)="toggleFolder.emit(node().entry.id)"
 			[attr.aria-label]="'Expand folder'"
 		>
 			<svg lucideChevronRight class="size-4"></svg>
 		</button>
-		<svg
-			lucideFolder
-			class="size-5 flex-shrink-0 text-gray-500 dark:text-gray-400"
-		></svg>
-		<span class="text-sm truncate" [class.sr-only]="collapsed()">{{
-			node().entry.name
-		}}</span>
+		<svg lucideFolder class="size-5 flex-shrink-0 text-ink-4"></svg>
+		<span
+			class="text-[13px] font-semibold truncate"
+			[class.sr-only]="collapsed()"
+			>{{ node().entry.name }}</span
+		>
 	</div>
 } @else {
 	<!-- File row -->
 	<button
-		class="entry-btn font-semibold"
+		class="entry-btn font-medium"
 		[style.padding-left.px]="36 + node().depth * 16"
 		[tuiDropdown]="contextMenu"
 		[tuiDropdownManual]="contextEntry()?.id === node().entry.id"
@@ -108,7 +107,7 @@
 		} @else {
 			<span class="size-5 flex items-center justify-center text-sm flex-shrink-0">{{ displayIcon() ?? DEFAULT_NOTE_ICON }}</span>
 		}
-		<span class="text-sm truncate" [class.sr-only]="collapsed()">{{
+		<span class="text-[13px] truncate" [class.sr-only]="collapsed()">{{
 			node().entry.name
 		}}</span>
 	</button>
@@ -117,24 +116,26 @@
 <!-- Context menu template -->
 <ng-template #contextMenu>
 	@if (contextEntry(); as entry) {
-		<div class="flex flex-col min-w-32 py-1">
+		<div
+			class="flex flex-col min-w-36 py-1 rounded-xl border border-line bg-surface shadow-popover"
+		>
 			<button
 				[class.hidden]="entry.type !== 'folder'"
-				class="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors duration-150 border-none bg-transparent cursor-pointer text-left"
+				class="flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-ink-1 hover:bg-hairline transition-colors duration-150 border-none bg-transparent cursor-pointer text-left"
 				(click)="onNewFileInFolder(entry)"
 			>
 				<svg lucideFilePlus class="size-4 flex-shrink-0"></svg>
 				New File
 			</button>
 			<button
-				class="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors duration-150 border-none bg-transparent cursor-pointer text-left"
+				class="flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-ink-1 hover:bg-hairline transition-colors duration-150 border-none bg-transparent cursor-pointer text-left"
 				(click)="startRename.emit(entry)"
 			>
 				<svg lucidePencil class="size-4 flex-shrink-0"></svg>
 				Rename
 			</button>
 			<button
-				class="flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors duration-150 border-none bg-transparent cursor-pointer text-left"
+				class="flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-red-600 dark:text-red-400 hover:bg-hairline transition-colors duration-150 border-none bg-transparent cursor-pointer text-left"
 				(click)="deleteEntry.emit(entry)"
 			>
 				<svg lucideTrash2 class="size-4 flex-shrink-0"></svg>

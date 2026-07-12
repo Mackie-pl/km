@@ -12,3 +12,15 @@ export function isTauriRuntime(): boolean {
 		(window as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ != null
 	);
 }
+
+/**
+ * True when running inside the Tauri **Android** runtime (as opposed to a desktop
+ * Tauri build). Used to pick the deep-link OAuth driver over the loopback one.
+ */
+export function isAndroidRuntime(): boolean {
+	return (
+		isTauriRuntime() &&
+		typeof navigator !== 'undefined' &&
+		/android/i.test(navigator.userAgent)
+	);
+}

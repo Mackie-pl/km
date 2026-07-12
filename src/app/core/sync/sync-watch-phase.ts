@@ -55,10 +55,13 @@ export class SyncWatchPhase {
 		if (this.watching) return;
 		this.watching = true;
 
-		try {
-			for (const { adapter, root } of this.getActiveAdapters()) {
-				if (!adapter.watch) continue;
+		for (const { adapter, root } of this.getActiveAdapters()) {
+			if (!adapter.watch) continue;
 
+			// Isolate per-adapter: one adapter that can't start watching (e.g.
+			// gdrive throwing ReauthRequiredError) must not prevent the others'
+			// watchers OR the browser visibility refresh below from being wired up.
+			try {
 				const unsubscribe = await adapter.watch(
 					(events: WatchEvent[]) => {
 						this.#handleExternalChanges(events, adapter, root);
@@ -66,15 +69,15 @@ export class SyncWatchPhase {
 					root,
 				);
 				this.watchCleanups.push(unsubscribe);
+			} catch (err) {
+				this.reportError(err);
 			}
+		}
 
-			// Browser-only: full re-scan when the tab becomes visible
-			// (the File System Access API has no native watcher).
-			if (!this.#hasTauriAdapter()) {
-				this.#startVisibilityRefresh();
-			}
-		} catch (err) {
-			this.reportError(err);
+		// Browser-only: full re-scan when the tab becomes visible or the window
+		// regains focus (the File System Access API has no native watcher).
+		if (!this.#hasTauriAdapter()) {
+			this.#startVisibilityRefresh();
 		}
 	}
 
@@ -314,16 +317,28 @@ export class SyncWatchPhase {
 		);
 	}
 
-	/** Listen for visibilitychange → forcePull on tab focus. */
+	/**
+	 * Re-pull from disk when the tab becomes visible OR the window regains focus.
+	 *
+	 * `visibilitychange` fires when switching tabs or minimizing, but alt-tabbing
+	 * to another app (e.g. editing the file in Notepad) and back often leaves the
+	 * tab "visible" and only fires window `focus` — so we listen to both. Repeated
+	 * `forcePull` calls are cheap and coalesced by the engine's reentrancy guard.
+	 */
 	#startVisibilityRefresh(): void {
 		const onVisible = (): void => {
 			if (document.visibilityState === 'visible') {
 				void this.forcePull();
 			}
 		};
+		const onFocus = (): void => {
+			void this.forcePull();
+		};
 		document.addEventListener('visibilitychange', onVisible);
+		window.addEventListener('focus', onFocus);
 		this.visibilityCleanup = () => {
 			document.removeEventListener('visibilitychange', onVisible);
+			window.removeEventListener('focus', onFocus);
 		};
 	}
 

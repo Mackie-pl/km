@@ -1,4 +1,5 @@
 import { isTempFilePath } from '@core/utils/file-patterns';
+import { hashContent } from '@vault/vault-utils';
 import {
 	VAULT_ENTRY_TYPES,
 	type VaultStore,
@@ -78,7 +79,11 @@ export class SyncPushPhase {
 
 			try {
 				await this.#pushEntry(entry, adapter, root);
-				await this.vault.markAdapterSynced(entry.id, adapter.id);
+				await this.vault.markAdapterSynced(
+					entry.id,
+					adapter.id,
+					this.#pushedContentHash(entry),
+				);
 				debugLog(
 					`[Sync] push ok "${entry.path}" → ${adapter.id} (rev ${String(entry.revision)})`,
 				);
@@ -98,6 +103,17 @@ export class SyncPushPhase {
 		}
 
 		return errors;
+	}
+
+	/**
+	 * Hash of the file content just pushed — recorded as the adapter's sync
+	 * base so the reconciler can recognize a stale remote read later.
+	 * Undefined for folders and deletes (no content base to track).
+	 */
+	#pushedContentHash(entry: VaultEntry): string | undefined {
+		return entry.type === VAULT_ENTRY_TYPES.FILE && !entry.deleted
+			? hashContent(entry.content ?? '')
+			: undefined;
 	}
 
 	/** Push a single entry to its adapter — handles deleted, rename, folder, and file cases. */

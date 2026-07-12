@@ -264,6 +264,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_android_fs::init())
+        .plugin(tauri_plugin_deep_link::init())
         .manage(OAuthLoopback::default())
         // Register commands so the frontend can invoke them via `invoke()`
         .invoke_handler(tauri::generate_handler![

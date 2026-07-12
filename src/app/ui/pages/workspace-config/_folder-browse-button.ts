@@ -16,19 +16,19 @@ import { LucidePlus } from '@lucide/angular';
 	imports: [LucidePlus],
 	template: `
 		@if (pickingFolder()) {
-			<span class="text-sm text-gray-500">Opening folder picker...</span>
+			<span class="text-sm text-ink-3">Opening folder picker...</span>
 		} @else if (folderPath()) {
 			<div class="space-y-1">
-				<div class="font-medium text-gray-900 dark:text-gray-100">
+				<div class="text-[13.5px] font-semibold text-ink-1">
 					{{ folderName() }}
 				</div>
-				<div class="truncate text-xs text-gray-500">
+				<div class="truncate text-xs font-mono text-ink-3">
 					{{ folderPath() }}
 				</div>
 			</div>
 		} @else {
-			<svg lucidePlus class="mx-auto size-8 text-gray-400"></svg>
-			<span class="text-sm font-medium text-indigo-600">
+			<svg lucidePlus class="mx-auto size-8 text-ink-4"></svg>
+			<span class="text-[12.5px] font-semibold text-accent-text">
 				Browse Folders
 			</span>
 		}

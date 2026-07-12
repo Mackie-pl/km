@@ -1,0 +1,28 @@
+<div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+	<button
+		type="button"
+		class="underline underline-offset-2 hover:opacity-80 cursor-pointer bg-transparent border-none p-0 text-inherit truncate max-w-64"
+		[class.hidden]="!name()"
+		(click)="openVersion.emit()"
+		title="Open to compare"
+	>
+		{{ name() }}
+	</button>
+	<span class="flex items-center gap-2 ml-auto">
+		<button
+			type="button"
+			class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-warn-icon hover:opacity-90 text-white transition-opacity"
+			[class.hidden]="!useLabel()"
+			(click)="useVersion.emit()"
+		>
+			{{ useLabel() }}
+		</button>
+		<button
+			type="button"
+			class="px-2.5 py-1 rounded-lg text-xs font-semibold border border-warn-border text-warn-text hover:bg-warn-tint transition-colors"
+			(click)="discardVersion.emit()"
+		>
+			{{ discardLabel() }}
+		</button>
+	</span>
+</div>

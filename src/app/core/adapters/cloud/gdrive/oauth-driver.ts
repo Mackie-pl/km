@@ -3,13 +3,13 @@
  *
  * - Browser → Google Identity Services token model ({@link ./oauth}).
  * - Tauri desktop → Auth Code + PKCE over a 127.0.0.1 loopback ({@link ./oauth-desktop}).
- * - Android (next phase) → a custom-scheme deep-link driver, slotted in here.
+ * - Tauri Android → Auth Code + PKCE with a custom-scheme deep link ({@link ./oauth-android}).
  *
  * Each path is loaded via dynamic import so its runtime-specific dependencies
- * (GIS script vs Tauri `invoke`/opener) never land in the other bundle.
+ * (GIS script vs Tauri `invoke`/opener/deep-link) never land in the other bundle.
  */
 
-import { isTauriRuntime } from '@core/utils/tauri-runtime';
+import { isAndroidRuntime, isTauriRuntime } from '@core/utils/tauri-runtime';
 import type { GDriveTokenSet } from './token-store';
 
 export interface OAuthDriver {
@@ -24,6 +24,10 @@ export interface OAuthDriver {
 
 export async function getOAuthDriver(): Promise<OAuthDriver> {
 	if (isTauriRuntime()) {
+		if (isAndroidRuntime()) {
+			const { androidDriver } = await import('./oauth-android');
+			return androidDriver;
+		}
 		const { desktopDriver } = await import('./oauth-desktop');
 		return desktopDriver;
 	}

@@ -43,7 +43,7 @@ export class ThemeService {
 		this.apply(mode);
 	}
 
-	/** Toggle the .dark class on <html> based on the resolved theme */
+	/** Toggle the .dark class on <html> and sync Taiga to the resolved theme */
 	private apply(mode: Theme): void {
 		const isDark =
 			mode === THEME.SYSTEM

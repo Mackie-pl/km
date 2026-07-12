@@ -58,6 +58,11 @@ function looksLikeDriveId(value: string): boolean {
 	return /^[A-Za-z0-9_-]{24,}$/.test(value);
 }
 
+/** True for a DriveClient "Drive API 404" error (file id no longer exists). */
+function isDriveNotFoundError(err: unknown): boolean {
+	return err instanceof Error && err.message.startsWith('Drive API 404');
+}
+
 interface GDriveContext {
 	client: DriveClient;
 	index: PathIndex;
@@ -108,8 +113,16 @@ export class GDriveAdapter implements Adapter {
 		const { index, client } = this.#context(assertRoot(root));
 		await index.ensureBuilt();
 		const node = index.getNode(path);
-		if (!node) throw new Error(`GDriveAdapter: no such entry "${path}"`);
-		await client.trash(node.id);
+		// Idempotent like the local FS adapters: the goal state is "absent on
+		// remote". A file that never reached Drive (e.g. a locally-resolved
+		// conflict copy) or was already trashed there counts as deleted —
+		// throwing here would leave the entry pending and retry forever.
+		if (!node) return;
+		try {
+			await client.trash(node.id);
+		} catch (err) {
+			if (!isDriveNotFoundError(err)) throw err;
+		}
 		index.remove(path);
 	}
 
@@ -217,6 +230,16 @@ export class GDriveAdapter implements Adapter {
 	registerScope(): Promise<void> {
 		// No OS-level scope to register for a cloud adapter.
 		return Promise.resolve();
+	}
+
+	/**
+	 * Drop cached per-root clients/indexes and forget the shared OAuth token.
+	 * Invoked when no workspace uses Drive any more, so a removed Drive workspace
+	 * stops the app prompting to reconnect. Idempotent.
+	 */
+	async disconnect(): Promise<void> {
+		this.contexts.clear();
+		await gdriveAuth.signOut();
 	}
 
 	// ── internals ──────────────────────────────────────────────────────────
