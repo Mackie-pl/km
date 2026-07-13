@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "km-test",
+  "productName": "dotta",
   "version": "../package.json",
   "identifier": "space.dotta.app",
   "build": {
@@ -23,7 +23,7 @@
   "app": {
     "windows": [
       {
-        "title": "km-test",
+        "title": "dotta",
         "width": 800,
         "height": 600
       }

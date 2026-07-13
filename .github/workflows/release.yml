@@ -24,7 +24,7 @@ jobs:
         run: |
           gh release view "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" \
             || gh release create "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" \
-                 --title "km-test ${GITHUB_REF_NAME}" --generate-notes
+                 --title "dotta ${GITHUB_REF_NAME}" --generate-notes
 
   # ---------------------------------------------------------------------------
   # Web app is deployed to GitHub Pages by .github/workflows/pages.yml
@@ -87,7 +87,7 @@ jobs:
           # TAURI_SIGNING_PRIVATE_KEY / TAURI_SIGNING_PRIVATE_KEY_PASSWORD  (updater)
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: "km-test ${{ github.ref_name }}"
+          releaseName: "dotta ${{ github.ref_name }}"
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
