@@ -21,7 +21,10 @@ import type { VaultAgent } from '@core/agents/agents.service';
 			[routerLink]="['/agent', agent().id]"
 			routerLinkActive
 			#rla="routerLinkActive"
-			class="flex items-center w-full gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-colors duration-150 text-left no-underline ring-1 ring-inset ring-accent-border/60"
+			class="flex items-center w-full gap-2 py-1.5 rounded-lg cursor-pointer transition-colors duration-150 text-left no-underline ring-1 ring-inset ring-accent-border/60"
+			[class.px-2]="!collapsed()"
+			[class.px-1]="collapsed()"
+			[class.justify-center]="collapsed()"
 			[class.bg-accent-bg2]="rla.isActive"
 			[class.bg-surface]="!rla.isActive"
 			[class.hover:bg-accent-bg]="!rla.isActive"

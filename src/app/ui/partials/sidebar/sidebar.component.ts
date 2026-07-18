@@ -1,10 +1,12 @@
 import {
 	Component,
+	effect,
 	inject,
 	model,
 	output,
 	signal,
 	computed,
+	viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
@@ -13,6 +15,8 @@ import {
 	LucideArchive,
 	LucideChevronLeft,
 	LucideChevronRight,
+	LucideFilePlus,
+	LucideFolderPlus,
 	LucideX,
 	LucideSettings,
 } from '@lucide/angular';
@@ -38,6 +42,8 @@ import { BUILD_INFO } from '@build-info';
 		LucideArchive,
 		LucideChevronLeft,
 		LucideChevronRight,
+		LucideFilePlus,
+		LucideFolderPlus,
 		LucideX,
 		LucideSettings,
 		SidebarActivityLink,
@@ -62,6 +68,35 @@ export class SidebarComponent {
 
 	readonly isDesktop = this.platformService.isDesktop;
 	readonly activeWorkspace = this.workspaceService.activeWorkspace;
+
+	/** The vault list — header New Folder / New File buttons delegate to it. */
+	protected readonly vaultList = viewChild(SidebarVaultListComponent);
+
+	/**
+	 * Icon-rail layout active (labels hidden, icons centered).
+	 * Follows collapsed() with a delay matching the 300ms width transition
+	 * when collapsing — labels clip smoothly while the sidebar narrows —
+	 * and clears immediately when expanding so labels grow with the width.
+	 */
+	protected readonly railMode = signal(this.collapsed());
+
+	private railTimer: number | null = null;
+
+	private readonly railModeEffect = effect(() => {
+		const isCollapsed = this.collapsed();
+		if (this.railTimer !== null) {
+			window.clearTimeout(this.railTimer);
+			this.railTimer = null;
+		}
+		if (!isCollapsed) {
+			this.railMode.set(false);
+			return;
+		}
+		this.railTimer = window.setTimeout(() => {
+			this.railMode.set(true);
+			this.railTimer = null;
+		}, 300);
+	});
 
 	/** App version, stamped at build time (see build-info.ts) */
 	readonly appVersion = BUILD_INFO.version;

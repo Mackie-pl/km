@@ -24,4 +24,9 @@
 		background: var(--indigo-bg2);
 		color: var(--indigo-deep);
 	}
+
+	/* Collapsed icon rail: no indentation, icon centered in the 64px rail */
+	&.collapsed {
+		@apply justify-center px-0;
+	}
 }

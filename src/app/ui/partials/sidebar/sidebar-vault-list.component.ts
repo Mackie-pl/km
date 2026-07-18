@@ -47,8 +47,13 @@ export class SidebarVaultListComponent {
 			new Set(this.agentsService.runningRuns().map((run) => run.agentId)),
 	);
 
-	/** Whether the parent sidebar is collapsed (desktop only — hides labels). */
+	/** Icon-rail layout active (desktop only — hides labels, centers icons).
+	 * Follows the sidebar's collapse with a delay matching the width animation. */
 	readonly collapsed = input(false);
+
+	/** Immediate collapse state (no animation delay) — hides the tag filter bar
+	 * right away so its wrapping chips don't reflow while the width animates. */
+	readonly collapsedNow = input(false);
 
 	/** The currently-viewed entry path (highlighted in list), or null. */
 	readonly activeEntryPath = input<string | null>(null);

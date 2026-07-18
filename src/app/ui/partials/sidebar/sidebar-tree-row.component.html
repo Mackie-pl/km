@@ -61,9 +61,11 @@
 	<!-- Folder row -->
 	<div
 		class="entry-btn group"
-		[style.padding-left.px]="8 + node().depth * 16"
+		[class.collapsed]="collapsed()"
+		[style.padding-left.px]="collapsed() ? null : 8 + node().depth * 16"
 		[tuiDropdownManual]="contextEntry()?.id === node().entry.id"
 		[tuiDropdown]="contextMenu"
+		(click)="collapsed() && toggleFolder.emit(node().entry.id)"
 		(contextmenu)="emitContextMenu($event, node().entry)"
 		(touchstart)="onTouchStart($event, node().entry)"
 		(touchend)="onTouchEnd()"
@@ -71,6 +73,7 @@
 	>
 		<button
 			class="flex items-center justify-center size-5 flex-shrink-0 border-none bg-transparent cursor-pointer transition-transform duration-150 text-ink-4"
+			[class.hidden]="collapsed()"
 			[class.rotate-90]="expandedFolders().has(node().entry.id)"
 			(click)="toggleFolder.emit(node().entry.id)"
 			[attr.aria-label]="'Expand folder'"
@@ -88,7 +91,8 @@
 	<!-- File row -->
 	<button
 		class="entry-btn font-medium"
-		[style.padding-left.px]="36 + node().depth * 16"
+		[class.collapsed]="collapsed()"
+		[style.padding-left.px]="collapsed() ? null : 36 + node().depth * 16"
 		[tuiDropdown]="contextMenu"
 		[tuiDropdownManual]="contextEntry()?.id === node().entry.id"
 		(click)="openFile.emit(node().entry)"

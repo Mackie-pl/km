@@ -7,38 +7,10 @@
 	class="flex h-full flex-col px-1"
 	(contextmenu)="onBackgroundContextMenu($event)"
 >
-	<!-- Header row: label + action buttons (only when items exist) -->
-	<div class="flex items-center justify-between px-3 py-2">
-		<span
-			class="text-[10.5px] font-bold uppercase tracking-[0.08em] text-ink-4"
-		>
-			Vault
-		</span>
-		<span
-			[class.hidden]="!treeNodes().length"
-			class="flex items-center gap-1"
-		>
-			<button
-				class="flex items-center justify-center size-7 rounded-lg border-none bg-transparent cursor-pointer text-ink-3 transition-colors duration-150 hover:bg-hairline hover:text-ink-1"
-				(click)="createNewFolder()"
-				[attr.aria-label]="'New Folder'"
-			>
-				<svg lucideFolderPlus class="size-4.5 flex-shrink-0"></svg>
-			</button>
-			<button
-				class="flex items-center justify-center size-7 rounded-lg border-none bg-transparent cursor-pointer text-ink-3 transition-colors duration-150 hover:bg-hairline hover:text-ink-1"
-				(click)="createNewFile()"
-				[attr.aria-label]="'New File'"
-			>
-				<svg lucideFilePlus class="size-4.5 flex-shrink-0"></svg>
-			</button>
-		</span>
-	</div>
-
 	<!-- Tag filter bar -->
 	<div
 		class="flex flex-wrap items-center gap-1.5 px-3 pb-1.5"
-		[class.hidden]="collapsed() || vaultDb.allTags().length === 0"
+		[class.hidden]="collapsedNow() || vaultDb.allTags().length === 0"
 	>
 		@for (tag of vaultDb.allTags(); track tag) {
 			<button
@@ -65,7 +37,7 @@
 	</div>
 
 	<!-- Content area -->
-	<div class="flex-1 space-y-1 overflow-y-auto">
+	<div class="flex-1 space-y-1 overflow-y-auto overflow-x-hidden">
 		@if (treeNodes().length) {
 			<hr
 				class="mx-3 mb-1 border-hairline"
@@ -115,27 +87,36 @@
 		@if (!treeNodes().length && !isFilterActive()) {
 			<!-- Empty state: New Folder / New File buttons -->
 			<button
-				class="flex w-full items-center gap-3 rounded-lg border-none bg-transparent px-3 py-2 text-left text-[13px] text-ink-3 transition-colors duration-150 hover:bg-hairline hover:text-ink-1"
+				class="flex w-full items-center gap-3 rounded-lg border-none bg-transparent py-2 text-left text-[13px] text-ink-3 transition-colors duration-150 hover:bg-hairline hover:text-ink-1"
+				[class.px-3]="!collapsed()"
+				[class.justify-center]="collapsed()"
 				(click)="createNewFolder()"
 				[attr.aria-label]="'New Folder'"
 			>
 				<svg lucideFolderPlus class="size-5 flex-shrink-0"></svg>
-				<span class="text-[13px] font-medium" [class.sr-only]="collapsed()"
+				<span
+					class="text-[13px] font-medium truncate"
+					[class.sr-only]="collapsed()"
 					>New Folder</span
 				>
 			</button>
 			<button
-				class="flex w-full items-center gap-3 rounded-lg border-none bg-transparent px-3 py-2 text-left text-[13px] text-ink-3 transition-colors duration-150 hover:bg-hairline hover:text-ink-1"
+				class="flex w-full items-center gap-3 rounded-lg border-none bg-transparent py-2 text-left text-[13px] text-ink-3 transition-colors duration-150 hover:bg-hairline hover:text-ink-1"
+				[class.px-3]="!collapsed()"
+				[class.justify-center]="collapsed()"
 				(click)="createNewFile()"
 				[attr.aria-label]="'New File'"
 			>
 				<svg lucideFilePlus class="size-5 flex-shrink-0"></svg>
-				<span class="text-[13px] font-medium" [class.sr-only]="collapsed()"
+				<span
+					class="text-[13px] font-medium truncate"
+					[class.sr-only]="collapsed()"
 					>New File</span
 				>
 			</button>
 			<div
 				class="rounded-lg bg-hairline px-3 py-2 text-[13px] text-ink-3"
+				[class.hidden]="collapsed()"
 			>
 				No notes yet
 			</div>

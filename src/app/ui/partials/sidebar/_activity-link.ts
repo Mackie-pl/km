@@ -24,7 +24,9 @@ import { AgentsService } from '@core/agents/agents.service';
 				routerLink="/activity"
 				routerLinkActive="bg-accent-bg2 text-accent-deep"
 				(click)="pressed.emit()"
-				class="flex items-center w-full gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors duration-150 text-left no-underline text-ink-2 hover:bg-hairline hover:text-ink-1"
+				class="flex items-center w-full gap-3 py-2 rounded-lg cursor-pointer transition-colors duration-150 text-left no-underline text-ink-2 hover:bg-hairline hover:text-ink-1"
+				[class.px-3]="showLabel()"
+				[class.justify-center]="!showLabel()"
 				aria-label="Activity"
 			>
 				<svg lucideActivity class="size-4.5 flex-shrink-0"></svg>

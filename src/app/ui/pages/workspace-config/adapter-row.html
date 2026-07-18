@@ -1,7 +1,14 @@
 <div
 	class="flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2"
 >
+	@if (isLocal(adapterId())) { @if (isMobile()) {
+	<svg lucideTablet class="size-4 text-ink-4 shrink-0"></svg>
+	} @else {
+	<svg lucideHardDrive class="size-5 text-ink-4 shrink-0"></svg>
+	} } @else {
 	<svg lucideCloud class="size-4 text-ink-4 shrink-0"></svg>
+
+	}
 	<span class="flex-1 text-[13px] font-medium text-ink-1">
 		{{ getLabel(adapterId()) }}
 	</span>

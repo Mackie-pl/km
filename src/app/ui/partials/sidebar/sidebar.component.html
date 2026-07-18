@@ -29,16 +29,39 @@
 	(touchstart)="onTouchStart($event)"
 	(touchend)="onTouchEnd($event)"
 >
-	<!-- Header — the vault (workspace) name -->
-	<div class="flex items-center h-12 px-3 flex-shrink-0">
-		@if ((isDesktop() && !collapsed()) || !isDesktop()) {
+	<!-- Header — vault (workspace) name + new-item actions + collapse toggle.
+	     Collapsed: stacks vertically (toggle first, then actions).
+	     Layout switches on railMode() (post-animation), width on collapsed(). -->
+	<div
+		class="flex items-center gap-1 flex-shrink-0"
+		[class.h-12]="!isDesktop() || !railMode()"
+		[class.px-3]="!isDesktop() || !railMode()"
+		[class.flex-col]="isDesktop() && railMode()"
+		[class.py-2]="isDesktop() && railMode()"
+	>
+		@if ((isDesktop() && !railMode()) || !isDesktop()) {
 			<span
-				class="text-[13px] font-bold tracking-[-0.01em] truncate text-ink-1"
+				class="flex-1 min-w-0 text-[13px] font-bold tracking-[-0.01em] truncate text-ink-1"
 				>{{ activeWorkspace()?.name ?? 'Notes' }}</span
 			>
 		}
 		<button
-			class="ml-auto flex items-center justify-center size-7 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-ink-3 hover:bg-hairline hover:text-ink-1"
+			class="flex flex-shrink-0 items-center justify-center size-7 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-ink-3 hover:bg-hairline hover:text-ink-1"
+			(click)="vaultList()?.createNewFolder()"
+			aria-label="New Folder"
+		>
+			<svg lucideFolderPlus class="size-4.5 flex-shrink-0"></svg>
+		</button>
+		<button
+			class="flex flex-shrink-0 items-center justify-center size-7 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-ink-3 hover:bg-hairline hover:text-ink-1"
+			(click)="vaultList()?.createNewFile()"
+			aria-label="New File"
+		>
+			<svg lucideFilePlus class="size-4.5 flex-shrink-0"></svg>
+		</button>
+		<button
+			class="flex flex-shrink-0 items-center justify-center size-7 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-ink-3 hover:bg-hairline hover:text-ink-1"
+			[class.order-first]="isDesktop() && railMode()"
 			(click)="isDesktop() ? toggleCollapsed() : closeMobile()"
 			[attr.aria-label]="
 				isDesktop()
@@ -59,9 +82,10 @@
 	</div>
 
 	<!-- Vault list (scrollable) -->
-	<nav class="flex-1 overflow-y-auto px-2 py-2">
+	<nav class="flex-1 overflow-y-auto overflow-x-hidden px-2 py-2">
 		<app-sidebar-vault-list
-			[collapsed]="collapsed()"
+			[collapsed]="railMode()"
+			[collapsedNow]="collapsed()"
 			[activeEntryPath]="activeEntryPath()"
 		/>
 	</nav>
@@ -69,16 +93,18 @@
 	<!-- Activity + Archive -->
 	<div class="flex-shrink-0 px-2 pb-1 pt-1 border-t border-line">
 		<app-sidebar-activity-link
-			[showLabel]="!isDesktop() || !collapsed()"
+			[showLabel]="!isDesktop() || !railMode()"
 			(pressed)="closeMobile()"
 		/>
 		<button
-			class="flex items-center w-full gap-3 px-3 py-2 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-ink-3 hover:bg-hairline hover:text-ink-1"
+			class="flex items-center w-full gap-3 py-2 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-ink-3 hover:bg-hairline hover:text-ink-1"
+			[class.px-3]="!isDesktop() || !railMode()"
+			[class.justify-center]="isDesktop() && railMode()"
 			aria-label="Archive"
 		>
 			<svg lucideArchive class="size-4.5 flex-shrink-0"></svg>
-			@if (!isDesktop() || !collapsed()) {
-				<span class="text-[13px] font-medium">Archive</span>
+			@if (!isDesktop() || !railMode()) {
+				<span class="text-[13px] font-medium truncate">Archive</span>
 			}
 		</button>
 	</div>
@@ -87,26 +113,33 @@
 	<div class="flex-shrink-0 border-t border-line bg-surface-2 p-2">
 		<button
 			(click)="openWorkspaceConfigDialog()"
-			class="flex items-center w-full gap-3 px-3 py-2 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-ink-3 hover:bg-hairline hover:text-ink-1"
+			class="flex items-center w-full gap-3 py-2 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-ink-3 hover:bg-hairline hover:text-ink-1"
+			[class.px-3]="!isDesktop() || !railMode()"
+			[class.justify-center]="isDesktop() && railMode()"
 			[attr.aria-label]="
 				'Workspace: ' + (activeWorkspace()?.name ?? 'None')
 			"
 		>
-			@if (!isDesktop() || !collapsed()) {
-				<span class="text-xs font-medium text-ink-2">
+			@if (!isDesktop() || !railMode()) {
+				<span class="text-xs font-medium text-ink-2 truncate">
 					{{ activeWorkspace()?.name }}
 				</span>
 			}
-			<svg lucideSettings class="size-4 flex-shrink-0 ml-auto"></svg>
+			<svg
+				lucideSettings
+				class="size-4 flex-shrink-0"
+				[class.ml-auto]="!isDesktop() || !railMode()"
+			></svg>
 		</button>
 
-		<!-- Unobtrusive version label (expanded only) -->
-		@if (!isDesktop() || !collapsed()) {
-			<div
-				class="px-3 pt-1 text-right text-[10px] leading-none font-mono text-ink-5 select-none"
-			>
-				v{{ appVersion }}
-			</div>
-		}
+		<!-- Unobtrusive version label. Always in the DOM so the footer height
+		     stays constant across collapse (prevents the footer from jumping);
+		     the text just fades out in the collapsed rail. -->
+		<div
+			class="px-3 pt-1 text-right text-[10px] leading-none font-mono text-ink-5 select-none transition-opacity duration-150"
+			[class.opacity-0]="isDesktop() && railMode()"
+		>
+			v{{ appVersion }}
+		</div>
 	</div>
 </aside>

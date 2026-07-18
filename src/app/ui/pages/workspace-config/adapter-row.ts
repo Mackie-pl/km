@@ -1,15 +1,23 @@
 import {
 	ChangeDetectionStrategy,
 	Component,
+	inject,
 	input,
 	output,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { getAdapterSchema } from '@core/adapters/config-schema';
 import { AdapterConfigFormComponent } from '@ui/partials/adapter-config-form/adapter-config-form.component';
-import { LucideTrash2, LucideSettings, LucideCloud } from '@lucide/angular';
+import {
+	LucideTrash2,
+	LucideSettings,
+	LucideCloud,
+	LucideHardDrive,
+	LucideTablet,
+} from '@lucide/angular';
 import type { AdapterConfig } from '@core/adapters/adapter.interface';
 import type { Workspace } from '@services/workspace.service';
+import { PlatformService } from '@core/services/platform.service';
 
 @Component({
 	selector: 'app-adapter-row',
@@ -20,6 +28,8 @@ import type { Workspace } from '@services/workspace.service';
 		LucideTrash2,
 		LucideSettings,
 		LucideCloud,
+		LucideTablet,
+		LucideHardDrive,
 	],
 	templateUrl: './adapter-row.html',
 	styleUrl: './adapter-row.scss',
@@ -34,6 +44,10 @@ export class AdapterRow {
 	readonly remove = output();
 	readonly configSave = output<AdapterConfig>();
 	readonly configCancel = output();
+
+	public readonly platform = inject(PlatformService);
+
+	public readonly isMobile = this.platform.isMobile;
 
 	isLocal(adapterId: string): boolean {
 		return (
