@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Playwright configuration for km-test (Angular + Tauri 2.0).
+ * Playwright configuration for dotta (Angular + Tauri 2.0).
  *
  * Tests run against `ng serve` (browser mode, no Tauri backend).
  * Tauri APIs are mocked via addInitScript in the test fixture.

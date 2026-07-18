@@ -6,7 +6,7 @@
     "analytics": false
   },
   "projects": {
-    "km-test": {
+    "dotta": {
       "projectType": "application",
       "root": "",
       "sourceRoot": "src",
@@ -15,7 +15,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/km-test",
+            "outputPath": "dist/dotta",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
@@ -71,10 +71,10 @@
           },
           "configurations": {
             "production": {
-              "buildTarget": "km-test:build:production"
+              "buildTarget": "dotta:build:production"
             },
             "development": {
-              "buildTarget": "km-test:build:development"
+              "buildTarget": "dotta:build:development"
             }
           },
           "defaultConfiguration": "development"

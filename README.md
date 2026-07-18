@@ -1,4 +1,4 @@
-# km-test — Minimalistic Note App
+# dotta — Minimalistic Note App
 
 A cross-platform, minimalistic note-taking app built with Angular + Tauri 2.0.
 

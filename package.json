@@ -1,6 +1,6 @@
 {
   "type": "module",
-  "name": "km-test",
+  "name": "dotta",
   "version": "0.2.0",
   "scripts": {
     "ng": "ng",

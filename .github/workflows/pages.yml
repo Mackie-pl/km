@@ -45,19 +45,19 @@ jobs:
       # index.html served as 404.html lets deep links (/e/..., /settings) boot
       # the Angular app instead of showing Pages' 404.
       - name: Add SPA 404 fallback
-        run: cp dist/km-test/browser/index.html dist/km-test/browser/404.html
+        run: cp dist/dotta/browser/index.html dist/dotta/browser/404.html
 
       # Pins the custom subdomain when the APP_DOMAIN repo variable is set
       # (e.g. app.example.com). Without it, the default *.github.io URL is used.
       - name: Write CNAME
         if: vars.APP_DOMAIN != ''
-        run: echo "${{ vars.APP_DOMAIN }}" > dist/km-test/browser/CNAME
+        run: echo "${{ vars.APP_DOMAIN }}" > dist/dotta/browser/CNAME
 
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist/km-test/browser
+          path: dist/dotta/browser
 
   deploy:
     name: Deploy to Pages
