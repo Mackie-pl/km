@@ -20,10 +20,12 @@
     "lint": "eslint src --ext .ts,.html",
     "lint:fix": "eslint src --ext .ts,.html --fix",
     "jscpd": "jscpd src --reporters console --min-tokens 50 --ignore node_modules/** --ignore src-tauri/target/**",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "e2e": "playwright test --config e2e/playwright.config.ts",
     "e2e:headed": "playwright test --config e2e/playwright.config.ts --headed",
     "e2e:report": "playwright show-report dist/e2e-report",
-    "verify": "pnpm run build && pnpm run lint && pnpm run jscpd"
+    "verify": "pnpm run build && pnpm run lint && pnpm run test && pnpm run jscpd"
   },
   "private": true,
   "dependencies": {

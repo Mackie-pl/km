@@ -17,8 +17,10 @@ A cross-platform, minimalistic note-taking app built with Angular + Tauri 2.0.
 | `pnpm start`          | Start dev server (`ng serve` on port 1420) |
 | `pnpm run build`      | Production build                           |
 | `pnpm run lint`       | ESLint check                               |
+| `pnpm run test`       | Unit tests (Vitest, single run)            |
+| `pnpm run test:watch` | Unit tests in watch mode                   |
 | `pnpm run jscpd`      | Copy-paste detection                       |
-| `pnpm run verify`     | Build + lint + jscpd (CI gate)             |
+| `pnpm run verify`     | Build + lint + test + jscpd (CI gate)      |
 | `pnpm run e2e`        | Run Playwright E2E tests (headless)        |
 | `pnpm run e2e:headed` | Run Playwright E2E tests (visible browser) |
 | `pnpm tauri dev`      | Start Tauri desktop app in dev mode        |

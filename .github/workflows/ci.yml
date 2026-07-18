@@ -28,9 +28,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Mirrors the local `verify` gate: build + lint + jscpd
+      # Mirrors the local `verify` gate: build + lint + test + jscpd
       - name: Verify
         run: pnpm run verify
-
-      - name: Unit tests
-        run: pnpm exec vitest run
