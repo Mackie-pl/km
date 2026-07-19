@@ -53,7 +53,7 @@ const REDIRECT_TIMEOUT_MS = 180_000;
  * Rejects if nothing arrives within {@link REDIRECT_TIMEOUT_MS}, so a failed or
  * abandoned consent surfaces as an error the UI can show and retry.
  */
-async function waitForRedirect(): Promise<string> {
+async function waitForRedirect(expectedState: string): Promise<string> {
 	const { onOpenUrl, getCurrent } = await import('@tauri-apps/plugin-deep-link');
 	return new Promise<string>((resolve, reject) => {
 		let unlisten: (() => void) | undefined;
@@ -62,6 +62,7 @@ async function waitForRedirect(): Promise<string> {
 		const cleanup = (): void => {
 			clearTimeout(timer);
 			unlisten?.();
+			removeForegroundHooks();
 		};
 		const settle = (url: string): void => {
 			if (settled) return;
@@ -86,8 +87,56 @@ async function waitForRedirect(): Promise<string> {
 			);
 		}, REDIRECT_TIMEOUT_MS);
 
+		/**
+		 * Accept only a redirect carrying THIS attempt's `state`.
+		 *
+		 * `getCurrent()` returns whatever intent the app last received, which
+		 * may be a redirect left over from an earlier attempt. Consuming one of
+		 * those would exchange a code whose PKCE verifier no longer matches, so
+		 * the state check is what makes re-polling safe (and is the standard
+		 * CSRF protection besides).
+		 */
 		const match = (urls: string[] | null): string | undefined =>
-			urls?.find((u) => u.startsWith(GOOGLE_OAUTH_ANDROID_SCHEME));
+			urls?.find(
+				(u) =>
+					u.startsWith(GOOGLE_OAUTH_ANDROID_SCHEME) &&
+					new URLSearchParams(u.split('?')[1] ?? '').get('state') ===
+						expectedState,
+			);
+
+		/**
+		 * Ask the plugin for the intent the app currently holds.
+		 *
+		 * `onOpenUrl` is not reliable here: the redirect intent is delivered to
+		 * the existing activity (LAUNCH_SINGLE_TASK) and the JS event does not
+		 * always fire for it, while `getCurrent()` does return the URL. Checking
+		 * it only once — right after registering, before the browser has even
+		 * opened — is always too early, so sign-in silently did nothing and the
+		 * *next* attempt picked up the previous attempt's redirect instead.
+		 */
+		const poll = (): void => {
+			if (settled) return;
+			getCurrent()
+				.then((urls) => {
+					const hit = match(urls);
+					if (hit) settle(hit);
+				})
+				.catch(() => {
+					// Transient; the next foreground event or the timeout wins.
+				});
+		};
+
+		// Re-check whenever the app comes back to the foreground — that is
+		// exactly when the redirect intent has just been delivered.
+		const onVisible = (): void => {
+			if (document.visibilityState === 'visible') poll();
+		};
+		document.addEventListener('visibilitychange', onVisible);
+		window.addEventListener('focus', poll);
+		const removeForegroundHooks = (): void => {
+			document.removeEventListener('visibilitychange', onVisible);
+			window.removeEventListener('focus', poll);
+		};
 
 		onOpenUrl((urls) => {
 			const hit = match(urls);
@@ -98,11 +147,7 @@ async function waitForRedirect(): Promise<string> {
 				// attached; don't leak it if so.
 				if (settled) fn();
 				else unlisten = fn;
-				return getCurrent();
-			})
-			.then((urls) => {
-				const hit = match(urls);
-				if (hit) settle(hit);
+				poll();
 			})
 			.catch((err: unknown) => {
 				fail(err instanceof Error ? err : new Error(String(err)));
@@ -123,6 +168,8 @@ function parseRedirect(url: string): string {
 async function signIn(): Promise<GDriveTokenSet> {
 	const redirectUri = androidRedirectUri();
 	const verifier = randomVerifier();
+	// Ties the redirect to THIS attempt — see `match` in waitForRedirect.
+	const state = randomVerifier();
 
 	const authParams = new URLSearchParams({
 		client_id: GOOGLE_OAUTH_ANDROID_CLIENT_ID,
@@ -133,11 +180,12 @@ async function signIn(): Promise<GDriveTokenSet> {
 		code_challenge_method: 'S256',
 		access_type: 'offline',
 		prompt: 'consent',
+		state,
 	});
 
 	// Arm the deep-link listener BEFORE opening the browser so a fast redirect
 	// can't race past us.
-	const redirect = waitForRedirect();
+	const redirect = waitForRedirect(state);
 	await openUrl(`${GOOGLE_AUTH_ENDPOINT}?${authParams.toString()}`);
 	const code = parseRedirect(await redirect);
 

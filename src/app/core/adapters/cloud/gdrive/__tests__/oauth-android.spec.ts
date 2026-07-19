@@ -10,9 +10,15 @@ vi.mock('@tauri-apps/plugin-deep-link', () => ({
 }));
 
 import { driveFetch } from '../http';
+import { openUrl } from '@tauri-apps/plugin-opener';
+import { onOpenUrl, getCurrent } from '@tauri-apps/plugin-deep-link';
+import { GOOGLE_OAUTH_ANDROID_SCHEME } from '../config';
 import { androidDriver } from '../oauth-android';
 
 const fetchMock = driveFetch as Mock;
+const openUrlMock = openUrl as Mock;
+const onOpenUrlMock = onOpenUrl as Mock;
+const getCurrentMock = getCurrent as Mock;
 
 function jsonResponse(obj: unknown, status = 200): Response {
 	return new Response(JSON.stringify(obj), {
@@ -68,5 +74,81 @@ describe('androidDriver.renew', () => {
 				refreshToken: 'bad',
 			}),
 		).rejects.toThrow('invalid_grant');
+	});
+});
+
+describe('androidDriver.signIn redirect capture', () => {
+	beforeEach(() => {
+		fetchMock.mockReset();
+		openUrlMock.mockReset().mockResolvedValue(undefined);
+		onOpenUrlMock.mockReset().mockResolvedValue(() => undefined);
+		getCurrentMock.mockReset().mockResolvedValue(null);
+	});
+
+	/** The `state` the driver put on the outgoing auth URL. */
+	function sentState(): string {
+		const url = openUrlMock.mock.calls[0]?.[0] as string;
+		return new URL(url).searchParams.get('state') ?? '';
+	}
+
+	it('completes when the redirect only ever appears via getCurrent()', async () => {
+		// The real failure: the intent is delivered to the existing activity and
+		// onOpenUrl never fires, but getCurrent() holds the URL. Sign-in must
+		// still finish once the app returns to the foreground.
+		onOpenUrlMock.mockResolvedValue(() => undefined);
+		fetchMock.mockResolvedValueOnce(
+			jsonResponse({
+				access_token: 'tok',
+				refresh_token: 'r1',
+				expires_in: 3600,
+			}),
+		);
+
+		const pending = androidDriver.signIn();
+		await vi.waitFor(() => {
+			expect(openUrlMock).toHaveBeenCalled();
+		});
+
+		// Redirect lands; only getCurrent() knows about it.
+		getCurrentMock.mockResolvedValue([
+			`${GOOGLE_OAUTH_ANDROID_SCHEME}:/oauth2redirect?code=abc&state=${sentState()}`,
+		]);
+		window.dispatchEvent(new Event('focus'));
+
+		const set = await pending;
+		expect(set.accessToken).toBe('tok');
+		expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ method: 'POST' });
+	});
+
+	it('ignores a leftover redirect from a previous attempt', async () => {
+		// getCurrent() returns the last intent the app saw, which may be a stale
+		// redirect. Consuming it would exchange a code whose PKCE verifier no
+		// longer matches, so a mismatched state must not settle the flow.
+		onOpenUrlMock.mockResolvedValue(() => undefined);
+		getCurrentMock.mockResolvedValue([
+			`${GOOGLE_OAUTH_ANDROID_SCHEME}:/oauth2redirect?code=stale&state=from-an-older-attempt`,
+		]);
+
+		const pending = androidDriver.signIn();
+		await vi.waitFor(() => {
+			expect(openUrlMock).toHaveBeenCalled();
+		});
+		window.dispatchEvent(new Event('focus'));
+
+		// Give the poll a chance to (wrongly) settle.
+		await new Promise((r) => setTimeout(r, 20));
+		expect(fetchMock).not.toHaveBeenCalled();
+
+		// The real redirect for THIS attempt still completes it.
+		fetchMock.mockResolvedValueOnce(
+			jsonResponse({ access_token: 'tok2', expires_in: 3600 }),
+		);
+		getCurrentMock.mockResolvedValue([
+			`${GOOGLE_OAUTH_ANDROID_SCHEME}:/oauth2redirect?code=fresh&state=${sentState()}`,
+		]);
+		window.dispatchEvent(new Event('focus'));
+
+		expect((await pending).accessToken).toBe('tok2');
+		expect(fetchMock.mock.calls[0]?.[1]?.body).toContain('code=fresh');
 	});
 });
