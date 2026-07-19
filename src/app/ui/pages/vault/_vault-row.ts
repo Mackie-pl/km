@@ -10,6 +10,7 @@ import {
 import { NgComponentOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import {
+	LucideArchive,
 	LucideChevronRight,
 	LucideFilePlus,
 	LucideFolder,
@@ -57,6 +58,7 @@ const TRIGGER_LABELS: Record<string, string> = {
 	standalone: true,
 	imports: [
 		NgComponentOutlet,
+		LucideArchive,
 		LucideChevronRight,
 		LucideFilePlus,
 		LucideFolder,
@@ -81,6 +83,7 @@ export class VaultRowComponent implements OnDestroy {
 	readonly contextMenu = output<VaultEntry>();
 	readonly renameEntry = output<VaultEntry>();
 	readonly deleteEntry = output<VaultEntry>();
+	readonly archiveEntry = output<VaultEntry>();
 	readonly newFileInFolder = output<VaultEntry>();
 
 	/** Entry of this row, when it has one (folders and notes). */

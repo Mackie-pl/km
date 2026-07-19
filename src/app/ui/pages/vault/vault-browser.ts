@@ -8,12 +8,15 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import {
 	LucideActivity,
+	LucideArchive,
 	LucideFilePlus,
 	LucideFolderPlus,
 	LucideSearch,
 	LucideSettings,
 } from '@lucide/angular';
 import { VaultStore, VaultEntry } from '@vault/store';
+import { ArchiveService } from '@vault/archive.service';
+import { TrashService } from '@vault/trash.service';
 import { SyncEngineService } from '@core/sync/sync-engine';
 import {
 	AgentsService,
@@ -46,6 +49,7 @@ export interface VaultCard {
 	standalone: true,
 	imports: [
 		LucideActivity,
+		LucideArchive,
 		LucideFilePlus,
 		LucideFolderPlus,
 		LucideSearch,
@@ -65,6 +69,8 @@ export class VaultBrowserComponent {
 	protected readonly vaultDb = inject(VaultStore);
 	protected readonly agentsService = inject(AgentsService);
 	protected readonly workspaceService = inject(WorkspaceService);
+	private readonly archiveService = inject(ArchiveService);
+	private readonly trashService = inject(TrashService);
 	private readonly syncEngine = inject(SyncEngineService);
 	private readonly dialog = inject(DialogService);
 	private readonly search = inject(SearchService);
@@ -124,7 +130,10 @@ export class VaultBrowserComponent {
 	/** Parent → sorted children adjacency for the whole vault. */
 	private buildChildrenMap(): Map<string | null, VaultEntry[]> {
 		const map = new Map<string | null, VaultEntry[]>();
-		for (const entry of [...this.vaultDb.folders(), ...this.vaultDb.files()]) {
+		for (const entry of [
+			...this.vaultDb.visibleFolders(),
+			...this.vaultDb.visibleFiles(),
+		]) {
 			const list = map.get(entry.parentId) ?? [];
 			list.push(entry);
 			map.set(entry.parentId, list);
@@ -293,17 +302,16 @@ export class VaultBrowserComponent {
 		await this.vaultDb.renameEntry(entry.id, trimmed);
 	}
 
-	/** Delete after an explicit confirm (no inline undo on mobile). */
+	/** Delete — no confirm; recoverable from the device-local trash. */
 	async deleteEntry(entry: VaultEntry): Promise<void> {
 		this.closeContextMenu();
-		const ok = await this.dialog.confirm({
-			title: `Delete ${entry.type === 'folder' ? 'Folder' : 'Note'}`,
-			message: `Delete “${entry.name}”? This cannot be undone.`,
-			confirmLabel: 'Delete',
-		});
-		if (ok) {
-			await this.vaultDb.delete(entry.id);
-		}
+		await this.trashService.deleteToTrash(entry.id);
+	}
+
+	/** Archive — moves the entry into the synced `.archive/` folder. */
+	async archiveEntry(entry: VaultEntry): Promise<void> {
+		this.closeContextMenu();
+		await this.archiveService.archive(entry.id);
 	}
 
 	onContextMenu(entry: VaultEntry): void {

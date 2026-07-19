@@ -2,9 +2,11 @@ import { Injectable, signal, computed, inject, effect } from '@angular/core';
 import { WorkspaceService } from '@core/services/workspace.service';
 import { VAULT_ENTRY_TYPES, type VaultEntry } from './vault-entry';
 import { VaultReconciler } from './vault-reconciler';
+import { VaultRelocation } from './vault-relocation';
 import { VaultLifecycle } from './vault-lifecycle';
 import { VaultFrontmatterIndex } from './vault-frontmatter-index';
 import { resolveUniquePath, makeVaultEntry } from './vault-utils';
+import { ARCHIVE_FOLDER, isArchivedPath } from '@core/utils/file-patterns';
 
 // Re-exports for backward compat with imports from @vault/store
 export { VAULT_ENTRY_TYPES, type VaultEntry } from './vault-entry';
@@ -41,6 +43,9 @@ export class VaultStore {
 
 	private readonly reconciler = new VaultReconciler(this);
 
+	/** Owns rename/move mechanics (pendingRenameFrom, cascades). */
+	private readonly relocation = new VaultRelocation(this);
+
 	/** Owns DB access + workspace lifecycle (init/load/reload/purge). */
 	private readonly lifecycle = new VaultLifecycle(this);
 
@@ -68,6 +73,30 @@ export class VaultStore {
 		),
 	);
 
+	/**
+	 * UI-facing views of `files`/`folders` that hide the `.archive/` subtree.
+	 * Sync phases must keep consuming the unfiltered `files()`/`folders()` —
+	 * archived entries are real synced content, just not shown in the tree,
+	 * search, or tag bar.
+	 */
+	readonly visibleFiles = computed(() =>
+		this.files().filter((e) => !isArchivedPath(e.path)),
+	);
+
+	readonly visibleFolders = computed(() =>
+		this.folders().filter((e) => !isArchivedPath(e.path)),
+	);
+
+	/** Non-deleted entries living under `.archive/` (excluding the folder itself). */
+	readonly archivedEntries = computed(() =>
+		Array.from(this.entries().values()).filter(
+			(e) =>
+				!e.deleted &&
+				isArchivedPath(e.path) &&
+				e.path !== ARCHIVE_FOLDER,
+		),
+	);
+
 	/** Entries that still have at least one adapter pending sync. */
 	readonly entriesNeedingSync = computed(() => {
 		const wsId = this.activeWorkspaceId();
@@ -77,9 +106,11 @@ export class VaultStore {
 		);
 	});
 
-	/** Frontmatter metadata for every non-deleted file — reactively derived. */
+	/** Frontmatter metadata for every visible (non-archived) file. */
 	readonly allFrontmatters = computed(() =>
-		this.files().map((f) => this.#frontmatter.parse(f.id, f.content ?? '')),
+		this.visibleFiles().map((f) =>
+			this.#frontmatter.parse(f.id, f.content ?? ''),
+		),
 	);
 
 	/** All unique tags across all files, lowercased, sorted. */
@@ -117,11 +148,27 @@ export class VaultStore {
 	}
 
 	/**
+	 * Set when the IndexedDB connection could not be opened. The vault renders
+	 * empty in that state and no write can persist, so this must be surfaced
+	 * rather than left to look like an empty vault.
+	 */
+	readonly initError = signal<string | null>(null);
+
+	/**
 	 * Initialize the IndexedDB connection and load entries for the active
 	 * workspace. Safe to call multiple times. Delegates to VaultLifecycle.
 	 */
 	async init(): Promise<void> {
-		await this.lifecycle.init();
+		try {
+			await this.lifecycle.init();
+			this.initError.set(null);
+		} catch (err) {
+			const message =
+				err instanceof Error ? err.message : 'Unknown error';
+			console.error('[Vault] Failed to open the vault database:', err);
+			this.initError.set(message);
+			throw err;
+		}
 	}
 
 	async ensureInitialized(): Promise<void> {
@@ -331,101 +378,38 @@ export class VaultStore {
 
 	//
 	// =========================
-	// RENAME
+	// RENAME / MOVE — delegated to VaultRelocation
 	// =========================
 	//
 
-	/**
-	 * Rename a file or folder entry.
-	 *
-	 * For files: updates name + path, sets `pendingRenameFrom` so the sync
-	 * engine calls `adapter.rename()` instead of `adapter.write()`.
-	 *
-	 * For folders: cascades to all children whose `path` starts with the old path.
-	 * Every child gets `revision + 1` and `pendingAdapters` merged.
-	 *
-	 * @param id - The entry ID to rename
-	 * @param newName - The new name (last path segment only, e.g. "new-name.md")
-	 */
+	/** Rename an entry in place (last path segment only). */
 	async renameEntry(id: string, newName: string): Promise<void> {
-		const entry = this.entries().get(id);
-		if (!entry || entry.name === newName) return;
-
-		const oldPath = entry.path;
-
-		// Rebuild path: replace last segment (the name)
-		const parent = entry.path.split('/').slice(0, -1).join('/');
-		const newPath = parent ? `${parent}/${newName}` : newName;
-
-		const wsId = this.activeWorkspaceId();
-		if (!wsId) return;
-
-		const activeAdapters =
-			this.workspaceService.activeWorkspace()?.activeSyncAdapters ?? [];
-		const pendingAdapters = [
-			...new Set([...entry.pendingAdapters, ...activeAdapters]),
-		];
-
-		// Resolve name conflicts — if the new path already exists, auto-dedup
-		const resolvedPath = resolveUniquePath(newPath, (p) =>
-			this.getByPath(p),
-		);
-		const resolvedName = resolvedPath.split('/').pop() ?? newName;
-
-		const updated: VaultEntry = {
-			...entry,
-			name: resolvedName,
-			path: resolvedPath,
-			updatedAt: Date.now(),
-			revision: entry.revision + 1,
-			pendingAdapters,
-			pendingRenameFrom: oldPath,
-		};
-
-		await this.put(updated);
-
-		// Cascade to children if this is a folder
-		if (entry.type === VAULT_ENTRY_TYPES.FOLDER) {
-			await this.cascadeRenameChildren(
-				entry,
-				oldPath,
-				resolvedPath,
-				activeAdapters,
-			);
-		}
+		return this.relocation.renameEntry(id, newName);
 	}
 
-	/** Update all children of a renamed folder with new paths. */
+	/** Move an entry to an arbitrary new path (e.g. into `.archive/`). */
+	async moveEntry(id: string, newPath: string): Promise<void> {
+		return this.relocation.moveEntry(id, newPath);
+	}
+
+	/** Create any missing folder entries along `folderPath`. */
+	async ensureFolderPath(folderPath: string): Promise<void> {
+		return this.relocation.ensureFolderPath(folderPath);
+	}
+
+	/** Update all children of a renamed/moved folder with new paths. */
 	async cascadeRenameChildren(
 		entry: VaultEntry,
 		oldPath: string,
 		newPath: string,
 		activeAdapters: string[],
 	): Promise<void> {
-		const children = Array.from(this.entries().values()).filter(
-			(e) =>
-				e.workspaceId === entry.workspaceId &&
-				!e.deleted &&
-				e.path.startsWith(oldPath + '/'),
+		return this.relocation.cascadeRenameChildren(
+			entry,
+			oldPath,
+			newPath,
+			activeAdapters,
 		);
-
-		const now = Date.now();
-		const updates = children.map((child) => {
-			const childNewPath = newPath + child.path.slice(oldPath.length);
-			const childNewName = childNewPath.split('/').pop() ?? child.name;
-			return {
-				...child,
-				name: childNewName,
-				path: childNewPath,
-				updatedAt: now,
-				revision: child.revision + 1,
-				pendingAdapters: [
-					...new Set([...child.pendingAdapters, ...activeAdapters]),
-				],
-			};
-		});
-
-		await this.putMany(updates);
 	}
 
 	//

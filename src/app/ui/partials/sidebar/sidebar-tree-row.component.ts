@@ -12,6 +12,7 @@ import {
 import { NgComponentOutlet } from '@angular/common';
 import { timeout } from '@core/utils/async';
 import {
+	LucideArchive,
 	LucideChevronRight,
 	LucideFilePlus,
 	LucideFolder,
@@ -45,6 +46,7 @@ export interface TreeNode {
 	standalone: true,
 	imports: [
 		NgComponentOutlet,
+		LucideArchive,
 		LucideChevronRight,
 		LucideFilePlus,
 		LucideFolder,
@@ -71,6 +73,7 @@ export class SidebarTreeRowComponent implements OnDestroy {
 	readonly commitRename = output<{ id: string; name: string }>();
 	readonly cancelRename = output();
 	readonly deleteEntry = output<VaultEntry | null>();
+	readonly archiveEntry = output<VaultEntry>();
 	readonly createNewFileInFolder = output<VaultEntry>();
 
 	/** The icon to show for this row — falls back to DEFAULT_NOTE_ICON for files, folder icon for folders. */

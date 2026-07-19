@@ -53,13 +53,26 @@ export class SyncPushPhase {
 		}
 	}
 
-	/** Filter entries pending for this adapter. */
+	/**
+	 * Filter entries pending for this adapter, ordered so operations land on
+	 * a valid tree: folder creations first (shallow→deep, so `.archive/` or a
+	 * restored parent exists before anything moves or writes into it), then
+	 * file writes/renames, deletes last.
+	 */
 	#getPendingEntries(entries: VaultEntry[], adapterId: string): VaultEntry[] {
-		return entries.filter(
-			(e) =>
-				e.pendingAdapters.includes(adapterId) &&
-				!isTempFilePath(e.name),
-		);
+		const rank = (e: VaultEntry): number =>
+			e.deleted ? 2 : e.type === VAULT_ENTRY_TYPES.FOLDER ? 0 : 1;
+		return entries
+			.filter(
+				(e) =>
+					e.pendingAdapters.includes(adapterId) &&
+					!isTempFilePath(e.name),
+			)
+			.sort(
+				(a, b) =>
+					rank(a) - rank(b) ||
+					a.path.split('/').length - b.path.split('/').length,
+			);
 	}
 
 	/**

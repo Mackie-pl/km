@@ -1,0 +1,44 @@
+<!-- Archive page — Archived (.archive/, synced) + Trash (device-local, 30 days).
+     The component host is the scroll column (no wrapper) to keep nesting shallow. -->
+<app-archive-header
+	[(tab)]="tab"
+	[archivedCount]="archiveService.archivedItems().length"
+	[trashCount]="trashService.batches().length"
+	(emptyTrash)="emptyTrash()"
+/>
+
+@if (tab() === 'archived') {
+	<div class="px-4 sm:px-8 py-4 space-y-2">
+		@for (item of archiveService.archivedItems(); track item.entry.id) {
+			<app-archived-row
+				[item]="item"
+				(restore)="restoreArchived(item)"
+				(remove)="deleteArchived(item)"
+			/>
+		} @empty {
+			<div
+				class="rounded-[11px] bg-hairline px-4 py-6 text-center text-[13px] text-ink-3"
+			>
+				Nothing archived. Archive notes from their context menu to
+				tuck them away without deleting — they stay synced.
+			</div>
+		}
+	</div>
+} @else {
+	<div class="px-4 sm:px-8 py-4 space-y-2">
+		@for (batch of trashService.batches(); track batch.batchId) {
+			<app-trash-row
+				[batch]="batch"
+				(restore)="restoreTrash(batch)"
+				(removeForever)="deleteForever(batch)"
+			/>
+		} @empty {
+			<div
+				class="rounded-[11px] bg-hairline px-4 py-6 text-center text-[13px] text-ink-3"
+			>
+				Trash is empty. Deleted notes are recoverable here for 30
+				days, on this device only.
+			</div>
+		}
+	</div>
+}

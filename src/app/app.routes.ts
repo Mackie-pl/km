@@ -32,6 +32,11 @@ export const routes: Routes = [
 			import('@ui/pages/activity/activity').then((m) => m.Activity),
 	},
 	{
+		path: 'archive',
+		loadComponent: () =>
+			import('@ui/pages/archive/archive').then((m) => m.Archive),
+	},
+	{
 		path: 'agent/:agentId',
 		loadComponent: () =>
 			import('@ui/pages/agent-detail/agent-detail').then(

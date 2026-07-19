@@ -15,12 +15,12 @@ export class SearchService {
 	/** The current search query. */
 	readonly query = signal('');
 
-	/** All files matching the query by name or content. */
+	/** All visible (non-archived) files matching the query by name or content. */
 	readonly results = computed(() => {
 		const q = this.query().toLowerCase().trim();
 		if (!q) return [];
 
-		return this.vaultStore.files().filter((e) => {
+		return this.vaultStore.visibleFiles().filter((e) => {
 			if (e.name.toLowerCase().includes(q)) return true;
 			if (e.content?.toLowerCase().includes(q)) return true;
 			return false;

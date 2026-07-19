@@ -52,4 +52,16 @@ export function isTempFilePath(name: string): boolean {
 	return false;
 }
 
+/**
+ * Vault-root folder holding archived notes. Archived entries are real files
+ * that sync normally across adapters (NOT part of `isTempFilePath` ignores) —
+ * they are only hidden from the UI layer (tree, search, tag bar).
+ */
+export const ARCHIVE_FOLDER = '.archive';
+
+/** True if `path` is the archive folder itself or lives inside it. */
+export function isArchivedPath(path: string): boolean {
+	return path === ARCHIVE_FOLDER || path.startsWith(ARCHIVE_FOLDER + '/');
+}
+
 

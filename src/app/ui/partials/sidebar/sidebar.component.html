@@ -96,17 +96,10 @@
 			[showLabel]="!isDesktop() || !railMode()"
 			(pressed)="closeMobile()"
 		/>
-		<button
-			class="flex items-center w-full gap-3 py-2 rounded-lg border-none bg-transparent cursor-pointer transition-colors duration-150 text-left text-ink-3 hover:bg-hairline hover:text-ink-1"
-			[class.px-3]="!isDesktop() || !railMode()"
-			[class.justify-center]="isDesktop() && railMode()"
-			aria-label="Archive"
-		>
-			<svg lucideArchive class="size-4.5 flex-shrink-0"></svg>
-			@if (!isDesktop() || !railMode()) {
-				<span class="text-[13px] font-medium truncate">Archive</span>
-			}
-		</button>
+		<app-sidebar-archive-link
+			[showLabel]="!isDesktop() || !railMode()"
+			(pressed)="closeMobile()"
+		/>
 	</div>
 
 	<!-- Workspace footer -->

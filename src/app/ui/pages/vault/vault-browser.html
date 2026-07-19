@@ -54,6 +54,7 @@
 					(contextMenu)="onContextMenu($event)"
 					(renameEntry)="renameEntry($event)"
 					(deleteEntry)="deleteEntry($event)"
+					(archiveEntry)="archiveEntry($event)"
 					(newFileInFolder)="newNote($event)"
 				/>
 			}
@@ -94,6 +95,13 @@
 	} @else {
 		<span class="flex-1"></span>
 	}
+	<a
+		routerLink="/archive"
+		class="flex items-center justify-center size-9 rounded-lg no-underline text-ink-3 hover:bg-surface hover:text-ink-1 transition-colors"
+		aria-label="Archive"
+	>
+		<svg lucideArchive class="size-4.5 flex-shrink-0"></svg>
+	</a>
 	<button
 		type="button"
 		(click)="openWorkspaceConfig()"

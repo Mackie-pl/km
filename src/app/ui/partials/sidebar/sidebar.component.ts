@@ -12,7 +12,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 import {
-	LucideArchive,
 	LucideChevronLeft,
 	LucideChevronRight,
 	LucideFilePlus,
@@ -24,6 +23,7 @@ import { PlatformService } from '@services/platform.service';
 import { WorkspaceService } from '@services/workspace.service';
 import { SidebarVaultListComponent } from './sidebar-vault-list.component';
 import { SidebarActivityLink } from './_activity-link';
+import { SidebarArchiveLink } from './_archive-link';
 import { BUILD_INFO } from '@build-info';
 
 /**
@@ -39,7 +39,6 @@ import { BUILD_INFO } from '@build-info';
 	selector: 'app-sidebar',
 	standalone: true,
 	imports: [
-		LucideArchive,
 		LucideChevronLeft,
 		LucideChevronRight,
 		LucideFilePlus,
@@ -47,6 +46,7 @@ import { BUILD_INFO } from '@build-info';
 		LucideX,
 		LucideSettings,
 		SidebarActivityLink,
+		SidebarArchiveLink,
 		SidebarVaultListComponent,
 	],
 	templateUrl: './sidebar.component.html',

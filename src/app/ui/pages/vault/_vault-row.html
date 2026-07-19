@@ -107,6 +107,14 @@
 			</button>
 			<button
 				type="button"
+				class="flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] font-medium text-ink-1 hover:bg-hairline transition-colors border-none bg-transparent cursor-pointer text-left"
+				(click)="archiveEntry.emit(e)"
+			>
+				<svg lucideArchive class="size-4 flex-shrink-0"></svg>
+				Archive
+			</button>
+			<button
+				type="button"
 				class="flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] font-medium text-red-600 dark:text-red-400 hover:bg-hairline transition-colors border-none bg-transparent cursor-pointer text-left"
 				(click)="deleteEntry.emit(e)"
 			>

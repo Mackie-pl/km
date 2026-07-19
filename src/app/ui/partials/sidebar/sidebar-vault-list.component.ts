@@ -4,6 +4,8 @@ import { LucideFilePlus, LucideFolderPlus } from '@lucide/angular';
 import { navigateToEntry } from '@core/utils/router-utils';
 import { parseFrontmatter } from '@core/utils/frontmatter-parser';
 import { VaultStore, VaultEntry } from '@vault/store';
+import { ArchiveService } from '@vault/archive.service';
+import { TrashService } from '@vault/trash.service';
 import { SyncEngineService } from '@core/sync/sync-engine';
 import { AgentsService } from '@core/agents/agents.service';
 import {
@@ -38,6 +40,8 @@ import { SidebarAgentRow } from './_agent-row';
 export class SidebarVaultListComponent {
 	protected readonly vaultDb = inject(VaultStore);
 	protected readonly agentsService = inject(AgentsService);
+	private readonly archiveService = inject(ArchiveService);
+	private readonly trashService = inject(TrashService);
 	private readonly router = inject(Router);
 	private readonly syncEngine = inject(SyncEngineService);
 
@@ -108,8 +112,8 @@ export class SidebarVaultListComponent {
 	/** Build the normal nested tree (folders + files, expandable). */
 	#buildFullTree(): TreeNode[] {
 		const expanded = this.expandedFolders();
-		const allFolders = this.vaultDb.folders();
-		const allFiles = this.vaultDb.files();
+		const allFolders = this.vaultDb.visibleFolders();
+		const allFiles = this.vaultDb.visibleFiles();
 		const allEntries = [...allFolders, ...allFiles];
 
 		// Build parent → children adjacency map
@@ -162,7 +166,7 @@ export class SidebarVaultListComponent {
 	#buildFilteredTree(activeFilters: Set<string>): TreeNode[] {
 		const result: TreeNode[] = [];
 
-		for (const entry of this.vaultDb.files()) {
+		for (const entry of this.vaultDb.visibleFiles()) {
 			if (!entry.content) continue;
 			const { metadata } = parseFrontmatter(entry.content);
 			const entryTags = (metadata.tags ?? []).map((t) => t.toLowerCase());
@@ -308,11 +312,31 @@ export class SidebarVaultListComponent {
 		}
 	}
 
-	/** Delete the entry via context menu. */
+	/** Delete the entry via context menu — goes to the device-local trash. */
 	async deleteEntry(entry: VaultEntry | null): Promise<void> {
 		if (!entry) return;
 		this.contextEntry.set(null);
-		await this.vaultDb.delete(entry.id);
+		await this.#leaveIfOpen(entry);
+		await this.trashService.deleteToTrash(entry.id);
+	}
+
+	/** Archive the entry via context menu — moves it into `.archive/`. */
+	async archiveEntry(entry: VaultEntry | null): Promise<void> {
+		if (!entry) return;
+		this.contextEntry.set(null);
+		await this.#leaveIfOpen(entry);
+		await this.archiveService.archive(entry.id);
+	}
+
+	/** Navigate home if the open editor entry is `entry` or lives inside it. */
+	async #leaveIfOpen(entry: VaultEntry): Promise<void> {
+		const active = this.activeEntryPath();
+		if (
+			active &&
+			(active === entry.path || active.startsWith(entry.path + '/'))
+		) {
+			await this.router.navigate(['/']);
+		}
 	}
 
 	// ---- Navigation ----
