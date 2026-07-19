@@ -9,6 +9,7 @@ import { Menu, MenuItem, Submenu } from '@tauri-apps/api/menu';
 import { PlatformService } from '@services/platform.service';
 import { ThemeService } from '@services/theme.service';
 import { VaultStore } from '@vault/store';
+import { DialogService } from '@core/dialog/dialog.service';
 import { WorkspaceService } from '@services/workspace.service';
 import { AndroidOpenFileService } from '@services/android-open-file.service';
 import { WorkspaceAccessService } from '@services/workspace-access.service';
@@ -52,6 +53,7 @@ export class AppComponent {
 	private readonly router = inject(Router);
 	readonly platformService = inject(PlatformService);
 	private readonly dialogService = inject(TuiDialogService);
+	private readonly dialog = inject(DialogService);
 	readonly workspaceService = inject(WorkspaceService);
 	private readonly vaultDb = inject(VaultStore);
 	readonly searchService = inject(SearchService);
@@ -124,7 +126,19 @@ export class AppComponent {
 			const ws = this.workspaceService.activeWorkspace();
 			if (!ws || vaultWatchEnabled) return;
 			vaultWatchEnabled = true;
-			void this.vaultDb.init();
+			// A failed open leaves the vault empty and every write a no-op —
+			// tell the user instead of showing what looks like an empty vault.
+			this.vaultDb.init().catch((error: unknown) => {
+				vaultWatchEnabled = false;
+				console.error('Failed to initialize vault database:', error);
+				void this.dialog.alert({
+					title: 'Vault database unavailable',
+					message:
+						error instanceof Error
+							? error.message
+							: 'The vault database could not be opened. Your notes on disk are unaffected.',
+				});
+			});
 		});
 
 		// Verify folder access whenever the active workspace changes. On Android

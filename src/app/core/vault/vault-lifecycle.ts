@@ -62,8 +62,20 @@ export class VaultLifecycle {
 	 * entries (handles workspace switch where a different set of entries is needed).
 	 */
 	async init(): Promise<void> {
+		// The connection can be dropped after a successful open — another tab
+		// starting an upgrade triggers `onversionchange`, which closes it. A
+		// cached resolved promise would then keep us permanently disconnected,
+		// so reopen whenever the connection is gone.
+		if (!this.#database.isOpen) this.#initPromise = null;
 		this.#initPromise ??= this.#database.open();
-		await this.#initPromise;
+		try {
+			await this.#initPromise;
+		} catch (err) {
+			// Don't cache a rejected open — a retry (e.g. after the user closes
+			// the other tab holding an older version) must be able to succeed.
+			this.#initPromise = null;
+			throw err;
+		}
 		await this.#loadAll();
 	}
 
