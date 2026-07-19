@@ -37,18 +37,55 @@ import type { GDriveTokenSet } from './token-store';
 import type { OAuthDriver } from './oauth-driver';
 
 /**
+ * How long to wait for Google to redirect back before giving up. The redirect
+ * may simply never arrive — the user backs out of the consent screen, denies
+ * access, or Google shows a blocking error page (an account outside the
+ * OAuth client's test-user list, say) and never redirects at all. Without a
+ * bound, sign-in hangs forever with no error and the button just looks stuck.
+ */
+const REDIRECT_TIMEOUT_MS = 180_000;
+
+/**
  * Resolve the redirect URL delivered to our custom scheme. Registers a one-shot
  * deep-link listener and also checks `getCurrent()` in case the redirect cold-
  * started the app (arriving before the listener was attached).
+ *
+ * Rejects if nothing arrives within {@link REDIRECT_TIMEOUT_MS}, so a failed or
+ * abandoned consent surfaces as an error the UI can show and retry.
  */
 async function waitForRedirect(): Promise<string> {
 	const { onOpenUrl, getCurrent } = await import('@tauri-apps/plugin-deep-link');
 	return new Promise<string>((resolve, reject) => {
 		let unlisten: (() => void) | undefined;
-		const settle = (url: string): void => {
+		let settled = false;
+
+		const cleanup = (): void => {
+			clearTimeout(timer);
 			unlisten?.();
+		};
+		const settle = (url: string): void => {
+			if (settled) return;
+			settled = true;
+			cleanup();
 			resolve(url);
 		};
+		const fail = (err: Error): void => {
+			if (settled) return;
+			settled = true;
+			cleanup();
+			reject(err);
+		};
+
+		const timer = setTimeout(() => {
+			fail(
+				new Error(
+					'Timed out waiting for Google to return to the app. If the ' +
+						'consent screen showed an error, check that this Google ' +
+						'account is allowed to use this app, then try again.',
+				),
+			);
+		}, REDIRECT_TIMEOUT_MS);
+
 		const match = (urls: string[] | null): string | undefined =>
 			urls?.find((u) => u.startsWith(GOOGLE_OAUTH_ANDROID_SCHEME));
 
@@ -57,14 +94,19 @@ async function waitForRedirect(): Promise<string> {
 			if (hit) settle(hit);
 		})
 			.then((fn) => {
-				unlisten = fn;
+				// The flow may have already completed by the time the listener
+				// attached; don't leak it if so.
+				if (settled) fn();
+				else unlisten = fn;
 				return getCurrent();
 			})
 			.then((urls) => {
 				const hit = match(urls);
 				if (hit) settle(hit);
 			})
-			.catch(reject);
+			.catch((err: unknown) => {
+				fail(err instanceof Error ? err : new Error(String(err)));
+			});
 	});
 }
 

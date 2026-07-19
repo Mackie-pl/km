@@ -93,6 +93,12 @@ export class GDriveAuthProvider implements DriveAuth {
 			// User-initiated — never blocked by a pending silent (rejecting) renew.
 			return this.#acquire(true);
 		}
+		// Already known to need a gesture: stop retrying until the user
+		// reconnects. Every silent attempt costs a GIS popup that flashes open
+		// and closed on the browser path, so a sync retry loop would otherwise
+		// spam one window per cycle for as long as the session stays expired.
+		if (this.#reauth()) throw new ReauthRequiredError();
+
 		this.#refreshing ??= this.#acquire(false).finally(() => {
 			this.#refreshing = null;
 		});

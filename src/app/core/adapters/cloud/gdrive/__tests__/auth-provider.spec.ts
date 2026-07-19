@@ -62,6 +62,44 @@ describe('GDriveAuthProvider', () => {
 		expect(auth.needsReauth()).toBe(true);
 	});
 
+	it('stops retrying silent renewal once reauth is flagged', async () => {
+		// On the browser path every silent renew costs a GIS popup that flashes
+		// open and closed. A sync retry loop hitting an expired session must not
+		// spawn one per cycle — after the first failure, back off until the user
+		// reconnects.
+		// An expired token in the store, as after ~1h — renewal is attempted
+		// and fails because the Google session is gone.
+		signIn.mockResolvedValue({
+			accessToken: 'old',
+			expiresAt: past(),
+			refreshToken: 'r1',
+		});
+		const auth = new GDriveAuthProvider();
+		await auth.ensureSignedIn();
+		signIn.mockReset();
+		renew.mockResolvedValue(null);
+
+		await expect(auth.getToken()).rejects.toBeInstanceOf(
+			ReauthRequiredError,
+		);
+		expect(renew).toHaveBeenCalledTimes(1);
+
+		// Simulate many further sync cycles.
+		for (let i = 0; i < 20; i++) {
+			await expect(auth.getToken()).rejects.toBeInstanceOf(
+				ReauthRequiredError,
+			);
+		}
+		expect(renew).toHaveBeenCalledTimes(1); // no further attempts
+		expect(signIn).not.toHaveBeenCalled();
+
+		// An explicit reconnect resumes normal operation.
+		signIn.mockResolvedValue({ accessToken: 'fresh', expiresAt: future() });
+		await auth.reconnect();
+		expect(auth.needsReauth()).toBe(false);
+		expect(await auth.getToken()).toBe('fresh');
+	});
+
 	it('reconnect() signs in interactively and clears the reauth flag', async () => {
 		const auth = new GDriveAuthProvider();
 		await expect(auth.getToken()).rejects.toThrow(); // sets needsReauth
